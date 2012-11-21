@@ -1,0 +1,15 @@
+apt-get source gnome-settings-daemon, based on gnome-settings-daemon-3.4.2
+
+Dependence (Debian)
+sudo apt-get install gsettings-desktop-schemas-dev libgnome-desktop-3-dev 
+liblcms2-dev libnotify-dev libgnomekbd-dev libpulse-dev libcanberra-dev
+libcolord-dev libcanberra-gtk3-dev libwacom-dev libxtst-dev libupower-glib-dev
+libgudev-1.0-dev libcups2-dev libgconf2-dev
+
+Install
+aclocal --force
+autoconf
+automake
+./configure --prefix=/usr
+make
+sudo make install

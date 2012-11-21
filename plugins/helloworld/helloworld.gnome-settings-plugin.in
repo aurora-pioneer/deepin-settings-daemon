@@ -1,0 +1,8 @@
+[GNOME Settings Plugin]
+Module=helloworld
+IAge=0
+_Name=HelloWorld
+_Description=HelloWorld plugin
+Authors=Zhai Xiang
+Copyright=Copyright © 2012 Deepin, Inc.
+Website=http://www.linuxdeepin.com
