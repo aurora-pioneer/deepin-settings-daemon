@@ -1,0 +1,54 @@
+diff gnome-settings-daemon-3.4.2/plugins/gconf/conf-watcher.c gnome-settings-daemon-3.4.2-marga/plugins/gconf/conf-watcher.c
+--- gnome-settings-daemon-3.4.2/plugins/gconf/conf-watcher.c	2012-10-29 13:58:28.000000000 -0700
++++ gnome-settings-daemon-3.4.2-marga/plugins/gconf/conf-watcher.c	2012-10-29 17:02:14.473348298 -0700
+@@ -27,6 +27,11 @@
+                                  const gchar *key,
+                                  ConfWatcher *watcher);
+ 
++static gboolean settings_change_event_cb (GSettings *settings,
++                                          gpointer keys,
++                                          gint n_keys,
++                                          gpointer user_data);
++
+ static void
+ conf_watcher_finalize (GObject *object)
+ {
+@@ -34,6 +39,7 @@
+ 
+ 	if (watcher->settings != NULL) {
+                 g_signal_handlers_disconnect_by_func (watcher->settings, settings_changed_cb, watcher);
++                g_signal_handlers_disconnect_by_func (watcher->settings, settings_change_event_cb, watcher);
+ 		g_object_unref (watcher->settings);
+         }
+ 
+@@ -62,6 +68,20 @@
+ {
+ }
+ 
++static gboolean
++settings_change_event_cb (GSettings *settings,
++                          gpointer keys,
++                          gint n_keys,
++                          gpointer user_data)
++{
++	/* This is needed to prevent dconf update from
++	   overwriting user settings with system settings. */
++	if (n_keys == 0) {
++		return TRUE;
++	}
++	return FALSE;
++}
++
+ static void
+ settings_changed_cb (GSettings *settings,
+ 		     const gchar *key,
+@@ -128,6 +148,8 @@
+ 	watcher->settings = g_settings_new (watcher->settings_id);
+ 	g_signal_connect (watcher->settings, "changed",
+ 			  G_CALLBACK (settings_changed_cb), watcher);
++	g_signal_connect (watcher->settings, "change_event",
++			  G_CALLBACK (settings_change_event_cb), watcher);
+ 
+ 	watcher->conf_client = gconf_client_get_default ();
+ }
+
