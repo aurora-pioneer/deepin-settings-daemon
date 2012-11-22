@@ -18,7 +18,7 @@ gsettings_SCHEMAS =							\
 	org.gnome.settings-daemon.plugins.print-notifications.gschema.xml	\
 	org.gnome.settings-daemon.peripherals.wacom.gschema.xml		\
 	org.gnome.settings-daemon.plugins.xrandr.gschema.xml    \
-    com.linuxdeepin.settings-daemon.plugins.helloworld.gschema.xml
+    com.deepin.settings-daemon.plugins.helloworld.gschema.xml
 
 all_schemas = $(gsettings_SCHEMAS)
 

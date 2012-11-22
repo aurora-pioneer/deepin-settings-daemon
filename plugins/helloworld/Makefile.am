@@ -41,23 +41,23 @@ plugin_in_files = 					\
 
 plugin_DATA = $(plugin_in_files:.gnome-settings-plugin.in=.gnome-settings-plugin)
 
-com.linuxdeepin.settings-daemon.plugins.helloworld.policy.in: com.linuxdeepin.settings-daemon.plugins.helloworld.policy.in.in Makefile
+com.deepin.settings-daemon.plugins.helloworld.policy.in: com.deepin.settings-daemon.plugins.helloworld.policy.in.in Makefile
 	$(AM_V_GEN) sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
 
 @INTLTOOL_POLICY_RULE@
 polkit_policydir = $(datadir)/polkit-1/actions
-polkit_policy_in_files = com.linuxdeepin.settings-daemon.plugins.helloworld.policy.in
+polkit_policy_in_files = com.deepin.settings-daemon.plugins.helloworld.policy.in
 polkit_policy_DATA = $(polkit_policy_in_files:.policy.in=.policy)
 
 EXTRA_DIST = 						\
-	com.linuxdeepin.settings-daemon.plugins.helloworld.policy.in.in
+	com.deepin.settings-daemon.plugins.helloworld.policy.in.in
 
 clean-local:
 	rm -f *~
 
 CLEANFILES = 						\
 	$(plugin_DATA)					\
-	com.linuxdeepin.settings-daemon.plugins.helloworld.policy	\
-	com.linuxdeepin.settings-daemon.plugins.helloworld.policy.in
+	com.deepin.settings-daemon.plugins.helloworld.policy	\
+	com.deepin.settings-daemon.plugins.helloworld.policy.in
 
 @GSD_INTLTOOL_PLUGIN_RULE@
