@@ -1,0 +1,34 @@
+<schemalist>
+  <schema gettext-domain="@GETTEXT_PACKAGE@" id="com.deepin.settings-daemon.plugins.background" path="/com.deepin/settings-daemon/plugins/background/">
+    <key name="active" type="b">
+      <default>true</default>
+      <_summary>Activation of this plugin</_summary>
+      <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
+    </key>
+    <key name="priority" type="i">
+      <default>1</default>
+      <_summary>Priority to use for this plugin</_summary>
+      <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
+    </key>
+    <key name="picture-uri" type="s">
+      <default>'file:///usr/share/backgrounds/default_background.jpg'</default>
+      <_summary>Picture URI</_summary>
+      <_description>URI to use for the background image. Not that the backend only supports local (file://) URIs.</_description>
+    </key>
+    <key name="background-duration" type="i">
+      <default>0</default>
+      <_summary>壁纸保留时间</_summary>
+      <_description>单位为秒, 小于等于0, 不更换壁纸; 大于0, background-duration时间之后更换壁纸</_description>
+    </key>
+    <key name="cross-fade-manual-interval" type="i">
+      <default>50</default>
+      <_summary>手动切换两张背景图片过程所花时间</_summary>
+      <_description>单位为毫秒, 两张背景图片切换过程所花时间</_description>
+    </key>
+    <key name="cross-fade-auto-interval" type="i">
+      <default>300</default>
+      <_summary>自动更换壁纸动画中两帧之间的时间间隔</_summary>
+      <_description>单位为毫秒, 更换壁纸动画中两帧之间的时间间隔</_description>
+    </key>
+  </schema>
+</schemalist>

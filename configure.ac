@@ -590,6 +590,7 @@ data/org.gnome.settings-daemon.plugins.xrandr.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.wacom.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.print-notifications.gschema.xml.in
 data/com.deepin.settings-daemon.plugins.helloworld.gschema.xml.in
+data/com.deepin.settings-daemon.plugins.background.gschema.xml.in
 po/Makefile.in
 ])
 
