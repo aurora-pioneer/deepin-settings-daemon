@@ -29,4 +29,3 @@ power-ignore-bad-dbus-requests.patch
 xsettings_signal_handling.patch
 git_xrandr_explicitly_set_clone_state.patch
 git-mask-out-virtual-modifiers.patch
-dont_overwrite_gconf_keys.patch
