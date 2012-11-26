@@ -27,11 +27,6 @@ static void settings_changed_cb (GSettings *settings,
                                  const gchar *key,
                                  ConfWatcher *watcher);
 
-static gboolean settings_change_event_cb (GSettings *settings,
-                                          gpointer keys,
-                                          gint n_keys,
-                                          gpointer user_data);
-
 static void
 conf_watcher_finalize (GObject *object)
 {
@@ -39,7 +34,6 @@ conf_watcher_finalize (GObject *object)
 
 	if (watcher->settings != NULL) {
                 g_signal_handlers_disconnect_by_func (watcher->settings, settings_changed_cb, watcher);
-                g_signal_handlers_disconnect_by_func (watcher->settings, settings_change_event_cb, watcher);
 		g_object_unref (watcher->settings);
         }
 
@@ -66,20 +60,6 @@ conf_watcher_class_init (ConfWatcherClass *klass)
 static void
 conf_watcher_init (ConfWatcher *watcher)
 {
-}
-
-static gboolean
-settings_change_event_cb (GSettings *settings,
-                          gpointer keys,
-                          gint n_keys,
-                          gpointer user_data)
-{
-	/* This is needed to prevent dconf update from
-	   overwriting user settings with system settings. */
-	if (n_keys == 0) {
-		return TRUE;
-	}
-	return FALSE;
 }
 
 static void
@@ -148,8 +128,6 @@ setup_watcher (ConfWatcher *watcher)
 	watcher->settings = g_settings_new (watcher->settings_id);
 	g_signal_connect (watcher->settings, "changed",
 			  G_CALLBACK (settings_changed_cb), watcher);
-	g_signal_connect (watcher->settings, "change_event",
-			  G_CALLBACK (settings_change_event_cb), watcher);
 
 	watcher->conf_client = gconf_client_get_default ();
 }
