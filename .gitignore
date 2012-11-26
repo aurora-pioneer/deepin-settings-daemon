@@ -1,0 +1,9 @@
+*.o
+*.lo
+*.gmo
+*.la
+*.in
+*.xml
+*.valid
+*.policy
+Makefile
