@@ -9,6 +9,7 @@ libgudev-1.0-dev libcups2-dev libgconf2-dev
 Install
 aclocal --force
 autoconf
+autoheader
 automake
 ./configure --prefix=/usr
 make
