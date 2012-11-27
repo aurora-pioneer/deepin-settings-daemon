@@ -9,7 +9,10 @@ noinst_PROGRAMS = 			\
 test_background_SOURCES = 		\
 	test-background.c		\
 	gsd-background-manager.h	\
+	gsd-background-manager-private.h \
 	gsd-background-manager.c	\
+	background_util.c		\
+	background_util.h		\
 	$(NULL)
 
 test_background_CPPFLAGS = \
@@ -37,7 +40,10 @@ libbackground_la_SOURCES =		\
 	gsd-background-plugin.h		\
 	gsd-background-plugin.c		\
 	gsd-background-manager.h	\
+	gsd-background-manager-private.h \
 	gsd-background-manager.c	\
+	background_util.c		\
+	background_util.h		\
 	$(NULL)
 
 libbackground_la_CPPFLAGS = \
