@@ -1,0 +1,8 @@
+[GNOME Settings Plugin]
+Module=key-bindings
+IAge=0
+_Name=Key Bindings
+_Description=Key Bindings  plugin
+Authors=AUTHOR
+Copyright=Copyright © 2007 AUTHOR
+Website=

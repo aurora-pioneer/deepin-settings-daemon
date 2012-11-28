@@ -19,7 +19,8 @@ enabled_plugins =	\
 	wacom		\
 	xrandr		\
 	xsettings	\
-	helloworld \
+	helloworld 	\
+	key-bindings	\
     $(NULL)
 
 disabled_plugins = $(NULL)

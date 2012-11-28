@@ -573,6 +573,7 @@ plugins/wacom/Makefile
 plugins/xrandr/Makefile
 plugins/xsettings/Makefile
 plugins/helloworld/Makefile
+plugins/key-bindings/Makefile
 data/Makefile
 data/gnome-settings-daemon.pc
 data/gnome-settings-daemon-uninstalled.pc

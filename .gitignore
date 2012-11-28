@@ -6,4 +6,13 @@
 *.xml
 *.valid
 *.policy
+
+# build time artifacts.
+configure
 Makefile
+Makefile.in
+.deps/
+.libs/
+autom4te.cache/
+# all these files are generated 
+*.gnome-settings-plugin
