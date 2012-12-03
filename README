@@ -10,7 +10,7 @@ Install
 aclocal --force
 autoconf
 autoheader
-automake
+automake --add-missing
 ./configure --prefix=/usr
 make
 sudo make install
