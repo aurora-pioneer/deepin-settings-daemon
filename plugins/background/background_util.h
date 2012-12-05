@@ -8,10 +8,12 @@
 #define DEEPIN_EXPORT
 
 // all schema related information.
-//#define	BG_SCHEMA_ID	"com.deepin.settings-daemon.plugins.background"
-#define	BG_SCHEMA_ID	"org.gnome.desktop.background"
+#define	BG_SCHEMA_ID	"com.deepin.desktop.background"
+
+#define BG_FRAME_NUM	30		//in my implementation, the actual frame number may not be 30.
 
 #define BG_PICTURE_URI	"picture-uri" //better renamed to picture-URIs
+#define DELIMITER	';'		//picture-uri string delimiter 
 #define BG_BG_DURATION	"background-duration"
 #define BG_XFADE_MANUAL_INTERVAL "cross-fade-manual-interval"     //manually change background
 #define BG_XFADE_AUTO_INTERVAL	 "cross-fade-auto-interval"       //automatically change background

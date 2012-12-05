@@ -18,7 +18,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  **/
+
 #include <string.h>
+#include <stdlib.h>
 
 #include <X11/X.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -32,12 +34,18 @@
 #include "background_util.h"
 
 
-
 #define USEC_PER_SEC 1000000.0 // microseconds per second 
 #define MSEC_PER_SEC 1000.0    // milliseconds per second 
-//TODO: get these values from gsettings.
-#define BG_INTERVAL 0.05 //in seconds 
-#define BG_DURATION 1.0 //in seconds
+
+//
+static GPtrArray *picture_paths;		//an array of picture paths (strings).
+static guint	picture_num;		//number of pictures in GPtrArray.
+static guint	picture_index;		// the next background picture.
+
+static gulong	gsettings_background_duration;
+static gulong	gsettings_xfade_auto_interval; //use this time only when we use 
+                                               //multiple background pictures.
+static gulong	gsettings_xfade_manual_interval;
 
 static const gchar* bg_props[2] = {"_XROOTPMAP_ID","ESETROOT_PMAP_ID"};
 static Atom bg1_atom;  
@@ -52,11 +60,10 @@ static Visual*	root_visual;
 static int	root_width;
 static int	root_height;
 
-// 
-static gboolean	bg_initialized = FALSE;
-
 //global timeout_id to track in process timeoutout
-static guint	timeout_id = 0;
+static guint	bg_timeout_id =0;	// background_duration
+static guint	auto_timeout_id = 0;	// xfade_auto_interval
+static guint	manual_timeout_id = 0;	// xfade_manual_interval
 //
 
 /*
@@ -64,17 +71,17 @@ static guint	timeout_id = 0;
  */
 typedef struct _xfade_data
 {
-	//all in seconds.
-	gdouble		 start_time;
-	gdouble		 total_duration;
-	gdouble		 interval;
+    //all in seconds.
+    gdouble	start_time;
+    gdouble	total_duration;
+    gdouble	interval;
 	
-	cairo_surface_t* fading_surface;
-	GdkPixbuf* 	 end_pixbuf;
-	gdouble		 alpha;
+    cairo_surface_t*	fading_surface;
+    GdkPixbuf*		end_pixbuf;
+    gdouble		alpha;
 
-	Pixmap		pixmap;
-}xfade_data_t;
+    Pixmap		pixmap;
+} xfade_data_t;
 
 /*
  *	change root window x properties.
@@ -84,13 +91,13 @@ typedef struct _xfade_data
 static void 
 _change_bg_xproperties (Pixmap pm)
 {
-	gdk_error_trap_push ();
-	XChangeProperty (display, root, bg1_atom, pixmap_atom,
-			 32, PropModeReplace, (unsigned char*)&pm, 1);
-	XChangeProperty (display, root, bg2_atom, pixmap_atom,
-			 32, PropModeReplace, (unsigned char*)&pm, 1);
-	XFlush (display);
-	gdk_error_trap_pop ();
+    gdk_error_trap_push ();
+    XChangeProperty (display, root, bg1_atom, pixmap_atom,
+		     32, PropModeReplace, (unsigned char*)&pm, 1);
+    XChangeProperty (display, root, bg2_atom, pixmap_atom,
+		     32, PropModeReplace, (unsigned char*)&pm, 1);
+    XFlush (display);
+    gdk_error_trap_pop ();
 }
 /*
  *    compositing two cairo surfaces. 
@@ -98,15 +105,15 @@ _change_bg_xproperties (Pixmap pm)
 static void 
 draw_background (xfade_data_t* fade_data)
 {
-	cairo_t* cr;
-	cr = cairo_create (fade_data->fading_surface);
+    cairo_t* cr;
+    cr = cairo_create (fade_data->fading_surface);
 
-	gdk_cairo_set_source_pixbuf (cr, fade_data->end_pixbuf, 0, 0);
-	cairo_paint_with_alpha (cr, fade_data->alpha);
+    gdk_cairo_set_source_pixbuf (cr, fade_data->end_pixbuf, 0, 0);
+    cairo_paint_with_alpha (cr, fade_data->alpha);
 
-	cairo_destroy (cr);
+    cairo_destroy (cr);
 
-	_change_bg_xproperties (fade_data->pixmap);
+    _change_bg_xproperties (fade_data->pixmap);
 }
         	
 /*
@@ -115,9 +122,9 @@ draw_background (xfade_data_t* fade_data)
 static void 
 free_fade_data (xfade_data_t* fade_data)
 {
-	cairo_surface_destroy (fade_data->fading_surface);
- 	g_object_unref (fade_data->end_pixbuf);
-	g_free (fade_data);
+    cairo_surface_destroy (fade_data->fading_surface);
+    g_object_unref (fade_data->end_pixbuf);
+    g_free (fade_data);
 }
 
 /*
@@ -126,73 +133,74 @@ free_fade_data (xfade_data_t* fade_data)
 static gdouble 
 get_current_time (void)
 {
-	double timestamp;
-	GTimeVal now;
+    double timestamp;
+    GTimeVal now;
 
-	g_get_current_time (&now);
+    g_get_current_time (&now);
 
-	timestamp = ((USEC_PER_SEC * now.tv_sec) + now.tv_usec) / USEC_PER_SEC;
+    timestamp = ((USEC_PER_SEC * now.tv_sec) + now.tv_usec) / USEC_PER_SEC;
 
-	return timestamp;
+    return timestamp;
 }
 
 static gboolean 
 on_tick (gpointer user_data)
 {
-	xfade_data_t* fade_data = (xfade_data_t*)user_data;
+    xfade_data_t* fade_data = (xfade_data_t*)user_data;
 
-	gdouble cur_time;
-	cur_time = get_current_time ();
+    gdouble cur_time;
+    cur_time = get_current_time ();
 
-	fade_data->alpha = (cur_time - fade_data->start_time) / fade_data->total_duration;
-	fade_data->alpha = CLAMP (fade_data->alpha, 0.0, 1.0);
+    fade_data->alpha = (cur_time - fade_data->start_time) / fade_data->total_duration;
+    fade_data->alpha = CLAMP (fade_data->alpha, 0.0, 1.0);
 
-	draw_background (fade_data);
+    draw_background (fade_data);
 
-	static int i=0;
-	g_debug ("tick %d\n",++i);
-	g_debug ("cur_time : %lf\n", cur_time);
-	g_debug ("alpha	 : %lf\n", fade_data->alpha);
+    static int i=0;
+	
+    g_debug ("tick %d\n",++i);
+    g_debug ("cur_time : %lf\n", cur_time);
+    g_debug ("start_time: %lf\n", fade_data->start_time);
+    g_debug ("total_duration: %lf\n", fade_data->total_duration);
+    g_debug ("alpha	 : %lf\n", fade_data->alpha);
 
-	// 'coz fade_data->alpha is a rough value
-	if(fade_data->alpha >=0.9)
-		return FALSE;
+    // 'coz fade_data->alpha is a rough value
+    if(fade_data->alpha >=0.9)
+	return FALSE;
 
-	return TRUE;
+    return TRUE;
 }
 
 static void 
 on_finished (gpointer user_data)
 {
-	xfade_data_t* fade_data = (xfade_data_t*) user_data;
+    xfade_data_t* fade_data = (xfade_data_t*) user_data;
 
-	fade_data->alpha = 1.0;
+    fade_data->alpha = 1.0;
 
-	draw_background (fade_data);
+    draw_background (fade_data);
 
-	free_fade_data (fade_data);
-	g_debug ("crossfade finished \n");
-}
-/*
- * 	setup cross fade timer and callback.
- */
-static void 
-crossfade_start (xfade_data_t* fade_data)
-{
-	fade_data->start_time = get_current_time(); 
-	g_debug ("start_time : %lf\n", fade_data->start_time);
-	g_debug ("interval   : %lf\n", fade_data->interval);
-	GSource* source = g_timeout_source_new(fade_data->interval*MSEC_PER_SEC);
-
-	g_source_set_callback (source, (GSourceFunc) on_tick, fade_data, (GDestroyNotify)on_finished);
-
-	timeout_id = g_source_attach (source, g_main_context_default());
+    free_fade_data (fade_data);
+    g_debug ("crossfade finished \n");
 }
 static void 
-crossfade_stop ()
+remove_timers ()
 {
-	g_source_remove (timeout_id);
-	timeout_id = 0;
+    if (bg_timeout_id)
+    {
+	g_source_remove (bg_timeout_id);
+	bg_timeout_id = 0;
+    }
+    if (auto_timeout_id)
+    {
+	g_source_remove (auto_timeout_id);
+	auto_timeout_id = 0;
+    }	
+    if (manual_timeout_id)
+    {
+	g_source_remove (manual_timeout_id);
+	manual_timeout_id = 0;
+    }
 }
 /*
  * 	get previous background pixmap id.
@@ -215,64 +223,61 @@ crossfade_stop ()
 static Pixmap 
 get_previous_background (void)
 {
-	g_debug (" enter get_previous_background:\n");
+    Pixmap pbg1 = None;
+    Pixmap pbg2 = None;
 
-	Pixmap pbg1 = None;
-	Pixmap pbg2 = None;
+    //get previous properties.
+    gulong nitems = 0;
+    guchar* prop = NULL;
+    Atom actual_type;
+    int  actual_format;
+    gulong bytes_after;
 
-	//get previous properties.
-	gulong nitems = 0;
-	guchar* prop = NULL;
-	Atom actual_type;
-	int  actual_format;
-	gulong bytes_after;
-
-	gdk_error_trap_push ();
-	if (XGetWindowProperty (display, root, bg1_atom, 0, 4, False, AnyPropertyType,
+    gdk_error_trap_push ();
+    if (XGetWindowProperty (display, root, bg1_atom, 0, 4, False, AnyPropertyType,
 			&actual_type, &actual_format, &nitems, &bytes_after, &prop) == Success &&
 	   actual_type == pixmap_atom && actual_format == 32 && nitems == 1)
-	{
-		memcpy (&pbg1, prop, 4);
-		XFree (prop);
-	}	
+    {
+	memcpy (&pbg1, prop, 4);
+	XFree (prop);
+    }	
 
-	if (XGetWindowProperty (display, root, bg2_atom, 0, 4, False, AnyPropertyType,
+    if (XGetWindowProperty (display, root, bg2_atom, 0, 4, False, AnyPropertyType,
 			&actual_type, &actual_format, &nitems, &bytes_after, &prop) == Success &&
 	   actual_type == pixmap_atom && actual_format == 32 && nitems == 1)
-	{
-		memcpy (&pbg2, prop, 4);
-		XFree (prop);
-	}	
-	gdk_error_trap_pop ();
-	//compare two pixmaps.
-	g_assert (pbg1 == pbg2);
+    {
+	memcpy (&pbg2, prop, 4);
+	XFree (prop);
+    }	
+    gdk_error_trap_pop ();
+    //compare two pixmaps.
+    g_assert (pbg1 == pbg2);
 
-	//check whether the pixmap exists
-	Window _root;
-	int _x,_y;
-	unsigned int _width,_height;
-	unsigned int _border,_depth;
+    //check whether the pixmap exists
+    Window _root;
+    int _x,_y;
+    unsigned int _width,_height;
+    unsigned int _border,_depth;
 	/*
 	 * 	TODO: how to reliably check the existence of a pixmap.
 	 */
 	
-	if (pbg1 != None)
-	{
-		gdk_error_trap_push ();
-		Status _s = XGetGeometry (display, pbg1, &_root,
+    if (pbg1 != None)
+    {
+	gdk_error_trap_push ();
+	Status _s = XGetGeometry (display, pbg1, &_root,
 		                &_x, &_y, &_width, &_height,
 		                &_border, &_depth);
-		if ((_s==0)||(_width!=root_width)||(_height!=root_height))
-		{
-			// the drawable have been freed or resolution changed.
-			pbg1 = None;
-		}
-		gdk_error_trap_pop ();
+	if ((_s==0)||(_width!=root_width)||(_height!=root_height))
+	{
+	    // the drawable have been freed or resolution changed.
+	    pbg1 = None;
 	}
+	gdk_error_trap_pop ();
+    }
 
-	g_debug ("prev_pixmap = 0x%x\n", (unsigned) pbg1);
-	g_debug ("leaving get_previous_background:\n");
-	return pbg1;
+    g_debug ("prev_pixmap = 0x%x\n", (unsigned) pbg1);
+    return pbg1;
 }
 
 /*
@@ -285,101 +290,212 @@ get_previous_background (void)
 static cairo_surface_t* 
 get_surface(Pixmap pixmap)
 {
-	cairo_surface_t* cs=NULL;
-	cs = cairo_xlib_surface_create (display, pixmap, 
-			                root_visual, 
-				        root_width, root_height);
+    cairo_surface_t* cs=NULL;
+    cs = cairo_xlib_surface_create (display, pixmap, 
+			            root_visual, 
+				    root_width, root_height);
 	
-	return cs;
+    return cs;
+}
+
+static gboolean 
+on_bg_duration_tick (gpointer user_data)
+{
+    xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
+    
+    fade_data->interval = gsettings_xfade_auto_interval/MSEC_PER_SEC;
+    fade_data->total_duration = fade_data->interval * BG_FRAME_NUM;
+
+    fade_data->start_time = get_current_time(); 
+    fade_data->alpha = 0.0;
+
+    Pixmap prev_pixmap = get_previous_background ();
+    fade_data->pixmap = prev_pixmap;
+    fade_data->fading_surface = get_surface (prev_pixmap);
+
+    //periodical transition : picture_index = (picture_index + 1) % picture_num;
+    picture_index = random() % picture_num;
+    gchar *next_picture = g_ptr_array_index (picture_paths, picture_index);
+    fade_data->end_pixbuf = gdk_pixbuf_new_from_file (next_picture, NULL);
+
+    GSource* source = g_timeout_source_new (gsettings_xfade_auto_interval);
+
+    g_source_set_callback (source, (GSourceFunc) on_tick, fade_data, (GDestroyNotify)on_finished);
+
+    if (auto_timeout_id)
+	g_source_remove (auto_timeout_id);
+
+    auto_timeout_id = g_source_attach (source, g_main_context_default());
+
+    return TRUE;
+}
+
+static void 
+on_bg_duration_finished (gpointer user_data)
+{
+    g_debug ("bg_duration_finished");
+}
+
+static void
+setup_background_timer ()
+{
+    GSource* source = g_timeout_source_new (gsettings_background_duration*MSEC_PER_SEC);
+
+    g_source_set_callback (source, (GSourceFunc) on_bg_duration_tick, NULL, (GDestroyNotify)on_bg_duration_finished);
+
+    bg_timeout_id = g_source_attach (source, g_main_context_default());
+}
+
+static void
+setup_crossfade_timer ()
+{
+    xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
+
+    Pixmap prev_pixmap = get_previous_background ();
+    fade_data->pixmap = prev_pixmap;
+    fade_data->fading_surface = get_surface (prev_pixmap);
+    fade_data->alpha = 0;
+
+    // we don't use picture_index here.
+    gchar* current_bg_image = g_ptr_array_index (picture_paths, 0);
+    fade_data->end_pixbuf = gdk_pixbuf_new_from_file (current_bg_image, NULL);
+
+    fade_data->interval = gsettings_xfade_manual_interval/MSEC_PER_SEC;
+    fade_data->total_duration = fade_data->interval * BG_FRAME_NUM;
+    fade_data->start_time = get_current_time(); 
+    g_debug ("start_time : %lf\n", fade_data->start_time);
+    GSource* source = g_timeout_source_new(fade_data->interval*MSEC_PER_SEC);
+
+    g_source_set_callback (source, (GSourceFunc) on_tick, fade_data, (GDestroyNotify)on_finished);
+
+    manual_timeout_id = g_source_attach (source, g_main_context_default());
+    g_debug ("timeout_id : %d\n", manual_timeout_id);
 }
 /*
- *	@pb : pixbuf for new background, we should ensure 
- *	      that pb is not null.
  */
 static void 
-set_bg_props (GdkPixbuf* pb)
+setup_timers ()
 {
-	//don't remove following comments:
-	//to keep pixmap resource available
-	XSetCloseDownMode (display, RetainPermanent);
-	g_assert (pb != NULL);
-
-	xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
-
-	Pixmap prev_pixmap = get_previous_background ();
-	
-	if (bg_initialized && (prev_pixmap != None))
-	{
-		// cross fade 
-		//TODO: scale prev_pixmap to root window size.
-		fade_data->pixmap = prev_pixmap;
-		fade_data->fading_surface = get_surface (prev_pixmap);
-		fade_data->end_pixbuf = pb;
-		//TODO: get this from gsettings.
-		fade_data->total_duration = BG_DURATION;
-		fade_data->interval = BG_INTERVAL;
-		
-		g_debug ("we've setup fade_data\n");
-
-		if(timeout_id!=0)
-			crossfade_stop ();
-		crossfade_start (fade_data);
-		// free fade_data in on_finished
-		// reuse pixman. no need to change background xproperty.
-		// if this causes problems, we need to set a new Pixmap.
-	}
-	else
-	{
-		//no previous background, no cross fade effect.
-		//this is most likely the situation when we first start up.
-		//resolution changed.
-		Pixmap new_pixmap = XCreatePixmap (display, root, 
-				          root_width, root_height,
-					  root_depth);
-
-		fade_data->pixmap = new_pixmap;
-		fade_data->fading_surface = get_surface (new_pixmap);
-		fade_data->end_pixbuf = pb;
-		fade_data->alpha = 1.0;     
-
-		draw_background (fade_data);
-		free_fade_data (fade_data);
-
-		bg_initialized = TRUE;
-	}
+    if (gsettings_background_duration && picture_num > 1)
+    {
+	g_debug ("setup_background_timer");
+	setup_background_timer ();
+    }
+    else
+    {
+	g_debug ("setup_crossfade_timer");
+	setup_crossfade_timer ();
+    }
 }
 
-static GdkPixbuf* 
-get_bg_pixbuf_from_gsettings (GSettings* settings)
+/*
+ *	parse picture-uri string and
+ *	add them to global array---picture_paths
+ *
+ *	<picture_uri> := (<uri> ";")* <uri> [";"]
+ */
+static void
+parse_picture_uri(gchar * pic_uri)
 {
-	gchar* bg_image_uri = g_settings_get_string (settings, BG_PICTURE_URI);
-	gchar* bg_image = g_filename_from_uri (bg_image_uri, NULL, NULL);
+    gchar* uri_end;   // end of a uri
+    gchar* uri_start;   //start of a uri
+    gchar* filename_ptr;
 
-	g_free (bg_image_uri);
-
-	//creat pixbuf from image file
-	GdkPixbuf* pb = gdk_pixbuf_new_from_file (bg_image, NULL);
-
-	g_debug ("background image: %s\n", bg_image);
+    uri_start = pic_uri;
+    while ((uri_end = strchr (uri_start, DELIMITER)) != NULL)
+    {
+	*uri_end = '\0';
 	
-	g_free (bg_image);
+       	filename_ptr = g_filename_from_uri (uri_start, NULL, NULL);
+	if (filename_ptr != NULL)
+	{
+	    g_ptr_array_add (picture_paths, filename_ptr);
+	    picture_num ++;
+	    g_debug ("picture %d: %s", picture_num, filename_ptr);
+	}
 
-	return pb;
+	uri_start = uri_end + 1;
+    }
+    if (*uri_start != '\0')
+    {
+       	filename_ptr = g_filename_from_uri (uri_start, NULL, NULL);
+	if (filename_ptr != NULL)
+	{
+	    g_ptr_array_add (picture_paths, filename_ptr);
+	    picture_num ++;
+	    g_debug ("picture %d: %s", picture_num, filename_ptr);
+	}
+    }
 }
-
+static void
+destroy_picture_path (gpointer data)
+{
+    g_free (data);
+}
+/*
+ *	it's not efficient to check if the new picture_uri is the same 
+ *	as the previous value. we just restart all.
+ */
 static void 
-bg_settings_changed (GSettings *settings, gchar* key, gpointer user_data)
+bg_settings_picture_uri_changed (GSettings *settings, gchar *key, gpointer user_data)
 {
-	if (g_strcmp0 (key, BG_PICTURE_URI))
-		return;
-	
-	GdkPixbuf* pb = get_bg_pixbuf_from_gsettings (settings);
-	if (pb == NULL)
-		return;
-
-	set_bg_props (pb);
-
+    if (g_strcmp0 (key, BG_PICTURE_URI))
 	return;
+
+    g_ptr_array_free (picture_paths, TRUE);
+    picture_paths = g_ptr_array_new_with_free_func (destroy_picture_path);
+    picture_num = 0;
+    picture_index = 0;
+
+    gchar* bg_image_uri = g_settings_get_string (settings, BG_PICTURE_URI);
+    parse_picture_uri (bg_image_uri);
+    free (bg_image_uri);
+
+    remove_timers ();
+
+    setup_timers ();
+}
+
+/*
+ *	we should reset timer and start auto	
+ */
+static void 
+bg_settings_bg_duration_changed (GSettings *settings, gchar *key, gpointer user_data)
+{
+    if (g_strcmp0 (key, BG_BG_DURATION))
+	return;
+
+    gsettings_background_duration = g_settings_get_int (settings, BG_BG_DURATION);
+
+    remove_timers ();
+
+    setup_timers ();
+}
+
+static void
+bg_settings_xfade_manual_interval_changed (GSettings *settings, gchar *key, gpointer user_data)
+{
+    if (g_strcmp0 (key, BG_XFADE_MANUAL_INTERVAL))
+	return;
+
+    gsettings_xfade_manual_interval = g_settings_get_int (settings, BG_XFADE_MANUAL_INTERVAL);
+
+    remove_timers ();
+
+    setup_timers ();
+}
+
+static void
+bg_settings_xfade_auto_interval_changed (GSettings *settings, gchar *key, gpointer user_data)
+{
+    if (g_strcmp0 (key, BG_XFADE_AUTO_INTERVAL))
+	return;
+
+    gsettings_xfade_auto_interval = g_settings_get_int (settings, BG_XFADE_AUTO_INTERVAL);
+
+    remove_timers ();
+
+    setup_timers ();
 }
 /*
 static void 
@@ -415,34 +531,88 @@ bg_util_disconnect_screen_signals (GsdBackgroundManager* manager)
 			   G_CALLBACK (screen_size_changed_cb), manager);
 }
 */
+
+static void
+initial_setup (GSettings *settings)
+{
+    picture_paths = g_ptr_array_new_with_free_func (destroy_picture_path);
+
+    picture_num = 0;
+    picture_index = 0;
+
+    gchar* bg_image_uri = g_settings_get_string (settings, BG_PICTURE_URI);
+    parse_picture_uri (bg_image_uri);
+    free (bg_image_uri);
+
+    gsettings_background_duration = g_settings_get_int (settings, BG_BG_DURATION);
+    gsettings_xfade_manual_interval = g_settings_get_int (settings, BG_XFADE_MANUAL_INTERVAL);
+    gsettings_xfade_auto_interval = g_settings_get_int (settings, BG_XFADE_AUTO_INTERVAL);
+
+    /*
+     *	don't remove following comments:
+     * 	to keep pixmap resource available
+    */
+    XSetCloseDownMode (display, RetainPermanent);
+
+    gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
+    GdkPixbuf* pb = gdk_pixbuf_new_from_file (current_bg_image, NULL);
+    g_assert (pb != NULL);
+
+    /*
+     *	no previous background, no cross fade effect.
+     *	this is most likely the situation when we first start up.
+     *	resolution changed.
+     */
+    Pixmap new_pixmap = XCreatePixmap (display, root, 
+				       root_width, root_height,
+				       root_depth);
+
+    xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
+    
+    fade_data->pixmap = new_pixmap;
+    fade_data->fading_surface = get_surface (new_pixmap);
+    fade_data->end_pixbuf = pb;
+    fade_data->alpha = 1.0;     
+
+    draw_background (fade_data);
+    free_fade_data (fade_data);
+
+    if (gsettings_background_duration && picture_num > 1)
+    {
+	setup_background_timer ();
+    }
+
+    return;
+}
+
 DEEPIN_EXPORT void
 bg_util_init (GsdBackgroundManager* manager)
 {
-	bg_initialized = FALSE;
+    display = GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
 
-	display = GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
+    bg1_atom = gdk_x11_get_xatom_by_name(bg_props[0]);
+    bg2_atom = gdk_x11_get_xatom_by_name(bg_props[1]);
+    pixmap_atom = gdk_x11_get_xatom_by_name("PIXMAP");
 
-	bg1_atom = gdk_x11_get_xatom_by_name(bg_props[0]);
-	bg2_atom = gdk_x11_get_xatom_by_name(bg_props[1]);
-	pixmap_atom = gdk_x11_get_xatom_by_name("PIXMAP");
+    root = DefaultRootWindow(display);
+    default_screen = DefaultScreen(display);
+    root_depth = DefaultDepth(display, default_screen);
+    root_visual = DefaultVisual(display, default_screen);
+    root_width = DisplayWidth(display, default_screen);
+    root_height = DisplayHeight(display, default_screen);
 
-	root = DefaultRootWindow(display);
-	default_screen = DefaultScreen(display);
-	root_depth = DefaultDepth(display, default_screen);
-	root_visual = DefaultVisual(display, default_screen);
-	root_width = DisplayWidth(display, default_screen);
-	root_height = DisplayHeight(display, default_screen);
+    //GdkScreen* gdk_screen = gdk_screen_get_default();
 
-	//GdkScreen* gdk_screen = gdk_screen_get_default();
+    manager->priv->settings = g_settings_new (BG_SCHEMA_ID);
 
-        manager->priv->settings = g_settings_new (BG_SCHEMA_ID);
-	//TODO: do we need to listen to individual change signals?
-	g_signal_connect (manager->priv->settings, "changed",
-			  G_CALLBACK (bg_settings_changed), NULL);
+    g_signal_connect (manager->priv->settings, "changed::picture-uri",
+		      G_CALLBACK (bg_settings_picture_uri_changed), NULL);
+    g_signal_connect (manager->priv->settings, "changed::background-duration",
+		      G_CALLBACK (bg_settings_bg_duration_changed), NULL);
+    g_signal_connect (manager->priv->settings, "changed::cross-fade-manual-interval",
+		      G_CALLBACK (bg_settings_xfade_manual_interval_changed), NULL);
+    g_signal_connect (manager->priv->settings, "changed::cross-fade-auto-interval",
+		      G_CALLBACK (bg_settings_xfade_auto_interval_changed), NULL);
 
-	GdkPixbuf* pb = get_bg_pixbuf_from_gsettings(manager->priv->settings);
-	if(pb==NULL) //just return.
-		return;
-
-	set_bg_props (pb);
+    initial_setup (manager->priv->settings);
 }

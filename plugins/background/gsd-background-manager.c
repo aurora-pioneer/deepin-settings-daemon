@@ -43,6 +43,7 @@
 #include "gnome-settings-profile.h"
 #include "gsd-background-manager.h"
 #include "gsd-background-manager-private.h"
+#include "background_util.h"
 
 static void     gsd_background_manager_class_init  (GsdBackgroundManagerClass *klass);
 static void     gsd_background_manager_init        (GsdBackgroundManager      *background_manager);

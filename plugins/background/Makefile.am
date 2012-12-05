@@ -24,7 +24,7 @@ test_background_CFLAGS = \
 	$(PLUGIN_CFLAGS)		\
 	$(SETTINGS_PLUGIN_CFLAGS)	\
 	$(BACKGROUND_CFLAGS)		\
-	$(AM_CFLAGS)
+	$(AM_CFLAGS) -g
 
 test_background_LDADD =		\
 	$(top_builddir)/gnome-settings-daemon/libgsd.la	\
