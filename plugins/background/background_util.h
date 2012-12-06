@@ -10,7 +10,7 @@
 // all schema related information.
 #define	BG_SCHEMA_ID	"com.deepin.dde.background"
 
-#define BG_FRAME_NUM	30		//in my implementation, the actual frame number may not be 30.
+#define BG_FPS		30		//in my implementation, the actual fps may not be 30.
 
 #define BG_PICTURE_URIS	"picture-uris" //better renamed to picture-URIs
 #define DELIMITER	';'		//picture-uri string delimiter 

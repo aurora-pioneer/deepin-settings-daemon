@@ -36,7 +36,7 @@
 
 #define USEC_PER_SEC 1000000.0 // microseconds per second 
 #define MSEC_PER_SEC 1000.0    // milliseconds per second 
-
+#define TIME_PER_FRAME	1.0/BG_FPS  // the interval between contingent frames
 //
 static GPtrArray *picture_paths;		//an array of picture paths (strings).
 static guint	picture_num;		//number of pictures in GPtrArray.
@@ -303,8 +303,8 @@ on_bg_duration_tick (gpointer user_data)
 {
     xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
     
-    fade_data->interval = gsettings_xfade_auto_interval/MSEC_PER_SEC;
-    fade_data->total_duration = fade_data->interval * BG_FRAME_NUM;
+    fade_data->total_duration = gsettings_xfade_auto_interval/MSEC_PER_SEC;
+    fade_data->interval = TIME_PER_FRAME;
 
     fade_data->start_time = get_current_time(); 
     fade_data->alpha = 0.0;
@@ -360,11 +360,12 @@ setup_crossfade_timer ()
     gchar* current_bg_image = g_ptr_array_index (picture_paths, 0);
     fade_data->end_pixbuf = gdk_pixbuf_new_from_file (current_bg_image, NULL);
 
-    fade_data->interval = gsettings_xfade_manual_interval/MSEC_PER_SEC;
-    fade_data->total_duration = fade_data->interval * BG_FRAME_NUM;
+    fade_data->total_duration = gsettings_xfade_manual_interval/MSEC_PER_SEC;
+    fade_data->interval = TIME_PER_FRAME;
+
     fade_data->start_time = get_current_time(); 
     g_debug ("start_time : %lf\n", fade_data->start_time);
-    GSource* source = g_timeout_source_new(fade_data->interval*MSEC_PER_SEC);
+    GSource* source = g_timeout_source_new (fade_data->interval*MSEC_PER_SEC);
 
     g_source_set_callback (source, (GSourceFunc) on_tick, fade_data, (GDestroyNotify)on_finished);
 
