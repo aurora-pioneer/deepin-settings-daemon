@@ -309,6 +309,7 @@ on_bg_duration_tick (gpointer user_data)
     fade_data->start_time = get_current_time(); 
     fade_data->alpha = 0.0;
 
+    g_debug ("on_bg_duration_tick: current_time: %lf", fade_data->start_time);
     Pixmap prev_pixmap = get_previous_background ();
     fade_data->pixmap = prev_pixmap;
     fade_data->fading_surface = get_surface (prev_pixmap);
@@ -318,7 +319,7 @@ on_bg_duration_tick (gpointer user_data)
     gchar *next_picture = g_ptr_array_index (picture_paths, picture_index);
     fade_data->end_pixbuf = gdk_pixbuf_new_from_file (next_picture, NULL);
 
-    GSource* source = g_timeout_source_new (gsettings_xfade_auto_interval);
+    GSource* source = g_timeout_source_new (fade_data->interval*MSEC_PER_SEC);
 
     g_source_set_callback (source, (GSourceFunc) on_tick, fade_data, (GDestroyNotify)on_finished);
 
@@ -495,8 +496,9 @@ bg_settings_xfade_auto_interval_changed (GSettings *settings, gchar *key, gpoint
     gsettings_xfade_auto_interval = g_settings_get_int (settings, BG_XFADE_AUTO_INTERVAL);
 
     remove_timers ();
-
-    setup_timers ();
+    
+    if (gsettings_background_duration)
+	setup_timers ();
 }
 /*
 static void 
