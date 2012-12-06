@@ -8,11 +8,11 @@
 #define DEEPIN_EXPORT
 
 // all schema related information.
-#define	BG_SCHEMA_ID	"com.deepin.desktop.background"
+#define	BG_SCHEMA_ID	"com.deepin.dde.background"
 
 #define BG_FRAME_NUM	30		//in my implementation, the actual frame number may not be 30.
 
-#define BG_PICTURE_URI	"picture-uri" //better renamed to picture-URIs
+#define BG_PICTURE_URIS	"picture-uris" //better renamed to picture-URIs
 #define DELIMITER	';'		//picture-uri string delimiter 
 #define BG_BG_DURATION	"background-duration"
 #define BG_XFADE_MANUAL_INTERVAL "cross-fade-manual-interval"     //manually change background

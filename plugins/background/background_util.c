@@ -389,13 +389,13 @@ setup_timers ()
 }
 
 /*
- *	parse picture-uri string and
+ *	parse picture-uris string and
  *	add them to global array---picture_paths
  *
- *	<picture_uri> := (<uri> ";")* <uri> [";"]
+ *	<picture_uris> := (<uri> ";")* <uri> [";"]
  */
 static void
-parse_picture_uri(gchar * pic_uri)
+parse_picture_uris (gchar * pic_uri)
 {
     gchar* uri_end;   // end of a uri
     gchar* uri_start;   //start of a uri
@@ -433,13 +433,13 @@ destroy_picture_path (gpointer data)
     g_free (data);
 }
 /*
- *	it's not efficient to check if the new picture_uri is the same 
+ *	it's not efficient to check if the new picture_uris is the same 
  *	as the previous value. we just restart all.
  */
 static void 
-bg_settings_picture_uri_changed (GSettings *settings, gchar *key, gpointer user_data)
+bg_settings_picture_uris_changed (GSettings *settings, gchar *key, gpointer user_data)
 {
-    if (g_strcmp0 (key, BG_PICTURE_URI))
+    if (g_strcmp0 (key, BG_PICTURE_URIS))
 	return;
 
     g_ptr_array_free (picture_paths, TRUE);
@@ -447,8 +447,8 @@ bg_settings_picture_uri_changed (GSettings *settings, gchar *key, gpointer user_
     picture_num = 0;
     picture_index = 0;
 
-    gchar* bg_image_uri = g_settings_get_string (settings, BG_PICTURE_URI);
-    parse_picture_uri (bg_image_uri);
+    gchar* bg_image_uri = g_settings_get_string (settings, BG_PICTURE_URIS);
+    parse_picture_uris (bg_image_uri);
     free (bg_image_uri);
 
     remove_timers ();
@@ -540,8 +540,8 @@ initial_setup (GSettings *settings)
     picture_num = 0;
     picture_index = 0;
 
-    gchar* bg_image_uri = g_settings_get_string (settings, BG_PICTURE_URI);
-    parse_picture_uri (bg_image_uri);
+    gchar* bg_image_uri = g_settings_get_string (settings, BG_PICTURE_URIS);
+    parse_picture_uris (bg_image_uri);
     free (bg_image_uri);
 
     gsettings_background_duration = g_settings_get_int (settings, BG_BG_DURATION);
@@ -605,8 +605,8 @@ bg_util_init (GsdBackgroundManager* manager)
 
     manager->priv->settings = g_settings_new (BG_SCHEMA_ID);
 
-    g_signal_connect (manager->priv->settings, "changed::picture-uri",
-		      G_CALLBACK (bg_settings_picture_uri_changed), NULL);
+    g_signal_connect (manager->priv->settings, "changed::picture-uris",
+		      G_CALLBACK (bg_settings_picture_uris_changed), NULL);
     g_signal_connect (manager->priv->settings, "changed::background-duration",
 		      G_CALLBACK (bg_settings_bg_duration_changed), NULL);
     g_signal_connect (manager->priv->settings, "changed::cross-fade-manual-interval",
