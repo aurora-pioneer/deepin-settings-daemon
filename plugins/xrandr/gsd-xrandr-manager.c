@@ -34,28 +34,20 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
-#include <libupower-glib/upower.h>
 #include <X11/Xatom.h>
-
-#define GNOME_DESKTOP_USE_UNSTABLE_API
-
-#include <libgnome-desktop/gnome-rr-config.h>
-#include <libgnome-desktop/gnome-rr.h>
-#include <libgnome-desktop/gnome-rr-labeler.h>
 
 #include "gsd-enums.h"
 #include "gsd-input-helper.h"
 #include "gnome-settings-profile.h"
 #include "gnome-settings-session.h"
 #include "gsd-xrandr-manager.h"
+#include "deepin_xrandr.h"
 
 #define GSD_XRANDR_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_XRANDR_MANAGER, GsdXrandrManagerPrivate))
 
-#define CONF_SCHEMA "org.gnome.settings-daemon.plugins.xrandr"
 #define CONF_KEY_DEFAULT_MONITORS_SETUP   "default-monitors-setup"
 #define CONF_KEY_DEFAULT_CONFIGURATION_FILE   "default-configuration-file"
 
@@ -98,27 +90,6 @@ static const gchar introspection_xml[] =
 "    </method>"
 "  </interface>"
 "</node>";
-
-struct GsdXrandrManagerPrivate
-{
-        GnomeRRScreen *rw_screen;
-        gboolean running;
-
-        UpClient *upower_client;
-        gboolean laptop_lid_is_closed;
-
-        GSettings       *settings;
-        GDBusNodeInfo   *introspection_data;
-        GDBusConnection *connection;
-        GCancellable    *bus_cancellable;
-
-        /* fn-F7 status */
-        int             current_fn_f7_config;             /* -1 if no configs */
-        GnomeRRConfig **fn_f7_configs;  /* NULL terminated, NULL if there are no configs */
-
-        /* Last time at which we got a "screen got reconfigured" event; see on_randr_event() */
-        guint32 last_config_timestamp;
-};
 
 static const GnomeRRRotation possible_rotations[] = {
         GNOME_RR_ROTATION_0,
@@ -1982,6 +1953,8 @@ gsd_xrandr_manager_start (GsdXrandrManager *manager,
                 return FALSE;
         }
 
+        deepin_xrandr_init(manager);
+        
         g_signal_connect (manager->priv->rw_screen, "changed", G_CALLBACK (on_randr_event), manager);
 
         manager->priv->upower_client = up_client_new ();

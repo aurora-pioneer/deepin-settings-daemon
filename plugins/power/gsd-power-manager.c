@@ -2124,6 +2124,7 @@ do_power_action_type (GsdPowerManager *manager,
         case GSD_POWER_ACTION_INTERACTIVE:
                 gnome_session_shutdown ();
                 break;
+        /* FIXME: Hibernate do not work */
         case GSD_POWER_ACTION_HIBERNATE:
                 g_dbus_proxy_call (manager->priv->upower_proxy,
                                    "Hibernate",

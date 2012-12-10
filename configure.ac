@@ -572,7 +572,6 @@ plugins/updates/Makefile
 plugins/wacom/Makefile
 plugins/xrandr/Makefile
 plugins/xsettings/Makefile
-plugins/helloworld/Makefile
 plugins/key-bindings/Makefile
 data/Makefile
 data/gnome-settings-daemon.pc
@@ -590,7 +589,6 @@ data/org.gnome.settings-daemon.plugins.updates.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.xrandr.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.wacom.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.print-notifications.gschema.xml.in
-data/com.deepin.settings-daemon.plugins.helloworld.gschema.xml.in
 po/Makefile.in
 ])
 
