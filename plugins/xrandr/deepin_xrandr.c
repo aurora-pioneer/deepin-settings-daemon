@@ -19,24 +19,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "gsd-xrandr-manager.h"
-
+#include <X11/Xlib.h>
+#include <X11/extensions/Xrandr.h>
 #include <gio/gio.h>
 
+#include "gsd-xrandr-manager.h"
+
+typedef struct _output output_t;
+
+static Display *m_dpy = NULL;
+static Window m_root = -1;
+static output_t *m_outputs = NULL;
+static XRRScreenResources *m_res = NULL;
+
+static void m_get_screen(int current);
 static void m_brightness_changed(GSettings *settings, gchar *key, gpointer user_data);
+
+static void m_get_screen(int current) 
+{
+
+}
 
 static void m_brightness_changed(GSettings *settings, gchar *key, gpointer user_data) 
 {
-    double brightness = g_settings_get_double(settings, key);
+    double value = g_settings_get_double(settings, key);
 
-    printf("DEBUG m_brightness_changed %s %d\n", key, brightness);
 }
 
 int deepin_xrandr_init(GsdXrandrManager *manager) 
 {
     if (!manager) 
         return -1;
-    
+
+    m_dpy = XOpenDisplay(NULL);
+    if (!m_dpy) 
+        return -1;
+   
+    m_root = RootWindow(m_dpy, DefaultScreen(m_dpy));
+
     manager->priv->settings = g_settings_new(CONF_SCHEMA);
 
     g_signal_connect(manager->priv->settings, "changed::brightness", 
