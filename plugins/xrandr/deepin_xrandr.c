@@ -24,24 +24,88 @@
 #include "gsd-xrandr-manager.h"
 #include "xrandr.h"
 
+#define BUF_SIZE 1024
+#define XRANDR_PROG_NAME "Deepin XRandR"
+
 static void m_init_output_names(GSettings *settings);
-static void m_brightness_changed(GSettings *settings, gchar *key, gpointer user_data);
+static void m_set_brightness(GSettings *settings, double value);
+static void m_init_brightness(GSettings *settings);
+static void m_init_screen_size(GSettings *settings);
 
-static void m_brightness_changed(GSettings *settings, gchar *key, gpointer user_data) 
+static void m_set_brightness(GSettings *settings, double value) 
 {
-    double value = g_settings_get_double(settings, key);
+    char **output_names = g_settings_get_strv(settings, "output-names");
+    char value_str[BUF_SIZE];
+    int i = 0;
 
-    if (value <= 0.0 || value > 1.0) 
+    if (!output_names) 
         return;
+    
+    while (output_names[i]) {
+        /* TODO: filter the disconnected output */
+        if (strcmp(output_names[i], "NULL") == 0) { 
+            i++;
+            continue;
+        }
+
+        memset(value_str, 0, BUF_SIZE);
+        sprintf(value_str, "%f", value);
+        char *argv[] = {XRANDR_PROG_NAME, 
+                        "--output", 
+                        output_names[i], 
+                        "--brightness", 
+                        value_str};
+        xrandr_main(5, argv);
+        xrandr_cleanup();
+        
+        i++;
+    }
 }
 
 static void m_init_output_names(GSettings *settings) 
 {
-    int argc = 1;
-    char **argv = {"deepin_xrandr"};
+    char *argv[] = {XRANDR_PROG_NAME};
 
-    xrandr_main(argc, argv);
+    xrandr_main(1, argv);
     g_settings_set_strv(settings, "output-names", xrandr_get_output_names());
+    xrandr_cleanup();
+}
+
+static void m_init_brightness(GSettings *settings) 
+{
+    double value = g_settings_get_double(settings, "brightness");
+    
+    if (value <= 0.0 || value > 1.0) 
+        return;
+
+    m_set_brightness(settings, value);
+}
+
+static void m_init_screen_size(GSettings *settings) 
+{
+    char *screen_size = g_settings_get_string(settings, "screen-size");
+    char **output_names = g_settings_get_strv(settings, "output-names");
+    int i = 0;
+    
+    if (!screen_size || !output_names) 
+        return;
+
+    while (output_names[i]) {
+        if (strcmp(output_names[i], "NULL") == 0) {
+            i++;
+            continue;
+        }
+
+        char *argv[] = {XRANDR_PROG_NAME, 
+                        "--output", 
+                        output_names[i], 
+                        "--mode", 
+                        screen_size};
+        xrandr_main(5, argv);
+        xrandr_cleanup();
+
+        i++;
+    }
 }
 
 int deepin_xrandr_init(GsdXrandrManager *manager) 
@@ -50,11 +114,12 @@ int deepin_xrandr_init(GsdXrandrManager *manager)
         return -1;
 
     manager->priv->settings = g_settings_new(CONF_SCHEMA);
-
+    
     m_init_output_names(manager->priv->settings);
 
-    g_signal_connect(manager->priv->settings, "changed::brightness", 
-                     G_CALLBACK(m_brightness_changed), NULL);
+    m_init_brightness(manager->priv->settings);
+
+    m_init_screen_size(manager->priv->settings);
     
     return 0;
 }

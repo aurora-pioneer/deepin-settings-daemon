@@ -51,6 +51,7 @@ static Bool	properties = False;
 static Bool	grab_server = True;
 static Bool	no_primary = False;
 static char **m_output_names = NULL;
+static char **m_screen_sizes = NULL;
 
 static char *direction[5] = {
     "normal", 
@@ -645,7 +646,7 @@ add_output (void)
 static output_t *
 find_output (name_t *name)
 {
-    output_t *output;
+    output_t *output = NULL;    /* if do not found, return NULL */
 
     for (output = outputs; output; output = output->next)
     {
@@ -2140,6 +2141,41 @@ char **xrandr_get_output_names()
     return m_output_names;
 }
 
+/* TODO: get current screen sizes (mode name) by output name */
+char **xrandr_get_screen_sizes(char *output_name) 
+{
+    XRROutputInfo *output_info = NULL;
+    XRRModeInfo *mode = NULL;
+    int nmode = 0;
+    int i;
+
+    output_t *output = find_output_by_name(output_name);
+    if (!output) 
+        return NULL;
+
+    output_info = output->output_info;
+    m_screen_sizes = malloc(output_info->nmode * sizeof(char *));
+    if (!m_screen_sizes) 
+        return NULL;
+    memset(m_screen_sizes, 0, output_info->nmode);
+
+    for (i = 0; i < output_info->nmode - 1; i++) 
+    {
+        mode = find_mode_by_xid(output_info->modes[i + 1]);
+        if (!mode) 
+            continue;
+
+        m_screen_sizes[i] = malloc(strlen(mode->name) * sizeof(char));
+        if (!m_screen_sizes[i]) 
+            continue;
+        memset(m_screen_sizes[i], 0, strlen(mode->name));
+        strcpy(m_screen_sizes[i], mode->name);
+    }
+    m_screen_sizes[output_info->nmode - 1] = NULL;
+
+    return m_screen_sizes;
+}
+
 int xrandr_main(int argc, char **argv) 
 {
     XRRScreenSize *sizes;
@@ -2920,8 +2956,6 @@ int xrandr_main(int argc, char **argv)
 	apply ();
 	
 	XSync (dpy, False);
-	/* TODO: set brightness
-    exit (0);*/
     return 0;
     }
     if (query_1_2 || (query && has_1_2 && !query_1))
@@ -2935,10 +2969,12 @@ int xrandr_main(int argc, char **argv)
 	get_crtcs ();
 	get_outputs ();
 
+    if (verbose) {
         printf ("Screen %d: minimum %d x %d, current %d x %d, maximum %d x %d\n",
 		screen, minWidth, minHeight,
 		DisplayWidth (dpy, screen), DisplayHeight(dpy, screen),
 		maxWidth, maxHeight);
+    }
 
     m_output_names = malloc((res->noutput + 1) * sizeof(char *));
     if (m_output_names) 
@@ -2957,7 +2993,8 @@ int xrandr_main(int argc, char **argv)
 	    Rotation	    rotations = output_rotations (output);
 
 	    /* TODO: connected = 0, disconnected = 1 */
-        printf ("%s %s", output_info->name, connection[output_info->connection]);
+        if (verbose)
+            printf ("%s %s", output_info->name, connection[output_info->connection]);
 	    if (m_output_names) {
             m_output_names[index] = malloc(strlen(output_info->name) * sizeof(char));
             if (m_output_names[index]) {
@@ -2971,47 +3008,52 @@ int xrandr_main(int argc, char **argv)
         if (mode)
 	    {
 		if (crtc_info) {
-		    printf (" %dx%d+%d+%d",
-			    crtc_info->width, crtc_info->height,
-			    crtc_info->x, crtc_info->y);
+		    if (verbose)
+                printf (" %dx%d+%d+%d", crtc_info->width, crtc_info->height, crtc_info->x, crtc_info->y);
 		} else {
-		    printf (" %dx%d+%d+%d",
-			    mode->width, mode->height, output->x, output->y);
+		    if (verbose) 
+                printf (" %dx%d+%d+%d", mode->width, mode->height, output->x, output->y);
 		}
 		if (verbose)
 		    printf (" (0x%x)", (int)mode->id);
 		if (output->rotation != RR_Rotate_0 || verbose)
 		{
-		    printf ("DEBUG %s", 
-			    rotation_name (output->rotation));
-            if (output->rotation & (RR_Reflect_X|RR_Reflect_Y))
-			    printf ("DEBUG REFLECT %s", reflection_name (output->rotation));
+		    /* TODO: rotation */
+            if (verbose)
+                printf (" %s", rotation_name (output->rotation));
+            if (output->rotation & (RR_Reflect_X|RR_Reflect_Y) && verbose)
+			    printf (" %s", reflection_name (output->rotation));
 		}
 	    }
 	    if (rotations != RR_Rotate_0 || verbose)
 	    {
 		Bool    first = True;
-		printf (" (");
+		    if (verbose)
+                printf (" (");
 		for (i = 0; i < 4; i ++) {
 		    if ((rotations >> i) & 1) {
-			if (!first) printf (" "); first = False;
-			printf("%s", direction[i]);
+			if (!first && verbose) printf (" "); first = False;
+			if (verbose)
+                printf("%s", direction[i]);
 		    }
 		}
 		if (rotations & RR_Reflect_X)
 		{
-		    if (!first) printf (" "); first = False;
-		    printf ("x axis");
+		    if (!first && verbose) printf (" "); first = False;
+		    if (verbose)
+                printf ("x axis");
 		}
 		if (rotations & RR_Reflect_Y)
 		{
-		    if (!first) printf (" ");
-		    printf ("y axis");
+		    if (!first && verbose) printf (" ");
+		    if (verbose)
+                printf ("y axis");
 		}
-		printf (")");
+        if (verbose)
+		    printf (")");
 	    }
 
-	    if (mode)
+	    if (mode && verbose)
 	    {
 		printf (" %dmm x %dmm",
 			(int)output_info->mm_width, (int)output_info->mm_height);
@@ -3038,7 +3080,8 @@ int xrandr_main(int argc, char **argv)
 			    pan->border_left,  pan->border_top,
 			    pan->border_right, pan->border_bottom);
 	    }
-	    printf ("\n");
+	    if (verbose)
+            printf ("\n");
 
 	    if (verbose)
 	    {
@@ -3193,7 +3236,7 @@ int xrandr_main(int argc, char **argv)
 		    XRRModeInfo	*mode = find_mode_by_xid (output_info->modes[j]);
 		    int		f;
 		    
-		    printf ("  %s (0x%x) %6.1fMHz",
+		    printf (" %s (0x%x) %6.1fMHz",
 			    mode->name, (int)mode->id,
 			    (double)mode->dotClock / 1000000.0);
 		    for (f = 0; mode_flags[f].flag; f++)
@@ -3217,15 +3260,16 @@ int xrandr_main(int argc, char **argv)
 	    {
 		mode_shown = calloc (output_info->nmode, sizeof (Bool));
 		if (!mode_shown) fatal ("out of memory\n");
-		for (j = 0; j < output_info->nmode; j++)
+        for (j = 0; j < output_info->nmode; j++)
 		{
 		    XRRModeInfo *jmode, *kmode;
 		    
 		    if (mode_shown[j]) continue;
     
 		    jmode = find_mode_by_xid (output_info->modes[j]);
-		    printf (" ");
-		    printf ("  %-12s", jmode->name);
+            if (verbose) printf (" ");
+		    /* TODO: mode name, screen sizes */
+            if (verbose) printf (" %-12s", jmode->name);
 		    for (k = j; k < output_info->nmode; k++)
 		    {
 			if (mode_shown[k]) continue;
@@ -3233,24 +3277,24 @@ int xrandr_main(int argc, char **argv)
 			if (strcmp (jmode->name, kmode->name) != 0) continue;
 			mode_shown[k] = True;
 			kmode->modeFlags |= ModeShown;
-			printf (" %6.1f", mode_refresh (kmode));
+			if (verbose) printf (" %6.1f", mode_refresh (kmode));
 			if (kmode == output->mode_info)
-			    printf ("*");
+			    if (verbose) printf ("*");
 			else
-			    printf (" ");
+			    if (verbose) printf (" ");
 			if (k < output_info->npreferred)
-			    printf ("+");
+			    if (verbose) printf ("+");
 			else
-			    printf (" ");
+			    if (verbose) printf (" ");
 		    }
-		    printf ("\n");
+		    if (verbose) printf ("\n");
 		}
 		free (mode_shown);
 	    }
 	}
     /* TODO: GSettings NULL termination */
     m_output_names[res->noutput] = NULL;
-	for (m = 0; m < res->nmode; m++)
+    for (m = 0; m < res->nmode; m++)
 	{
 	    XRRModeInfo	*mode = &res->modes[m];
 
@@ -3462,16 +3506,28 @@ int xrandr_main(int argc, char **argv)
 
 void xrandr_cleanup() 
 {
-    int i;
+    int i = 0;
 
-    for (i = 0; i < res->noutput; i++) {
-        if (m_output_names[i]) {
-            free(m_output_names[i]);
-            m_output_names[i] = NULL;
-        }
-    }
     if (m_output_names) {
+        for (i = 0; i < res->noutput; i++) {
+            if (m_output_names[i]) {
+                free(m_output_names[i]);
+                m_output_names[i] = NULL;
+            }
+        }
         free(m_output_names);
         m_output_names = NULL;
+    }
+
+    i = 0;
+    if (m_screen_sizes) {
+        while (m_screen_sizes[i]) {
+            if (m_screen_sizes[i]) {
+                free(m_screen_sizes[i]);
+                m_screen_sizes[i] = NULL;
+            }
+        }
+        free(m_screen_sizes);
+        m_screen_sizes = NULL;
     }
 }

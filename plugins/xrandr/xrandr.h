@@ -26,5 +26,6 @@ int xrandr_main(int argc, char **argv);
 void xrandr_cleanup();
 int xrandr_get_output_count();
 char **xrandr_get_output_names();
+char **xrandr_get_screen_sizes(char *output_name);
 
 #endif /* XRANDR_H */
