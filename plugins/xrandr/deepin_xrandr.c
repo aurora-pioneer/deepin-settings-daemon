@@ -19,31 +19,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <X11/Xlib.h>
-#include <X11/extensions/Xrandr.h>
 #include <gio/gio.h>
 
 #include "gsd-xrandr-manager.h"
+#include "xrandr.h"
 
-typedef struct _output output_t;
-
-static Display *m_dpy = NULL;
-static Window m_root = -1;
-static output_t *m_outputs = NULL;
-static XRRScreenResources *m_res = NULL;
-
-static void m_get_screen(int current);
+static void m_init_output_names(GSettings *settings);
 static void m_brightness_changed(GSettings *settings, gchar *key, gpointer user_data);
-
-static void m_get_screen(int current) 
-{
-
-}
 
 static void m_brightness_changed(GSettings *settings, gchar *key, gpointer user_data) 
 {
     double value = g_settings_get_double(settings, key);
 
+    if (value <= 0.0 || value > 1.0) 
+        return;
+}
+
+static void m_init_output_names(GSettings *settings) 
+{
+    int argc = 1;
+    char **argv = {"deepin_xrandr"};
+
+    xrandr_main(argc, argv);
+    g_settings_set_strv(settings, "output-names", xrandr_get_output_names());
 }
 
 int deepin_xrandr_init(GsdXrandrManager *manager) 
@@ -51,16 +49,17 @@ int deepin_xrandr_init(GsdXrandrManager *manager)
     if (!manager) 
         return -1;
 
-    m_dpy = XOpenDisplay(NULL);
-    if (!m_dpy) 
-        return -1;
-   
-    m_root = RootWindow(m_dpy, DefaultScreen(m_dpy));
-
     manager->priv->settings = g_settings_new(CONF_SCHEMA);
+
+    m_init_output_names(manager->priv->settings);
 
     g_signal_connect(manager->priv->settings, "changed::brightness", 
                      G_CALLBACK(m_brightness_changed), NULL);
     
     return 0;
+}
+
+void deepin_xrandr_cleanup() 
+{
+    xrandr_cleanup();
 }

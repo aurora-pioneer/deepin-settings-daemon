@@ -25,5 +25,10 @@
       <_summary>Brightness</_summary>
       <_description>Brightness</_description>
     </key>
+    <key name="output-names" type="as">
+      <default>['VGA-0', 'LVDS', 'HDMI']</default>
+      <_summary>Output connected by name</_summary>
+      <_description>Output connected by name</_description>
+    </key>
   </schema>
 </schemalist>
