@@ -121,6 +121,8 @@ static gpointer manager_object = NULL;
 
 static FILE *log_file;
 
+static GSettings *m_settings = NULL;
+
 static int m_get_outputs_count(GnomeRROutputInfo **outputs);
 
 static void
@@ -333,6 +335,7 @@ static void print_configuration(GnomeRRConfig *config, const char *header)
     int i;
     int count;
     GnomeRROutputInfo **outputs;
+    char *output_name = NULL;
     gchar **strv = NULL;
 
     g_print("=== %s Configuration ===\n", header);
@@ -345,9 +348,36 @@ static void print_configuration(GnomeRRConfig *config, const char *header)
 
     outputs = gnome_rr_config_get_outputs(config);
     count = m_get_outputs_count(outputs);
+    strv = malloc((count + 1) * sizeof(gchar **));
+    if (strv) 
+        memset(strv, 0, count + 1);
     
     for (i = 0; outputs[i]; ++i) {
-        print_output (outputs[i]);
+        if (strv) {
+            output_name = gnome_rr_output_info_get_name(outputs[i]);
+            strv[i] = malloc(strlen(output_name) * sizeof(gchar));
+            if (strv[i]) {
+                memset(strv[i], 0, strlen(output_name));
+                strcpy(strv[i], output_name);
+            }
+        }
+        print_output(outputs[i]);
+    }
+    strv[count] = NULL;
+    if (m_settings) { 
+        g_settings_set_strv(m_settings, "output-names", strv);
+        g_settings_sync();
+    }
+
+    if (strv) {
+        for (i = 0; i < count; i++) {
+            if (strv[i]) {
+                free(strv[i]);
+                strv[i] = NULL;
+            }
+        }
+        free(strv);
+        strv = NULL;
     }
 }
 
@@ -1975,6 +2005,7 @@ gsd_xrandr_manager_start (GsdXrandrManager *manager,
                 return FALSE;
         }
 
+        m_settings = manager->priv->settings;
         deepin_xrandr_init(manager);
         
         g_signal_connect (manager->priv->rw_screen, "changed", G_CALLBACK (on_randr_event), manager);
