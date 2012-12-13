@@ -2,6 +2,8 @@
  *
  * Copyright (C) 2007 William Jon McCann <mccann@jhu.edu>
  * Copyright (C) 2007, 2008 Red Hat, Inc
+ * Copyright (C) 2012 Deepin, Inc.
+ *               2012 Zhai Xiang <zhaixiang@linuxdeepin.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -118,6 +120,8 @@ G_DEFINE_TYPE (GsdXrandrManager, gsd_xrandr_manager, G_TYPE_OBJECT)
 static gpointer manager_object = NULL;
 
 static FILE *log_file;
+
+static int m_get_outputs_count(GnomeRROutputInfo **outputs);
 
 static void
 log_open (void)
@@ -294,6 +298,7 @@ show_timestamps_dialog (GsdXrandrManager *manager, const char *msg)
 #endif
 }
 
+/* TODO: hacking RROutputChangeNotify event */
 static void
 print_output (GnomeRROutputInfo *info)
 {
@@ -310,23 +315,40 @@ print_output (GnomeRROutputInfo *info)
         g_print ("     position: %d %d\n", x, y);
 }
 
-static void
-print_configuration (GnomeRRConfig *config, const char *header)
+/* TODO: get outputs count */
+static int m_get_outputs_count(GnomeRROutputInfo **outputs) 
 {
-        int i;
-        GnomeRROutputInfo **outputs;
+    int count = 0;
+    int i = 0;
 
-        g_print ("=== %s Configuration ===\n", header);
-        if (!config) {
-                g_print ("  none\n");
-                return;
-        }
+    for (i = 0; outputs[i]; ++i) 
+        count++;
+    
+    return count;
+}
 
-        g_print ("  Clone: %s\n", gnome_rr_config_get_clone (config) ? "true" : "false");
+/* TODO: Update output-names */
+static void print_configuration(GnomeRRConfig *config, const char *header)
+{
+    int i;
+    int count;
+    GnomeRROutputInfo **outputs;
+    gchar **strv = NULL;
 
-        outputs = gnome_rr_config_get_outputs (config);
-        for (i = 0; outputs[i] != NULL; ++i)
-                print_output (outputs[i]);
+    g_print("=== %s Configuration ===\n", header);
+    if (!config) {
+        g_print("  none\n");
+        return;
+    }
+
+    g_print("  Clone: %s\n", gnome_rr_config_get_clone(config) ? "true" : "false");
+
+    outputs = gnome_rr_config_get_outputs(config);
+    count = m_get_outputs_count(outputs);
+    
+    for (i = 0; outputs[i]; ++i) {
+        print_output (outputs[i]);
+    }
 }
 
 static gboolean
@@ -2021,6 +2043,8 @@ gsd_xrandr_manager_stop (GsdXrandrManager *manager)
                 g_object_unref (manager->priv->connection);
                 manager->priv->connection = NULL;
         }
+
+        deepin_xrandr_cleanup();
 
         log_open ();
         log_msg ("STOPPING XRANDR PLUGIN\n------------------------------------------------------------\n");
