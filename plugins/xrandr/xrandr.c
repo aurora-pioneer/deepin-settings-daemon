@@ -3519,8 +3519,8 @@ void xrandr_cleanup()
         m_output_names = NULL;
     }
 
-    i = 0;
     if (m_screen_sizes) {
+        i = 0;
         while (m_screen_sizes[i]) {
             if (m_screen_sizes[i]) {
                 free(m_screen_sizes[i]);
