@@ -2004,9 +2004,6 @@ gsd_xrandr_manager_start (GsdXrandrManager *manager,
                 log_close ();
                 return FALSE;
         }
-
-        m_settings = manager->priv->settings;
-        deepin_xrandr_init(manager);
         
         g_signal_connect (manager->priv->rw_screen, "changed", G_CALLBACK (on_randr_event), manager);
 
@@ -2019,7 +2016,9 @@ gsd_xrandr_manager_start (GsdXrandrManager *manager,
         log_screen (manager->priv->rw_screen);
 
         manager->priv->running = TRUE;
-        manager->priv->settings = g_settings_new (CONF_SCHEMA);
+        manager->priv->settings = g_settings_new(CONF_SCHEMA);
+        m_settings = manager->priv->settings;
+        deepin_xrandr_init(manager->priv->settings);
 
         show_timestamps_dialog (manager, "Startup");
         if (!apply_stored_configuration_at_startup (manager, GDK_CURRENT_TIME)) /* we don't have a real timestamp at startup anyway */

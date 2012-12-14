@@ -20,6 +20,7 @@
  */
 
 #include <gio/gio.h>
+#include <sys/inotify.h>
 
 #include "gsd-xrandr-manager.h"
 #include "xrandr.h"
@@ -27,11 +28,20 @@
 #define BUF_SIZE 1024
 #define XRANDR_PROG_NAME "Deepin XRandR"
 
+static int m_fd = -1;
+static int m_wd = -1;
+
+static void m_inotify_events_io_cb(struct inotify_event *event, gpointer data);
 static void m_changed_brightness(GSettings *settings, gchar* key, gpointer user_data);
 static void m_init_output_names(GSettings *settings);
 static void m_set_brightness(GSettings *settings, double value);
 static void m_init_brightness(GSettings *settings);
 static void m_init_screen_size(GSettings *settings);
+
+static void m_inotify_events_io_cb(struct inotify_event *event, gpointer data) 
+{
+    printf("DEBUG m_inotify_events_io_cb\n");
+}
 
 static void m_changed_brightness(GSettings *settings, gchar *key, gpointer user_data) 
 {
@@ -89,25 +99,35 @@ static void m_init_brightness(GSettings *settings)
     m_set_brightness(settings, value);
 }
 
-int deepin_xrandr_init(GsdXrandrManager *manager) 
+int deepin_xrandr_init(GSettings *settings) 
 {
-    if (!manager) 
+    GIOChannel *channel = NULL;
+
+    g_signal_connect(settings, "changed::brightness", m_changed_brightness, NULL);
+    m_init_output_names(settings);
+    m_init_brightness(settings);
+
+    m_fd = inotify_init();
+    if (-1 == m_fd) 
         return -1;
 
-    manager->priv->settings = g_settings_new(CONF_SCHEMA);
-    g_signal_connect(manager->priv->settings, 
-                     "changed::brightness", 
-                     m_changed_brightness, 
-                     NULL);
-    
-    m_init_output_names(manager->priv->settings);
+    m_wd = inotify_add_watch(m_fd, "/home/zhaixiang/.config/monitors.xml", IN_MODIFY);
+    if (-1 == m_wd) 
+        return -1;
 
-    m_init_brightness(manager->priv->settings);
+    channel = g_io_channel_unix_new(m_fd);
+    g_io_add_watch(channel, G_IO_IN, m_inotify_events_io_cb, NULL);
     
     return 0;
 }
 
 void deepin_xrandr_cleanup() 
 {
+    if (m_fd) {
+        inotify_rm_watch(m_fd, m_wd);
+        close(m_fd);
+        m_fd = -1;
+    }
+
     xrandr_cleanup();
 }

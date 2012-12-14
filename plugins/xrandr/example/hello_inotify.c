@@ -1,42 +1,50 @@
-#include <glib.h>
+#include <stdio.h>
+#include <assert.h>
 #include <sys/inotify.h>
+#include <sys/epoll.h>
 
-static int m_inotifyfd = -1;
+#define EPOLL_SIZE 3
 
-static void m_inotify_events_io_cb(struct inotify_event *event, gpointer data) 
+int main(int argc, char **argv)
 {
-    printf("DEBUG m_inotify_events_io_cb\n");
-}
-
-int main(int argc, char **argv) 
-{
+    int inotifyfd = -1;
     int wd = -1;
-    GIOChannel *channel = NULL;
+    int epollfd = -1;
+    int nfds;
+    int i;
+    struct epoll_event ev;
+    struct epoll_event events[EPOLL_SIZE];
 
-    m_inotifyfd = inotify_init();
-    if (-1 == m_inotifyfd) {
-        printf("fail to inotify_init\n");
-        return -1;
+    /*creating the INOTIFY instance*/
+    inotifyfd = inotify_init();
+
+    /*checking for error*/
+    assert(-1 != inotifyfd);
+
+    wd = inotify_add_watch(inotifyfd, 
+                           "/home/zhaixiang/.config/monitors.xml", 
+                           IN_MODIFY);
+
+    epollfd = epoll_create(EPOLL_SIZE);
+    assert(-1 != epollfd);
+    ev.events = EPOLLIN;
+    ev.data.fd = inotifyfd;
+    assert(0 == epoll_ctl(epollfd, EPOLL_CTL_ADD, inotifyfd, &ev));
+    
+    while (1) {
+        nfds = epoll_wait(epollfd, events, EPOLL_SIZE, -1);
+        for (i = 0; i < nfds; ++i) {
+            if (inotifyfd == events[i].data.fd) {
+                printf("DEBUG inotify\n");
+            }
+        }
+        usleep(100);
     }
 
-    wd = inotify_add_watch(m_inotifyfd, "/home/zhaixiang/.config/monitors.xml", IN_MODIFY);
-    if (-1 == wd) {
-        printf("fail to inotify_add_watch\n");
-        return -1;
-    }
-    
-    channel = g_io_channel_unix_new(m_inotifyfd);
-    g_io_add_watch(channel, G_IO_IN, m_inotify_events_io_cb, NULL);
-    
-    GMainLoop* loop = g_main_loop_new(NULL, FALSE);
-    
-    g_main_loop_run(loop);
-    
-    if (m_inotifyfd) {
-        inotify_rm_watch(m_inotifyfd, wd);
-        close(m_inotifyfd);
-        m_inotifyfd = -1;
-    }
+    inotify_rm_watch(inotifyfd, wd);
+    wd = -1;
 
-    return 0;
+    /*closing the INOTIFY instance*/
+    close(inotifyfd);
+    inotifyfd = -1;
 }

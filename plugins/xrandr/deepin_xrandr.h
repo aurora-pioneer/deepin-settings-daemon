@@ -22,7 +22,7 @@
 #ifndef DEEPIN_XRANDR_H
 #define DEEPIN_XRANDR_H
 
-int deepin_xrandr_init(GsdXrandrManager *manager);
+int deepin_xrandr_init(GSettings *settings);
 void deepin_xrand_cleanup();
 
 #endif /* DEEPIN_XRANDR_H */
