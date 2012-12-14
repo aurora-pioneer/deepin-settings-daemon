@@ -60,6 +60,8 @@ static Visual*	root_visual;
 static int	root_width;
 static int	root_height;
 
+static GdkScreen * gdk_screen;
+
 //global timeout_id to track in process timeoutout
 static guint	bg_timeout_id =0;	// background_duration
 static guint	auto_timeout_id = 0;	// xfade_auto_interval
@@ -500,40 +502,65 @@ bg_settings_xfade_auto_interval_changed (GSettings *settings, gchar *key, gpoint
     if (gsettings_background_duration)
 	setup_timers ();
 }
-/*
+
 static void 
 screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
 {
-	root_width = gdk_screen_get_width(screen);
-	root_height = gdk_screen_get_height(screen);
+    root_width = gdk_screen_get_width(screen);
+    root_height = gdk_screen_get_height(screen);
+    g_debug ("screen_size_changed: root_width = %d\n", root_width);
+    g_debug ("screen_size_changed: root_height = %d\n", root_height);
 
-	//TODO: change root bg xproperty.
-	
-	GsdBackgroundManager* manager = (GsdBackgroundManager*) user_data;
-	GSettings* settings = (GSettings*) manager->priv->settings;
-	GdkPixbuf* pb = get_bg_pixbuf_from_gsettings(settings);
-	if(pb==NULL)
-		return;
-	set_bg_props(pb);
+    gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
+    GdkPixbuf* pb = gdk_pixbuf_new_from_file (current_bg_image, NULL);
+    g_assert (pb != NULL);
+
+    /*
+     *	this is similar to initial setup. but we need to
+     *	free previous pixmap first.
+     */
+    Pixmap prev_pixmap = get_previous_background();
+    if (prev_pixmap != None)
+    {
+	XFreePixmap (display, prev_pixmap);
+    }
+    Pixmap new_pixmap = XCreatePixmap (display, root, 
+				       root_width, root_height,
+				       root_depth);
+
+    xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
+    
+    fade_data->pixmap = new_pixmap;
+    fade_data->fading_surface = get_surface (new_pixmap);
+    fade_data->end_pixbuf = pb;
+    fade_data->alpha = 1.0;     
+
+    draw_background (fade_data);
+    free_fade_data (fade_data);
+
+    if (gsettings_background_duration && picture_num > 1)
+    {
+	setup_background_timer ();
+    }
 }
 
 DEEPIN_EXPORT void
 bg_util_connect_screen_signals (GsdBackgroundManager* manager)
 {
-	// xrandr screen resolution handling
-	g_signal_connect (gdk_screen, "size-changed", 
-			  G_CALLBACK (screen_size_changed_cb), manager);
-	g_signal_connect (gdk_screen, "monitors-changed",
-			  G_CALLBACK (screen_size_changed_cb), manager);
+    // xrandr screen resolution handling
+    g_signal_connect (gdk_screen, "size-changed", 
+		      G_CALLBACK (screen_size_changed_cb), NULL);
+    g_signal_connect (gdk_screen, "monitors-changed",
+		      G_CALLBACK (screen_size_changed_cb), NULL);
 }
 
 DEEPIN_EXPORT void
 bg_util_disconnect_screen_signals (GsdBackgroundManager* manager)
 {
-	g_signal_handlers_disconnect_by_func (gdk_screen, 
-			   G_CALLBACK (screen_size_changed_cb), manager);
+    g_signal_handlers_disconnect_by_func (gdk_screen, 
+			   G_CALLBACK (screen_size_changed_cb), NULL);
 }
-*/
+
 
 static void
 initial_setup (GSettings *settings)
@@ -604,7 +631,7 @@ bg_util_init (GsdBackgroundManager* manager)
     root_width = DisplayWidth(display, default_screen);
     root_height = DisplayHeight(display, default_screen);
 
-    //GdkScreen* gdk_screen = gdk_screen_get_default();
+    gdk_screen = gdk_screen_get_default();
 
     manager->priv->settings = g_settings_new (BG_SCHEMA_ID);
 

@@ -66,8 +66,7 @@ gsd_background_manager_start (GsdBackgroundManager *manager,
 	// connect gsettings signals.
 	bg_util_init (manager);
 
-	//
-//	bg_util_connect_screen_signals (manager);
+	bg_util_connect_screen_signals (manager);
 
         gnome_settings_profile_end (NULL);
 
@@ -81,7 +80,7 @@ gsd_background_manager_stop (GsdBackgroundManager *manager)
 
         g_debug ("Stopping background manager");
 
-//	bg_util_disconnect_screen_signals (manager);
+	bg_util_disconnect_screen_signals (manager);
 
 //        if (manager->priv->proxy) {
 //                disconnect_session_manager_listener (manager);

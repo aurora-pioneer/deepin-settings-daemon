@@ -21,7 +21,7 @@
 //exporting functions for gsd-background-manager.c
 extern void bg_util_init (GsdBackgroundManager* manager);
 
-//extern void bg_util_connect_screen_signals (GsdBackgroundManager* manager);
-//extern void bg_util_disconnect_screen_signals (GsdBackgroundManager* manager);
+extern void bg_util_connect_screen_signals (GsdBackgroundManager* manager);
+extern void bg_util_disconnect_screen_signals (GsdBackgroundManager* manager);
 
 #endif
