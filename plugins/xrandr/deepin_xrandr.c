@@ -20,7 +20,8 @@
  */
 
 #include <gio/gio.h>
-#include <sys/inotify.h>
+#include <limits.h>
+#include <pwd.h>
 
 #include "gsd-xrandr-manager.h"
 #include "xrandr.h"
@@ -28,19 +29,30 @@
 #define BUF_SIZE 1024
 #define XRANDR_PROG_NAME "Deepin XRandR"
 
-static int m_fd = -1;
-static int m_wd = -1;
+static GFile *m_file = NULL;
+static GFileMonitor *m_file_monitor = NULL;
 
-static void m_inotify_events_io_cb(struct inotify_event *event, gpointer data);
+static void m_file_changed(GFileMonitor *monitor, 
+                           GFile *file, 
+                           GFile *other_file, 
+                           GFileMonitorEvent event_type, 
+                           gpointer user_data);
 static void m_changed_brightness(GSettings *settings, gchar* key, gpointer user_data);
 static void m_init_output_names(GSettings *settings);
 static void m_set_brightness(GSettings *settings, double value);
 static void m_init_brightness(GSettings *settings);
 static void m_init_screen_size(GSettings *settings);
 
-static void m_inotify_events_io_cb(struct inotify_event *event, gpointer data) 
+static void m_file_changed(GFileMonitor *monitor, 
+                           GFile *file, 
+                           GFile *other_file, 
+                           GFileMonitorEvent event_type, 
+                           gpointer user_data) 
 {
-    printf("DEBUG m_inotify_events_io_cb\n");
+    if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
+        return;
+
+    printf("DEBUG m_file_changed %d\n", event_type);
 }
 
 static void m_changed_brightness(GSettings *settings, gchar *key, gpointer user_data) 
@@ -101,32 +113,42 @@ static void m_init_brightness(GSettings *settings)
 
 int deepin_xrandr_init(GSettings *settings) 
 {
-    GIOChannel *channel = NULL;
+    char backup_filename[PATH_MAX] = {'\0'}; 
+    struct passwd *pw = NULL;
 
     g_signal_connect(settings, "changed::brightness", m_changed_brightness, NULL);
+    
     m_init_output_names(settings);
     m_init_brightness(settings);
 
-    m_fd = inotify_init();
-    if (-1 == m_fd) 
+    pw = getpwuid(getuid());
+    if (!pw) {
+        return -1;
+    }
+    sprintf(backup_filename, "%s/.config/monitors.xml", pw->pw_dir);
+    m_file = g_file_new_for_path(backup_filename);
+    if (!m_file) 
         return -1;
 
-    m_wd = inotify_add_watch(m_fd, "/home/zhaixiang/.config/monitors.xml", IN_MODIFY);
-    if (-1 == m_wd) 
+    m_file_monitor = g_file_monitor_file(m_file, G_FILE_MONITOR_NONE, NULL, NULL);
+    if (!m_file_monitor) 
         return -1;
 
-    channel = g_io_channel_unix_new(m_fd);
-    g_io_add_watch(channel, G_IO_IN, m_inotify_events_io_cb, NULL);
-    
+    g_signal_connect(m_file_monitor, "changed", m_file_changed, NULL);
+
     return 0;
 }
 
 void deepin_xrandr_cleanup() 
 {
-    if (m_fd) {
-        inotify_rm_watch(m_fd, m_wd);
-        close(m_fd);
-        m_fd = -1;
+    if (m_file_monitor) {
+        g_object_unref(m_file_monitor);
+        m_file_monitor = NULL;
+    }
+    
+    if (m_file) {
+        g_object_unref(m_file);
+        m_file = NULL;
     }
 
     xrandr_cleanup();

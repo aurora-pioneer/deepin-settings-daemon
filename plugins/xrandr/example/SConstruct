@@ -1,3 +1,0 @@
-env = Environment(CCFLAGS='-g')
-
-env.Program('hello_inotify', ['hello_inotify.c'])
