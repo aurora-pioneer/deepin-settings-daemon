@@ -47,7 +47,7 @@ libxrandr_la_CPPFLAGS =						\
 	-I$(top_srcdir)/gnome-settings-daemon			\
 	-I$(top_srcdir)/data/					\
 	-I$(top_srcdir)/plugins/common/				\
-	-DBINDIR=\"$(bindir)\"					\
+    -DBINDIR=\"$(bindir)\"					\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
 	$(AM_CPPFLAGS)
 
@@ -56,7 +56,8 @@ libxrandr_la_CFLAGS =			\
 	$(UPOWER_CFLAGS)		\
 	$(SETTINGS_PLUGIN_CFLAGS)	\
 	$(GNOME_DESKTOP_CFLAGS)		\
-	$(AM_CFLAGS)
+	$(LIBXML2_CFLAGS)   \
+    $(AM_CFLAGS)
 
 libxrandr_la_LDFLAGS = 			\
 	$(GSD_PLUGIN_LDFLAGS)
@@ -65,7 +66,8 @@ libxrandr_la_LIBADD  =					\
 	$(top_builddir)/plugins/common/libcommon.la	\
 	$(UPOWER_LIBS)					\
 	$(SETTINGS_PLUGIN_LIBS)				\
-	$(GNOME_DESKTOP_LIBS)
+	$(GNOME_DESKTOP_LIBS)   \
+    $(LIBXML2_LIBS)
 
 plugin_in_files =			\
 	xrandr.gnome-settings-plugin.in

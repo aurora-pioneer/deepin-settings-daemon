@@ -22,6 +22,8 @@
 #include <gio/gio.h>
 #include <limits.h>
 #include <pwd.h>
+#include <libxml/xmlmemory.h>
+#include <libxml/parser.h>
 
 #include "gsd-xrandr-manager.h"
 #include "xrandr.h"
@@ -141,6 +143,8 @@ int deepin_xrandr_init(GSettings *settings)
 
 void deepin_xrandr_cleanup() 
 {
+    xmlCleanupParser();
+    
     if (m_file_monitor) {
         g_object_unref(m_file_monitor);
         m_file_monitor = NULL;

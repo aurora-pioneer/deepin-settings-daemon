@@ -48,6 +48,7 @@ GTK_REQUIRED_VERSION=3.3.18
 GCONF_REQUIRED_VERSION=2.6.1
 GIO_REQUIRED_VERSION=2.26.0
 GNOME_DESKTOP_REQUIRED_VERSION=3.3.92
+LIBXML2_REQUIRED_VERSION=2.7.8
 LIBNOTIFY_REQUIRED_VERSION=0.7.3
 UPOWER_GLIB_REQUIRED_VERSION=0.9.1
 PA_REQUIRED_VERSION=0.9.16
@@ -97,6 +98,12 @@ dnl ---------------------------------------------------------------------------
 dnl - Check for gnome-desktop
 dnl ---------------------------------------------------------------------------
 PKG_CHECK_MODULES(GNOME_DESKTOP, gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION)
+
+
+dnl ---------------------------------------------------------------------------
+dnl - Check for LIBXML2
+dnl ---------------------------------------------------------------------------
+PKG_CHECK_MODULES(LIBXML2, libxml-2.0 >= $LIBXML2_REQUIRED_VERSION)
 
 dnl ---------------------------------------------------------------------------
 dnl - Check for LCMS2
