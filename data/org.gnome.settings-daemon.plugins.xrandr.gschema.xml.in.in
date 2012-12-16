@@ -25,18 +25,8 @@
       <_summary>Brightness</_summary>
       <_description>Brightness</_description>
     </key>
-    <key name="screen-size" type="s">
-      <default>'1366x768'</default>
-      <_summary>Screen Size</_summary>
-      <_description>Screen Size</_description>
-    </key>
-    <key name="screen-rotation" type="s">
-      <default>'normal'</default>
-      <_summary>Screen Rotation</_summary>
-      <_description>Screen Rotation</_description>
-    </key>
     <key name="output-names" type="as">
-      <default>['VGA-0', 'LVDS', 'HDMI']</default>
+      <default>['']</default>
       <_summary>Output connected by name</_summary>
       <_description>Output connected by name</_description>
     </key>

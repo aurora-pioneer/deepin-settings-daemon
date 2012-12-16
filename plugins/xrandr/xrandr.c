@@ -2154,6 +2154,8 @@ char **xrandr_get_screen_sizes(char *output_name)
         return NULL;
 
     output_info = output->output_info;
+    if (0 == output_info->nmode) 
+        return NULL;
     m_screen_sizes = malloc(output_info->nmode * sizeof(char *));
     if (!m_screen_sizes) 
         return NULL;
