@@ -99,6 +99,7 @@ void deepin_xrandr_set_output_names(GSettings *settings)
 
     xrandr_main(1, argv);
     g_settings_set_strv(settings, "output-names", xrandr_get_output_names());
+    g_settings_sync();
     xrandr_cleanup();
 }
 
