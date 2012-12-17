@@ -13,8 +13,6 @@ aclocal --force
 autoconf
 autoheader
 automake --add-missing
-./configure --prefix=/usr \
-            --sysconfdir=/etc \
-            --libexecdir=/usr/lib/gnome-settings-daemon
+./configure --prefix=/usr
 make
 sudo make install
