@@ -10,6 +10,11 @@
       <_summary>Priority to use for this plugin</_summary>
       <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
     </key>
+    <key name="is-laptop" type="b">
+      <default>false</default>
+      <_summary>Is laptop or not</_summary>
+      <_description>Is laptop or not</_description>
+    </key>
     <key name="idle-brightness" type="i">
       <default>30</default>
       <summary>The brightness of the screen when idle</summary>

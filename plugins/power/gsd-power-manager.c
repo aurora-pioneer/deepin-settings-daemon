@@ -1085,6 +1085,8 @@ engine_device_add (GsdPowerManager *manager, UpDevice *device)
                            GUINT_TO_POINTER(state));
 
         if (kind == UP_DEVICE_KIND_BATTERY) {
+                g_settings_set_boolean(manager->priv->settings, "is-laptop", TRUE);
+                
                 g_debug ("updating because we added a device");
                 composite = engine_update_composite_device (manager, device);
 
