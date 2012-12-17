@@ -1,6 +1,8 @@
 based on gnome-settings-daemon-3.4.2
 
 Dependence (Debian)
+deepin-desktop
+
 sudo apt-get install libxml2-dev libtool gsettings-desktop-schemas-dev \
 libgnome-desktop-3-dev liblcms2-dev libnotify-dev libgnomekbd-dev libpulse-dev \
 libcanberra-dev libcolord-dev libcanberra-gtk3-dev libwacom-dev libxtst-dev \
