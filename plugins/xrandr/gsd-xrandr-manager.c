@@ -121,10 +121,6 @@ static gpointer manager_object = NULL;
 
 static FILE *log_file;
 
-static GSettings *m_settings = NULL;
-
-static int m_get_outputs_count(GnomeRROutputInfo **outputs);
-
 static void
 log_open (void)
 {
@@ -300,7 +296,6 @@ show_timestamps_dialog (GsdXrandrManager *manager, const char *msg)
 #endif
 }
 
-/* TODO: hacking RROutputChangeNotify event */
 static void
 print_output (GnomeRROutputInfo *info)
 {
@@ -317,26 +312,10 @@ print_output (GnomeRROutputInfo *info)
         g_print ("     position: %d %d\n", x, y);
 }
 
-/* TODO: get outputs count */
-static int m_get_outputs_count(GnomeRROutputInfo **outputs) 
-{
-    int count = 0;
-    int i = 0;
-
-    for (i = 0; outputs[i]; ++i) 
-        count++;
-    
-    return count;
-}
-
-/* TODO: Update output-names */
 static void print_configuration(GnomeRRConfig *config, const char *header)
 {
     int i;
-    int count;
     GnomeRROutputInfo **outputs;
-    char *output_name = NULL;
-    gchar **strv = NULL;
 
     g_print("=== %s Configuration ===\n", header);
     if (!config) {
@@ -347,48 +326,19 @@ static void print_configuration(GnomeRRConfig *config, const char *header)
     g_print("  Clone: %s\n", gnome_rr_config_get_clone(config) ? "true" : "false");
 
     outputs = gnome_rr_config_get_outputs(config);
-    count = m_get_outputs_count(outputs);
-    strv = malloc((count + 1) * sizeof(gchar **));
-    if (strv) 
-        memset(strv, 0, count + 1);
     
     for (i = 0; outputs[i]; ++i) {
-        if (strv) {
-            output_name = gnome_rr_output_info_get_name(outputs[i]);
-            strv[i] = malloc(strlen(output_name) * sizeof(gchar));
-            if (strv[i]) {
-                memset(strv[i], 0, strlen(output_name));
-                strcpy(strv[i], output_name);
-            }
-        }
         print_output(outputs[i]);
-    }
-    strv[count] = NULL;
-    if (m_settings) { 
-        g_settings_set_strv(m_settings, "output-names", strv);
-        g_settings_sync();
-    }
-
-    if (strv) {
-        for (i = 0; i < count; i++) {
-            if (strv[i]) {
-                free(strv[i]);
-                strv[i] = NULL;
-            }
-        }
-        free(strv);
-        strv = NULL;
     }
 }
 
-static gboolean
-is_laptop (GnomeRRScreen *screen, GnomeRROutputInfo *output)
+static gboolean is_laptop(GnomeRRScreen *screen, GnomeRROutputInfo *output)
 {
-        GnomeRROutput *rr_output;
+    GnomeRROutput *rr_output;
 
-        rr_output = gnome_rr_screen_get_output_by_name (screen, gnome_rr_output_info_get_name (output));
+    rr_output = gnome_rr_screen_get_output_by_name (screen, gnome_rr_output_info_get_name (output));
 
-        return gnome_rr_output_is_laptop (rr_output);
+    return gnome_rr_output_is_laptop(rr_output);
 }
 
 static GnomeRROutputInfo *
@@ -1714,60 +1664,61 @@ use_stored_configuration_or_auto_configure_outputs (GsdXrandrManager *manager, g
                 log_msg ("Applied stored configuration\n");
 }
 
-static void
-on_randr_event (GnomeRRScreen *screen, gpointer data)
+static void on_randr_event(GnomeRRScreen *screen, gpointer data)
 {
-        GsdXrandrManager *manager = GSD_XRANDR_MANAGER (data);
-        GsdXrandrManagerPrivate *priv = manager->priv;
-        guint32 change_timestamp, config_timestamp;
+    GsdXrandrManager *manager = GSD_XRANDR_MANAGER(data);
+    GsdXrandrManagerPrivate *priv = manager->priv;
+    guint32 change_timestamp, config_timestamp;
 
-        if (!priv->running)
-                return;
+    if (!priv->running)
+        return;
 
-        gnome_rr_screen_get_timestamps (screen, &change_timestamp, &config_timestamp);
+    deepin_xrandr_set_output_names(manager->priv->settings);
 
-        log_open ();
-        log_msg ("Got RANDR event with timestamps change=%u %c config=%u\n",
-                 change_timestamp,
-                 timestamp_relationship (change_timestamp, config_timestamp),
-                 config_timestamp);
+    gnome_rr_screen_get_timestamps(screen, &change_timestamp, &config_timestamp);
 
-        if (change_timestamp >= config_timestamp) {
-                GnomeRRConfig *rr_config;
+    log_open ();
+    log_msg ("Got RANDR event with timestamps change=%u %c config=%u\n",
+             change_timestamp,
+             timestamp_relationship (change_timestamp, config_timestamp),
+             config_timestamp);
 
-                /* The event is due to an explicit configuration change.
-                 *
-                 * If the change was performed by us, then we need to do nothing.
-                 *
-                 * If the change was done by some other X client, we don't need
-                 * to do anything, either; the screen is already configured.
-                 */
+    if (change_timestamp >= config_timestamp) {
+        GnomeRRConfig *rr_config;
 
-                /* Check if we need to update the primary */
-                rr_config = gnome_rr_config_new_current (priv->rw_screen, NULL);
-                if (gnome_rr_config_ensure_primary (rr_config)) {
-                        if (gnome_rr_config_applicable (rr_config, priv->rw_screen, NULL)) {
-                                print_configuration (rr_config, "Updating for primary");
-                                priv->last_config_timestamp = config_timestamp;
-                                gnome_rr_config_apply_with_time (rr_config, priv->rw_screen, config_timestamp, NULL);
-                        }
-                }
-                g_object_unref (rr_config);
+        /* The event is due to an explicit configuration change.
+         *
+         * If the change was performed by us, then we need to do nothing.
+         *
+         * If the change was done by some other X client, we don't need
+         * to do anything, either; the screen is already configured.
+         */
 
-                show_timestamps_dialog (manager, "ignoring since change > config");
-                log_msg ("  Ignoring event since change >= config\n");
-        } else {
-                /* Here, config_timestamp > change_timestamp.  This means that
-                 * the screen got reconfigured because of hotplug/unplug; the X
-                 * server is just notifying us, and we need to configure the
-                 * outputs in a sane way.
-                 */
+       /* Check if we need to update the primary */
+       rr_config = gnome_rr_config_new_current (priv->rw_screen, NULL);
+       if (gnome_rr_config_ensure_primary (rr_config)) {
+           if (gnome_rr_config_applicable (rr_config, priv->rw_screen, NULL)) {
+               print_configuration (rr_config, "Updating for primary");
+               priv->last_config_timestamp = config_timestamp;
+               gnome_rr_config_apply_with_time (rr_config, priv->rw_screen, config_timestamp, NULL);
+           }
+       }
+       g_object_unref (rr_config);
+       
+       show_timestamps_dialog (manager, "ignoring since change > config");
+       log_msg ("  Ignoring event since change >= config\n");
+    } else {
+        /* Here, config_timestamp > change_timestamp.  This means that
+         * the screen got reconfigured because of hotplug/unplug; the X
+         * server is just notifying us, and we need to configure the
+         * outputs in a sane way.
+         */
 
-                show_timestamps_dialog (manager, "need to deal with reconfiguration, as config > change");
-                use_stored_configuration_or_auto_configure_outputs (manager, config_timestamp);
-        }
+        show_timestamps_dialog (manager, "need to deal with reconfiguration, as config > change");
+        use_stored_configuration_or_auto_configure_outputs (manager, config_timestamp);
+    }
 
-        log_close ();
+    log_close ();
 }
 
 static void
@@ -2017,7 +1968,6 @@ gsd_xrandr_manager_start (GsdXrandrManager *manager,
 
         manager->priv->running = TRUE;
         manager->priv->settings = g_settings_new(CONF_SCHEMA);
-        m_settings = manager->priv->settings;
         deepin_xrandr_init(manager->priv->settings);
 
         show_timestamps_dialog (manager, "Startup");

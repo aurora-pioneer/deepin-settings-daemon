@@ -31,30 +31,29 @@
 #define BUF_SIZE 1024
 #define XRANDR_PROG_NAME "Deepin XRandR"
 
-static GFile *m_file = NULL;
-static GFileMonitor *m_file_monitor = NULL;
+static GFile *m_config_file = NULL;
+static GFileMonitor *m_config_file_monitor = NULL;
 
-static void m_file_changed(GFileMonitor *monitor, 
-                           GFile *file, 
-                           GFile *other_file, 
-                           GFileMonitorEvent event_type, 
-                           gpointer user_data);
+static void m_config_file_changed(GFileMonitor *monitor, 
+                                  GFile *file, 
+                                  GFile *other_file, 
+                                  GFileMonitorEvent event_type, 
+                                  gpointer user_data);
 static void m_changed_brightness(GSettings *settings, gchar* key, gpointer user_data);
-static void m_init_output_names(GSettings *settings);
 static void m_set_brightness(GSettings *settings, double value);
 static void m_init_brightness(GSettings *settings);
 static void m_init_screen_size(GSettings *settings);
 
-static void m_file_changed(GFileMonitor *monitor, 
-                           GFile *file, 
-                           GFile *other_file, 
-                           GFileMonitorEvent event_type, 
-                           gpointer user_data) 
+static void m_config_file_changed(GFileMonitor *monitor, 
+                                  GFile *file, 
+                                  GFile *other_file, 
+                                  GFileMonitorEvent event_type, 
+                                  gpointer user_data) 
 {
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
 
-    printf("DEBUG m_file_changed %d\n", event_type);
+    printf("DEBUG m_config_file_changed %d\n", event_type);
 }
 
 static void m_changed_brightness(GSettings *settings, gchar *key, gpointer user_data) 
@@ -94,7 +93,7 @@ static void m_set_brightness(GSettings *settings, double value)
     }
 }
 
-static void m_init_output_names(GSettings *settings) 
+void deepin_xrandr_set_output_names(GSettings *settings) 
 {
     char *argv[] = {XRANDR_PROG_NAME};
 
@@ -120,7 +119,7 @@ int deepin_xrandr_init(GSettings *settings)
 
     g_signal_connect(settings, "changed::brightness", m_changed_brightness, NULL);
     
-    m_init_output_names(settings);
+    deepin_xrandr_set_output_names(settings);
     m_init_brightness(settings);
 
     pw = getpwuid(getuid());
@@ -128,15 +127,15 @@ int deepin_xrandr_init(GSettings *settings)
         return -1;
     }
     sprintf(backup_filename, "%s/.config/monitors.xml", pw->pw_dir);
-    m_file = g_file_new_for_path(backup_filename);
-    if (!m_file) 
+    m_config_file = g_file_new_for_path(backup_filename);
+    if (!m_config_file) 
         return -1;
 
-    m_file_monitor = g_file_monitor_file(m_file, G_FILE_MONITOR_NONE, NULL, NULL);
-    if (!m_file_monitor) 
+    m_config_file_monitor = g_file_monitor_file(m_config_file, G_FILE_MONITOR_NONE, NULL, NULL);
+    if (!m_config_file_monitor) 
         return -1;
 
-    g_signal_connect(m_file_monitor, "changed", m_file_changed, NULL);
+    g_signal_connect(m_config_file_monitor, "changed", m_config_file_changed, NULL);
 
     return 0;
 }
@@ -145,14 +144,14 @@ void deepin_xrandr_cleanup()
 {
     xmlCleanupParser();
     
-    if (m_file_monitor) {
-        g_object_unref(m_file_monitor);
-        m_file_monitor = NULL;
+    if (m_config_file_monitor) {
+        g_object_unref(m_config_file_monitor);
+        m_config_file_monitor = NULL;
     }
     
-    if (m_file) {
-        g_object_unref(m_file);
-        m_file = NULL;
+    if (m_config_file) {
+        g_object_unref(m_config_file);
+        m_config_file = NULL;
     }
 
     xrandr_cleanup();
