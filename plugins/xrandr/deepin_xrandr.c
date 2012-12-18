@@ -26,10 +26,6 @@
 #include <libxml/parser.h>
 
 #include "gsd-xrandr-manager.h"
-#include "xrandr.h"
-
-#define BUF_SIZE 1024
-#define XRANDR_PROG_NAME "Deepin XRandR"
 
 static GFile *m_config_file = NULL;
 static GFileMonitor *m_config_file_monitor = NULL;
@@ -39,10 +35,10 @@ static void m_config_file_changed(GFileMonitor *monitor,
                                   GFile *other_file, 
                                   GFileMonitorEvent event_type, 
                                   gpointer user_data);
+static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data);
+static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings);
 static void m_changed_brightness(GSettings *settings, gchar* key, gpointer user_data);
-static void m_set_brightness(GSettings *settings, double value);
-static void m_init_brightness(GSettings *settings);
-static void m_init_screen_size(GSettings *settings);
+static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
 
 static void m_config_file_changed(GFileMonitor *monitor, 
                                   GFile *file, 
@@ -56,72 +52,131 @@ static void m_config_file_changed(GFileMonitor *monitor,
     printf("DEBUG m_config_file_changed %d\n", event_type);
 }
 
-static void m_changed_brightness(GSettings *settings, gchar *key, gpointer user_data) 
+static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data) 
 {
-    double value = g_settings_get_double(settings, "brightness");
+    GSettings *settings = (GSettings *) user_data;
 
-    m_set_brightness(settings, value);
+    m_set_output_names(screen, settings);
 }
 
-static void m_set_brightness(GSettings *settings, double value) 
+static void m_changed_brightness(GSettings *settings, gchar *key, gpointer user_data) 
 {
-    char **output_names = g_settings_get_strv(settings, "output-names");
-    char value_str[BUF_SIZE];
+    GnomeRRScreen *screen = (GnomeRRScreen *) user_data;
+    
+    m_set_brightness(screen, settings);
+}
+
+static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings) 
+{
+    char **output_names = NULL;
+    double value = 0.0;
+    GnomeRROutput *output = NULL;
+    GError **error = NULL;
     int i = 0;
+    
+    output_names = g_settings_get_strv(settings, "output-names");
+    value = g_settings_get_double(settings, "brightness");
 
     if (!output_names) 
         return;
+
+    if (value <= 0.0 || value > 1.0) 
+        return;
     
     while (output_names[i]) {
-        /* TODO: filter the disconnected output */
-        if (strcmp(output_names[i], "NULL") == 0) { 
+        if (strcmp(output_names[i], "NULL") == 0) {
             i++;
             continue;
         }
 
-        memset(value_str, 0, BUF_SIZE);
-        sprintf(value_str, "%f", value);
-        char *argv[] = {XRANDR_PROG_NAME, 
-                        "--output", 
-                        output_names[i], 
-                        "--brightness", 
-                        value_str};
-        xrandr_main(5, argv);
-        xrandr_cleanup();
-        
+        output = gnome_rr_screen_get_output_by_name(screen, output_names[i]);
+        if (!output) {
+            i++;
+            continue;
+        }
+
+        gnome_rr_output_set_backlight(output, value, error);
         i++;
     }
 }
 
-void deepin_xrandr_set_output_names(GSettings *settings) 
+static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings) 
 {
-    char *argv[] = {XRANDR_PROG_NAME};
+    GnomeRROutput **outputs = NULL;
+    GnomeRROutput *output = NULL;
+    char *output_name = NULL;
+    gchar **strv = NULL;
+    int i = 0;
+    int count = 0;
 
-    xrandr_main(1, argv);
-    g_settings_set_strv(settings, "output-names", xrandr_get_output_names());
-    g_settings_sync();
-    xrandr_cleanup();
-}
-
-static void m_init_brightness(GSettings *settings) 
-{
-    double value = g_settings_get_double(settings, "brightness");
-    
-    if (value <= 0.0 || value > 1.0) 
+    outputs = gnome_rr_screen_list_outputs(screen);
+    if (!outputs) 
         return;
 
-    m_set_brightness(settings, value);
+    while (outputs[count]) 
+        count++;
+
+    if (!count) 
+        return;
+
+    strv = malloc((count + 1) * sizeof(gchar *));
+    if (!strv) 
+        return;
+
+    memset(strv, 0, (count + 1) * sizeof(gchar *));
+    i = 0;
+    while (outputs[i]) {
+        if (gnome_rr_output_is_connected(outputs[i])) 
+            output_name = gnome_rr_output_get_name(outputs[i]);
+        else 
+            output_name = "NULL";
+
+        strv[i] = malloc(strlen(output_name) * sizeof(gchar));
+        if (!strv[i]) {
+            i++;
+            continue;
+        }
+
+        memset(strv[i], 0, strlen(output_name) * sizeof(gchar));
+        strcpy(strv[i], output_name);
+        
+        i++;
+    }
+    strv[count] = NULL;
+   
+    g_settings_set_strv(settings, "output-names", strv);
+    g_settings_sync();
+
+    if (strv) {
+        i = 0;
+        
+        while (strv[i]) {
+            if (strv[i]) { 
+                free(strv[i]);
+                strv[i] = NULL;
+            }
+
+            i++;
+        }
+        
+        free(strv);
+        strv = NULL;
+    }
 }
 
-int deepin_xrandr_init(GSettings *settings) 
+int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings) 
 {
     char backup_filename[PATH_MAX] = {'\0'}; 
     struct passwd *pw = NULL;
 
-    g_signal_connect(settings, "changed::brightness", m_changed_brightness, NULL);
+    /* TODO: GnomeRRScreen changed event */
+    g_signal_connect(screen, "changed", m_screen_changed, settings);
     
-    deepin_xrandr_set_output_names(settings);
-    m_init_brightness(settings);
+    /* TODO: GSettings changed brightness key event */
+    g_signal_connect(settings, "changed::brightness", m_changed_brightness, screen);
+    
+    m_set_output_names(screen, settings);
+    m_set_brightness(screen, settings);
 
     pw = getpwuid(getuid());
     if (!pw) {
@@ -136,6 +191,7 @@ int deepin_xrandr_init(GSettings *settings)
     if (!m_config_file_monitor) 
         return -1;
 
+    /* TODO: GFile changed event */
     g_signal_connect(m_config_file_monitor, "changed", m_config_file_changed, NULL);
 
     return 0;
@@ -154,6 +210,4 @@ void deepin_xrandr_cleanup()
         g_object_unref(m_config_file);
         m_config_file = NULL;
     }
-
-    xrandr_cleanup();
 }

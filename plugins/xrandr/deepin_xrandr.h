@@ -22,8 +22,7 @@
 #ifndef DEEPIN_XRANDR_H
 #define DEEPIN_XRANDR_H
 
-int deepin_xrandr_init(GSettings *settings);
+int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings);
 void deepin_xrand_cleanup();
-void deepin_xrandr_set_output_names(GSettings *settings);
 
 #endif /* DEEPIN_XRANDR_H */

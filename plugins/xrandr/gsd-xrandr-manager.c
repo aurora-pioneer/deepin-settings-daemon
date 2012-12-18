@@ -1673,8 +1673,6 @@ static void on_randr_event(GnomeRRScreen *screen, gpointer data)
     if (!priv->running)
         return;
 
-    deepin_xrandr_set_output_names(manager->priv->settings);
-
     gnome_rr_screen_get_timestamps(screen, &change_timestamp, &config_timestamp);
 
     log_open ();
@@ -1968,7 +1966,7 @@ gsd_xrandr_manager_start (GsdXrandrManager *manager,
 
         manager->priv->running = TRUE;
         manager->priv->settings = g_settings_new(CONF_SCHEMA);
-        deepin_xrandr_init(manager->priv->settings);
+        deepin_xrandr_init(manager->priv->rw_screen, manager->priv->settings);
 
         show_timestamps_dialog (manager, "Startup");
         if (!apply_stored_configuration_at_startup (manager, GDK_CURRENT_TIME)) /* we don't have a real timestamp at startup anyway */

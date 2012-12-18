@@ -39,9 +39,7 @@ libxrandr_la_SOURCES = 		\
 	gsd-xrandr-manager.h	\
 	gsd-xrandr-manager.c    \
     deepin_xrandr.h \
-    deepin_xrandr.c \
-    xrandr.h    \
-    xrandr.c
+    deepin_xrandr.c
 
 libxrandr_la_CPPFLAGS =						\
 	-I$(top_srcdir)/gnome-settings-daemon			\
