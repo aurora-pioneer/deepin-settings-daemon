@@ -26,6 +26,9 @@
 #include <libxml/parser.h>
 
 #include "gsd-xrandr-manager.h"
+#include "xrandr.h"
+
+#define BUF_SIZE 10
 
 static GFile *m_config_file = NULL;
 static GFileMonitor *m_config_file_monitor = NULL;
@@ -70,8 +73,7 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
 {
     char **output_names = NULL;
     double value = 0.0;
-    GnomeRROutput *output = NULL;
-    GError **error = NULL;
+    char value_str[BUF_SIZE];
     int i = 0;
     
     output_names = g_settings_get_strv(settings, "output-names");
@@ -88,14 +90,17 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
             i++;
             continue;
         }
-
-        output = gnome_rr_screen_get_output_by_name(screen, output_names[i]);
-        if (!output) {
-            i++;
-            continue;
-        }
-
-        gnome_rr_output_set_backlight(output, value, error);
+        
+        memset(value_str, 0, BUF_SIZE);
+        sprintf(value_str, "%f", value);
+        char *argv[] = {"Deepin XRandR", 
+                        "--output", 
+                        output_names[i], 
+                        "--brightness", 
+                        value_str};
+        xrandr_main(5, argv);
+        xrandr_cleanup();
+        
         i++;
     }
 }
