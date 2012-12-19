@@ -169,6 +169,7 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
     memset(strv, 0, (count + 1) * sizeof(gchar *));
     i = 0;
     while (outputs[i] && output_infos[i]) {
+        memset(output_name, 0, BUF_SIZE);
         if (gnome_rr_output_is_connected(outputs[i])) { 
             sprintf(output_name, 
                     "%s (%s)", 
