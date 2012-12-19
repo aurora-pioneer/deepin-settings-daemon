@@ -223,9 +223,10 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     /* TODO: GnomeRRScreen changed event */
     g_signal_connect(screen, "changed", m_screen_changed, settings);
     
-    /* TODO: GSettings changed brightness key event */
+    /* TODO: GSettings changed brightness key event 
     g_signal_connect(settings, "changed::brightness", m_changed_brightness, screen);
-    
+    */
+
     m_set_output_names(screen, settings);
     m_set_brightness(screen, settings);
 
