@@ -103,6 +103,11 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
         
         i++;
     }
+
+    if (output_names) {
+        g_strfree(output_names);
+        output_names = NULL;
+    }
 }
 
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings) 
