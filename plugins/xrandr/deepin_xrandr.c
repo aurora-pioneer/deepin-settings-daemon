@@ -28,7 +28,7 @@
 #include "gsd-xrandr-manager.h"
 #include "xrandr.h"
 
-#define BUF_SIZE 10
+#define BUF_SIZE 1024
 
 static GFile *m_config_file = NULL;
 static GFileMonitor *m_config_file_monitor = NULL;
@@ -71,31 +71,55 @@ static void m_changed_brightness(GSettings *settings, gchar *key, gpointer user_
 
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings) 
 {
-    char **output_names = NULL;
+    GnomeRRConfig *config = NULL;
+    GnomeRROutputInfo **output_infos = NULL;
+    GnomeRROutput *output = NULL;
+    char *output_name = NULL;
     double value = 0.0;
     char value_str[BUF_SIZE];
     int i = 0;
     
-    output_names = g_settings_get_strv(settings, "output-names");
-    value = g_settings_get_double(settings, "brightness");
-
-    if (!output_names) 
+    config = gnome_rr_config_new_current(screen, NULL);
+    if (!config) 
         return;
 
+    output_infos = gnome_rr_config_get_outputs(config);
+    if (!output_infos) 
+        return;
+
+    value = g_settings_get_double(settings, "brightness");
     if (value <= 0.0 || value > 1.0) 
         return;
-    
-    while (output_names[i]) {
-        if (strcmp(output_names[i], "NULL") == 0) {
+
+    while (output_infos[i]) {
+        /* Check whether the output is primary or not at first */
+        if (!gnome_rr_output_info_get_primary(output_infos[i])) {
             i++;
             continue;
         }
-        
+
+        output_name = gnome_rr_output_info_get_name(output_infos[i]);
+        if (!output_name) {
+            i++;
+            continue;
+        }
+
+        output = gnome_rr_screen_get_output_by_name(screen, output_name);
+        if (!output) {
+            i++;
+            continue;
+        }
+
+        if (!gnome_rr_output_is_connected(output)) {
+            i++;
+            continue;
+        }
+
         memset(value_str, 0, BUF_SIZE);
         sprintf(value_str, "%f", value);
         char *argv[] = {"Deepin XRandR", 
                         "--output", 
-                        output_names[i], 
+                        output_name, 
                         "--brightness", 
                         value_str};
         xrandr_main(5, argv);
@@ -104,20 +128,29 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
         i++;
     }
 
-    if (output_names) {
-        g_strfree(output_names);
-        output_names = NULL;
+    if (config) {
+        g_object_unref(config);
+        config = NULL;
     }
 }
 
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings) 
 {
+    GnomeRRConfig *config = NULL;
+    GnomeRROutputInfo **output_infos = NULL;
     GnomeRROutput **outputs = NULL;
-    GnomeRROutput *output = NULL;
-    char *output_name = NULL;
+    char output_name[BUF_SIZE];
     gchar **strv = NULL;
-    int i = 0;
     int count = 0;
+    int i = 0;
+
+    config = gnome_rr_config_new_current(screen, NULL);
+    if (!config) 
+        return;
+
+    output_infos = gnome_rr_config_get_outputs(config);
+    if (!output_infos) 
+        return;
 
     outputs = gnome_rr_screen_list_outputs(screen);
     if (!outputs) 
@@ -135,11 +168,14 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
 
     memset(strv, 0, (count + 1) * sizeof(gchar *));
     i = 0;
-    while (outputs[i]) {
-        if (gnome_rr_output_is_connected(outputs[i])) 
-            output_name = gnome_rr_output_get_name(outputs[i]);
-        else 
-            output_name = "NULL";
+    while (outputs[i] && output_infos[i]) {
+        if (gnome_rr_output_is_connected(outputs[i])) { 
+            sprintf(output_name, 
+                    "%s (%s)", 
+                    gnome_rr_output_info_get_display_name(output_infos[i]), 
+                    gnome_rr_output_get_name(outputs[i]));
+        } else 
+            strcpy(output_name, "NULL");
 
         strv[i] = malloc(strlen(output_name) * sizeof(gchar));
         if (!strv[i]) {
@@ -171,6 +207,11 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
         
         free(strv);
         strv = NULL;
+    }
+
+    if (config) {
+        g_object_unref(config);
+        config = NULL;
     }
 }
 
