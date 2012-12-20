@@ -22,6 +22,7 @@
 #include <gio/gio.h>
 #include <limits.h>
 #include <pwd.h>
+#include <unistd.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
@@ -218,34 +219,48 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
 
 int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings) 
 {
+    GnomeRRConfig *config = NULL;
     char backup_filename[PATH_MAX] = {'\0'}; 
     struct passwd *pw = NULL;
+
+    config = gnome_rr_config_new_current(screen, NULL);
+    if (!config) 
+        return -1;
 
     /* TODO: GnomeRRScreen changed event */
     g_signal_connect(screen, "changed", m_screen_changed, settings);
     
-    /* TODO: GSettings changed brightness key event 
+    /* TODO: GSettings changed brightness key event */
     g_signal_connect(settings, "changed::brightness", m_changed_brightness, screen);
-    */
 
     m_set_output_names(screen, settings);
     m_set_brightness(screen, settings);
 
     pw = getpwuid(getuid());
-    if (!pw) {
+    if (!pw) 
         return -1;
-    }
+
     sprintf(backup_filename, "%s/.config/monitors.xml", pw->pw_dir);
+    /* TODO: create monitors.xml if it is not exist */
+    if (access(backup_filename, 0) == -1) 
+        gnome_rr_config_save(config, NULL);
+
     m_config_file = g_file_new_for_path(backup_filename);
     if (!m_config_file) 
         return -1;
 
     m_config_file_monitor = g_file_monitor_file(m_config_file, G_FILE_MONITOR_NONE, NULL, NULL);
-    if (!m_config_file_monitor) 
+    if (!m_config_file_monitor) { 
         return -1;
+    }
 
     /* TODO: GFile changed event */
     g_signal_connect(m_config_file_monitor, "changed", m_config_file_changed, NULL);
+
+    if (config) {
+        g_object_unref(config);
+        config = NULL;
+    }
 
     return 0;
 }
