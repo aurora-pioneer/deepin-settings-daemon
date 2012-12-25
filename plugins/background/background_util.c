@@ -528,6 +528,7 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
 				       root_width, root_height,
 				       root_depth);
 
+    g_debug ("screen_size_changed_cb: new_pixmap = 0x%x", new_pixmap);
     xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
     
     fade_data->pixmap = new_pixmap;

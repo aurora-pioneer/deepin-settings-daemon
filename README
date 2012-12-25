@@ -1,5 +1,8 @@
 based on gnome-settings-daemon-3.4.2
 
+注意
+background插件正常运行要求Nautilus不托管桌面
+
 *Dependence (Debian)
 
 **deepin-desktop
