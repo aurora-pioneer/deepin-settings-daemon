@@ -1,0 +1,10 @@
+./gnome-settings-daemon/gnome-settings-daemon 
+
+ps aux | grep gnome-settings-daemon
+
+sudo gdb
+attach _pid_
+
+b /home/zhaixiang/Projects/deepin-settings-daemon/plugins/xrandr/deepin_xrandr.c:169
+r
+
