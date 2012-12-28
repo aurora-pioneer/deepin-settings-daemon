@@ -41,7 +41,8 @@ static void m_config_file_changed(GFileMonitor *monitor,
                                   gpointer user_data);
 static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data);
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings);
-static void m_changed_brightness(GSettings *settings, gchar* key, gpointer user_data);
+static void m_changed_brightness(GSettings *settings, gchar *key, 
+                                 gpointer user_data);
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
 
 static void m_config_file_changed(GFileMonitor *monitor, 
@@ -63,7 +64,8 @@ static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data)
     m_set_output_names(screen, settings);
 }
 
-static void m_changed_brightness(GSettings *settings, gchar *key, gpointer user_data) 
+static void m_changed_brightness(GSettings *settings, gchar *key, 
+                                 gpointer user_data) 
 {
     GnomeRRScreen *screen = (GnomeRRScreen *) user_data;
     
@@ -144,6 +146,7 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
     gchar **strv = NULL;
     int count = 0;
     int i = 0;
+    size_t output_name_length = 0;
 
     config = gnome_rr_config_new_current(screen, NULL);
     if (!config) 
@@ -179,13 +182,14 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
         } else 
             strcpy(output_name, "NULL");
 
-        strv[i] = malloc(strlen(output_name) * sizeof(gchar));
+        output_name_length = (strlen(output_name) + 1) * sizeof(gchar);
+        strv[i] = malloc(output_name_length);
         if (!strv[i]) {
             i++;
             continue;
         }
 
-        memset(strv[i], 0, strlen(output_name) * sizeof(gchar));
+        memset(strv[i], 0, output_name_length);
         strcpy(strv[i], output_name);
         
         i++;
@@ -231,7 +235,10 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     g_signal_connect(screen, "changed", m_screen_changed, settings);
     
     /* TODO: GSettings changed brightness key event */
-    g_signal_connect(settings, "changed::brightness", m_changed_brightness, screen);
+    g_signal_connect(settings, 
+                     "changed::brightness", 
+                     m_changed_brightness, 
+                     screen);
 
     m_set_output_names(screen, settings);
     m_set_brightness(screen, settings);
@@ -249,13 +256,19 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     if (!m_config_file) 
         return -1;
 
-    m_config_file_monitor = g_file_monitor_file(m_config_file, G_FILE_MONITOR_NONE, NULL, NULL);
+    m_config_file_monitor = g_file_monitor_file(m_config_file, 
+                                                G_FILE_MONITOR_NONE, 
+                                                NULL, 
+                                                NULL);
     if (!m_config_file_monitor) { 
         return -1;
     }
 
     /* TODO: GFile changed event */
-    g_signal_connect(m_config_file_monitor, "changed", m_config_file_changed, NULL);
+    g_signal_connect(m_config_file_monitor, 
+                     "changed", 
+                     m_config_file_changed, 
+                     NULL);
 
     if (config) {
         g_object_unref(config);
