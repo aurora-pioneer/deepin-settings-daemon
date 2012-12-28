@@ -2121,6 +2121,9 @@ check_strtod(char *s)
 
 int xrandr_get_output_count() 
 {
+    if (!res) 
+        return 0;
+
     return res->noutput;
 }
 
@@ -2149,16 +2152,16 @@ char **xrandr_get_screen_sizes(char *output_name)
         return NULL;
     memset(m_screen_sizes, 0, output_info->nmode);
 
-    for (i = 0; i < output_info->nmode - 1; i++) 
+    for (i = 0; i < output_info->nmode; i++) 
     {
-        mode = find_mode_by_xid(output_info->modes[i + 1]);
+        mode = find_mode_by_xid(output_info->modes[i]);
         if (!mode) 
             continue;
 
-        m_screen_sizes[i] = malloc(strlen(mode->name) * sizeof(char));
+        m_screen_sizes[i] = malloc((strlen(mode->name) + 1) * sizeof(char));
         if (!m_screen_sizes[i]) 
             continue;
-        memset(m_screen_sizes[i], 0, strlen(mode->name));
+        memset(m_screen_sizes[i], 0, (strlen(mode->name) + 1) * sizeof(char));
         strcpy(m_screen_sizes[i], mode->name);
     }
     m_screen_sizes[output_info->nmode - 1] = NULL;
@@ -2986,9 +2989,9 @@ int xrandr_main(int argc, char **argv)
         if (verbose)
             printf ("%s %s", output_info->name, connection[output_info->connection]);
 	    if (m_output_names) {
-            m_output_names[index] = malloc(strlen(output_info->name) * sizeof(char));
+            m_output_names[index] = malloc((strlen(output_info->name) + 1) * sizeof(char));
             if (m_output_names[index]) {
-                memset(m_output_names[index], 0, strlen(output_info->name));
+                memset(m_output_names[index], 0, (strlen(output_info->name) + 1) * sizeof(char));
                 if (output_info->connection) 
                     strcpy(m_output_names[index], "NULL");
                 else
