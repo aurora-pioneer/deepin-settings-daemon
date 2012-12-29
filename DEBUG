@@ -1,10 +1,15 @@
-./gnome-settings-daemon/gnome-settings-daemon 
+*找一枚deepin-settings-daemon的维护者, 比如涩兔子, 让他ssh上来把最新的tarball
+编译安装到测试机上
 
-ps aux | grep gnome-settings-daemon
+*在终端下运行 /usr/lib/gnome-settings-daemon/gnome-settings-daemon 
+查看一下该daemon的pid是多少 ps aux | grep gnome-settings-daemon
 
-sudo gdb
+*在开一个终端 sudo gdb
 attach _pid_
 
+设置断点
 b /home/zhaixiang/Projects/deepin-settings-daemon/plugins/xrandr/deepin_xrandr.c:169
 r
 
+n 下一步
+p output_name 查看变量的内存地址 && 该地址对应的值
