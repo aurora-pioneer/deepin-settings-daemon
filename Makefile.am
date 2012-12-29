@@ -1,5 +1,5 @@
 # For gdb load source code file to set breakpoint
-AM_CFLAGS = -g
+#AM_CFLAGS = -g
 NULL =
 
 SUBDIRS = 			\

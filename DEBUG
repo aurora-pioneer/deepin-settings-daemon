@@ -1,6 +1,8 @@
 *找一枚deepin-settings-daemon的维护者, 比如涩兔子, 让他ssh上来把最新的tarball
 编译安装到测试机上
 
+修改Makefile.am, 设置 AM_CFLAGS = -g, 让gcc编译器打开 symbole table 导入支持
+
 *在终端下运行 /usr/lib/gnome-settings-daemon/gnome-settings-daemon 
 查看一下该daemon的pid是多少 ps aux | grep gnome-settings-daemon
 
