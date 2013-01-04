@@ -319,7 +319,8 @@ on_bg_duration_tick (gpointer user_data)
     //periodical transition : picture_index = (picture_index + 1) % picture_num;
     picture_index = random() % picture_num;
     gchar *next_picture = g_ptr_array_index (picture_paths, picture_index);
-    fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_size (next_picture, root_width, root_height, NULL);
+    fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_scale (next_picture, root_width, 
+	                                                       root_height, FALSE, NULL);
 
     GSource* source = g_timeout_source_new (fade_data->interval*MSEC_PER_SEC);
 
