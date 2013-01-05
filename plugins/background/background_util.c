@@ -62,6 +62,7 @@ static int	root_height;
 
 static GdkScreen * gdk_screen;
 
+
 //global timeout_id to track in process timeoutout
 static guint	bg_timeout_id =0;	// background_duration
 static guint	auto_timeout_id = 0;	// xfade_auto_interval
@@ -319,8 +320,14 @@ on_bg_duration_tick (gpointer user_data)
     //periodical transition : picture_index = (picture_index + 1) % picture_num;
     picture_index = random() % picture_num;
     gchar *next_picture = g_ptr_array_index (picture_paths, picture_index);
+    GError* error = NULL;
     fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_scale (next_picture, root_width, 
-	                                                       root_height, FALSE, NULL);
+	                                                       root_height, FALSE, &error);
+    if (error != NULL)
+    {
+	g_debug ("background: %s", error->message);
+	return;
+    }
 
     GSource* source = g_timeout_source_new (fade_data->interval*MSEC_PER_SEC);
 
@@ -362,8 +369,14 @@ setup_crossfade_timer ()
 
     // we don't use picture_index here.
     gchar* current_bg_image = g_ptr_array_index (picture_paths, 0);
+    GError* error = NULL;
     fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
-	                                                      root_height, FALSE, NULL);
+	                                                      root_height, FALSE, &error);
+    if (error != NULL)
+    {
+	g_debug ("background: %s", error->message);
+	return;
+    }
 
     fade_data->total_duration = gsettings_xfade_manual_interval/MSEC_PER_SEC;
     fade_data->interval = TIME_PER_FRAME;
@@ -514,8 +527,14 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
     g_debug ("screen_size_changed: root_height = %d\n", root_height);
 
     gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
+    GError* error = NULL;
     GdkPixbuf* pb = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
-	                                               root_height, FALSE, NULL);
+	                                               root_height, FALSE, &error);
+    if (error != NULL)
+    {
+	g_debug ("background: %s", error->message);
+	return;
+    }
     g_assert (pb != NULL);
 
     /*
@@ -589,9 +608,15 @@ initial_setup (GSettings *settings)
     XSetCloseDownMode (display, RetainPermanent);
 
     gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
+    GError* error = NULL;
     GdkPixbuf* pb = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
-	                                               root_height, FALSE, NULL);
-    g_assert (pb != NULL);
+	                                               root_height, FALSE, &error);
+    if (error != NULL)
+    {
+	g_debug ("background: %s", error->message);
+	return;
+    }
+    //g_assert (pb != NULL);
 
     /*
      *	no previous background, no cross fade effect.
