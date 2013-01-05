@@ -2,8 +2,8 @@
  *
  * Copyright (C) 2007 William Jon McCann <mccann@jhu.edu>
  * Copyright (C) 2007, 2008 Red Hat, Inc
- * Copyright (C) 2012 Deepin, Inc.
- *               2012 Zhai Xiang <zhaixiang@linuxdeepin.com>
+ * Copyright (C) 2012 ~ 2013 Deepin, Inc.
+ *               2012 ~ 2013 Zhai Xiang <zhaixiang@linuxdeepin.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1701,6 +1701,8 @@ static void on_randr_event(GnomeRRScreen *screen, gpointer data)
                gnome_rr_config_apply_with_time (rr_config, priv->rw_screen, config_timestamp, NULL);
            }
        }
+       /* TODO: force to update monitors.xml backup file */
+       gnome_rr_config_save(rr_config, NULL);
        g_object_unref (rr_config);
        
        show_timestamps_dialog (manager, "ignoring since change > config");

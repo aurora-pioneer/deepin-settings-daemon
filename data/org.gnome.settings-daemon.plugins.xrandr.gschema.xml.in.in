@@ -30,5 +30,20 @@
       <_summary>Output connected by name</_summary>
       <_description>Output connected by name</_description>
     </key>
+    <key name="copy-multi-monitors" type="b">
+      <default>true</default>
+      <_summary>Copy multi monitors</_summary>
+      <_description>Copy multi monitors</_description>
+    </key>
+    <key name="extend-multi-monitors" type="b">
+      <default>false</default>
+      <_summary>Extend multi monitors</_summary>
+      <_description>Extend multi monitors</_description>
+    </key>
+    <key name="only-monitor-shown" type="i">
+      <default>0</default>
+      <_summary>Only which monitor shown</_summary>
+      <_description>Only which monitor shown</_description>
+    </key>
   </schema>
 </schemalist>
