@@ -161,11 +161,11 @@ on_tick (gpointer user_data)
 
     static int i=0;
 	
-    g_debug ("tick %d\n",++i);
-    g_debug ("cur_time : %lf\n", cur_time);
-    g_debug ("start_time: %lf\n", fade_data->start_time);
-    g_debug ("total_duration: %lf\n", fade_data->total_duration);
-    g_debug ("alpha	 : %lf\n", fade_data->alpha);
+    g_debug ("tick %d",++i);
+    g_debug ("cur_time : %lf", cur_time);
+    g_debug ("start_time: %lf", fade_data->start_time);
+    g_debug ("total_duration: %lf", fade_data->total_duration);
+    g_debug ("alpha	 : %lf", fade_data->alpha);
 
     // 'coz fade_data->alpha is a rough value
     if(fade_data->alpha >=0.9)
@@ -184,7 +184,7 @@ on_finished (gpointer user_data)
     draw_background (fade_data);
 
     free_fade_data (fade_data);
-    g_debug ("crossfade finished \n");
+    g_debug ("crossfade finished ");
 }
 static void 
 remove_timers ()
@@ -279,7 +279,7 @@ get_previous_background (void)
 	gdk_error_trap_pop ();
     }
 
-    g_debug ("prev_pixmap = 0x%x\n", (unsigned) pbg1);
+    g_debug ("prev_pixmap = 0x%x", (unsigned) pbg1);
     return pbg1;
 }
 
@@ -313,7 +313,17 @@ on_bg_duration_tick (gpointer user_data)
     fade_data->alpha = 0.0;
 
     g_debug ("on_bg_duration_tick: current_time: %lf", fade_data->start_time);
-    Pixmap prev_pixmap = get_previous_background ();
+    Pixmap prev_pixmap = get_previous_background();
+    gdk_error_trap_push ();
+    if (prev_pixmap == None)
+    {
+	prev_pixmap = XCreatePixmap (display, root, 
+				           root_width, root_height,
+				           root_depth);
+	_change_bg_xproperties (prev_pixmap);
+    }
+    gdk_error_trap_pop ();
+
     fade_data->pixmap = prev_pixmap;
     fade_data->fading_surface = get_surface (prev_pixmap);
 
@@ -363,6 +373,15 @@ setup_crossfade_timer ()
     xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
 
     Pixmap prev_pixmap = get_previous_background ();
+    gdk_error_trap_push ();
+    if (prev_pixmap == None)
+    {
+	prev_pixmap = XCreatePixmap (display, root, 
+				     root_width, root_height,
+				     root_depth);
+	_change_bg_xproperties (prev_pixmap);
+    }
+    gdk_error_trap_pop ();
     fade_data->pixmap = prev_pixmap;
     fade_data->fading_surface = get_surface (prev_pixmap);
     fade_data->alpha = 0;
@@ -382,13 +401,13 @@ setup_crossfade_timer ()
     fade_data->interval = TIME_PER_FRAME;
 
     fade_data->start_time = get_current_time(); 
-    g_debug ("start_time : %lf\n", fade_data->start_time);
+    g_debug ("start_time : %lf", fade_data->start_time);
     GSource* source = g_timeout_source_new (fade_data->interval*MSEC_PER_SEC);
 
     g_source_set_callback (source, (GSourceFunc) on_tick, fade_data, (GDestroyNotify)on_finished);
 
     manual_timeout_id = g_source_attach (source, g_main_context_default());
-    g_debug ("timeout_id : %d\n", manual_timeout_id);
+    g_debug ("timeout_id : %d", manual_timeout_id);
 }
 /*
  */
@@ -521,10 +540,13 @@ bg_settings_xfade_auto_interval_changed (GSettings *settings, gchar *key, gpoint
 static void 
 screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
 {
+    //remove early to avoid fatal X errors
+    remove_timers ();
+
     root_width = gdk_screen_get_width(screen);
     root_height = gdk_screen_get_height(screen);
-    g_debug ("screen_size_changed: root_width = %d\n", root_width);
-    g_debug ("screen_size_changed: root_height = %d\n", root_height);
+    g_debug ("screen_size_changed: root_width = %d", root_width);
+    g_debug ("screen_size_changed: root_height = %d", root_height);
 
     gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
     GError* error = NULL;
@@ -548,6 +570,7 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
 	XFreePixmap (display, prev_pixmap);
     }
     gdk_error_trap_pop ();
+
     Pixmap new_pixmap = XCreatePixmap (display, root, 
 				       root_width, root_height,
 				       root_depth);
