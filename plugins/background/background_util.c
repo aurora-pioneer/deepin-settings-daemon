@@ -542,10 +542,12 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
      *	free previous pixmap first.
      */
     Pixmap prev_pixmap = get_previous_background();
+    gdk_error_trap_push ();
     if (prev_pixmap != None)
     {
 	XFreePixmap (display, prev_pixmap);
     }
+    gdk_error_trap_pop ();
     Pixmap new_pixmap = XCreatePixmap (display, root, 
 				       root_width, root_height,
 				       root_depth);
