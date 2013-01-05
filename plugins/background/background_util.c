@@ -362,7 +362,8 @@ setup_crossfade_timer ()
 
     // we don't use picture_index here.
     gchar* current_bg_image = g_ptr_array_index (picture_paths, 0);
-    fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_size (current_bg_image, root_width, root_height, NULL);
+    fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
+	                                                      root_height, FALSE, NULL);
 
     fade_data->total_duration = gsettings_xfade_manual_interval/MSEC_PER_SEC;
     fade_data->interval = TIME_PER_FRAME;
@@ -513,7 +514,8 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
     g_debug ("screen_size_changed: root_height = %d\n", root_height);
 
     gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
-    GdkPixbuf* pb = gdk_pixbuf_new_from_file_at_size (current_bg_image, root_width, root_height, NULL);
+    GdkPixbuf* pb = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
+	                                               root_height, FALSE, NULL);
     g_assert (pb != NULL);
 
     /*
@@ -587,7 +589,8 @@ initial_setup (GSettings *settings)
     XSetCloseDownMode (display, RetainPermanent);
 
     gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
-    GdkPixbuf* pb = gdk_pixbuf_new_from_file_at_size (current_bg_image, root_width, root_height, NULL);
+    GdkPixbuf* pb = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
+	                                               root_height, FALSE, NULL);
     g_assert (pb != NULL);
 
     /*
