@@ -115,6 +115,13 @@ draw_background (xfade_data_t* fade_data)
     cairo_paint_with_alpha (cr, fade_data->alpha);
 
     cairo_destroy (cr);
+    //Yep, we draw it again on the root window.
+
+    GdkWindow* gdk_root = gdk_get_default_root_window ();
+    cr = gdk_cairo_create (gdk_root);
+    cairo_set_source_surface (cr, fade_data->fading_surface, 0, 0);
+    cairo_paint (cr);
+    cairo_destroy (cr);
 
     _change_bg_xproperties (fade_data->pixmap);
 }
