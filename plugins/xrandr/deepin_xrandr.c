@@ -41,6 +41,7 @@ static void m_config_file_changed(GFileMonitor *monitor,
                                   gpointer user_data);
 static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data);
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings);
+static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings);
 static void m_changed_brightness(GSettings *settings, gchar *key, 
                                  gpointer user_data);
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
@@ -62,6 +63,7 @@ static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data)
     GSettings *settings = (GSettings *) user_data;
 
     m_set_output_names(screen, settings);
+    m_set_multi_monitors(screen, settings);
 }
 
 static void m_changed_brightness(GSettings *settings, gchar *key, 
@@ -135,6 +137,61 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
         g_object_unref(config);
         config = NULL;
     }
+}
+
+static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings) 
+{
+    GnomeRRConfig *config = NULL;                                               
+    GnomeRROutputInfo **output_infos = NULL;                                    
+    GnomeRROutput **outputs = NULL;
+    char *primary_output_name = NULL;
+    char *other_output_name = NULL;
+    int i = 0;
+                                                                                
+    config = gnome_rr_config_new_current(screen, NULL);                         
+    if (!config)                                                                
+        return;                                                                 
+                                                                                
+    output_infos = gnome_rr_config_get_outputs(config);                         
+    if (!output_infos)                                                          
+        return;
+
+    outputs = gnome_rr_screen_list_outputs(screen);
+    if (!outputs) 
+        return;
+
+    while (outputs[i] && output_infos[i]) {
+        if (!gnome_rr_output_is_connected(outputs[i])) {
+            i++;
+            continue;
+        }
+        
+        if (gnome_rr_output_info_get_primary(output_infos[i])) {
+            primary_output_name = gnome_rr_output_info_get_name(output_infos[i]);
+            i++;
+            continue;
+        }
+
+        other_output_name = gnome_rr_output_info_get_name(output_infos[i]);
+        
+        i++;
+    }
+
+    if (!primary_output_name || !other_output_name) 
+        return;
+
+    printf("DEBUG primary %s, other %s\n", primary_output_name, other_output_name);
+    /*
+     * TODO: it need to read backup file monitors.xml to get other_output 
+     *       (not primary outut) resolution, then set other_output mode at first 
+     */
+    char *argv[] = {"Deepin XRandR",                                        
+                    "--output",                                             
+                    other_output_name,                                            
+                    "--same-as",                                         
+                    primary_output_name};                                             
+    xrandr_main(5, argv);                                                   
+    xrandr_cleanup();  
 }
 
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings) 
