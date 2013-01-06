@@ -1,6 +1,6 @@
 /* 
- * Copyright (C) 2012 Deepin, Inc.
- *               2012 Zhai Xiang
+ * Copyright (C) 2012 ~ 2013 Deepin, Inc.
+ *               2012 ~ 2013 Zhai Xiang
  *
  * Author:     Zhai Xiang <zhaixiang@linuxdeepin.com>
  * Maintainer: Zhai Xiang <zhaixiang@linuxdeepin.com>
@@ -29,6 +29,7 @@
 #include "gsd-xrandr-manager.h"
 #include "xrandr.h"
 
+#define DEEPIN_XRANDR "Deepin XRandR"
 #define BUF_SIZE 1024
 
 static GFile *m_config_file = NULL;
@@ -42,7 +43,13 @@ static void m_config_file_changed(GFileMonitor *monitor,
 static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data);
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings);
 static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings);
-static void m_changed_brightness(GSettings *settings, gchar *key, 
+static void m_use_mirror(char *primary_output_name, char *other_output_name);
+static void m_use_extend(char *primary_output_name, char *other_output_name);
+static void m_only_one_shown(char *primary_output_name, 
+                             char *other_output_name, 
+                             int index);
+static void m_changed_brightness(GSettings *settings, 
+                                 gchar *key, 
                                  gpointer user_data);
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
 
@@ -66,7 +73,8 @@ static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data)
     m_set_multi_monitors(screen, settings);
 }
 
-static void m_changed_brightness(GSettings *settings, gchar *key, 
+static void m_changed_brightness(GSettings *settings, 
+                                 gchar *key, 
                                  gpointer user_data) 
 {
     GnomeRRScreen *screen = (GnomeRRScreen *) user_data;
@@ -122,7 +130,7 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
 
         memset(value_str, 0, BUF_SIZE);
         sprintf(value_str, "%f", value);
-        char *argv[] = {"Deepin XRandR", 
+        char *argv[] = {DEEPIN_XRANDR, 
                         "--output", 
                         output_name, 
                         "--brightness", 
@@ -181,17 +189,46 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
         return;
 
     printf("DEBUG primary %s, other %s\n", primary_output_name, other_output_name);
-    /*
-     * TODO: it need to read backup file monitors.xml to get other_output 
-     *       (not primary outut) resolution, then set other_output mode at first 
-     */
-    char *argv[] = {"Deepin XRandR",                                        
-                    "--output",                                             
-                    other_output_name,                                            
-                    "--same-as",                                         
-                    primary_output_name};                                             
-    xrandr_main(5, argv);                                                   
-    xrandr_cleanup();  
+    if (g_settings_get_boolean(settings, "copy-multi-monitors")) {
+        m_use_mirror(primary_output_name, other_output_name);
+        return;
+    }
+
+    if (g_settings_get_boolean(settings, "extend-multi-monitors")) {
+        m_use_extend(primary_output_name, other_output_name);
+        return;
+    }
+
+    if (g_settings_get_int(settings, "only-monitors-shown") != 0) {
+        m_only_one_shown(primary_output_name, 
+                         other_output_name, 
+                         g_settings_get_int(settings, "only-monitors-shown"));
+    }
+}
+
+static void m_use_mirror(char *primary_output_name, char *other_output_name) 
+{
+    char *argv[] = {DEEPIN_XRANDR, 
+                    "--output", 
+                    primary_output_name, 
+                    "--auto", 
+                    "--output", 
+                    other_output_name, 
+                    "--auto", 
+                    "--same-as", 
+                    primary_output_name};
+    xrandr_main(9, argv);
+    xrandr_cleanup();
+}
+
+static void m_use_extend(char *primary_output_name, char *other_output_name) 
+{
+}
+
+static void m_only_one_shown(char *primary_output_name, 
+                             char *other_output_name, 
+                             int index) 
+{
 }
 
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings) 
