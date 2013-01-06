@@ -48,9 +48,9 @@ static void m_use_extend(char *primary_output_name, char *other_output_name);
 static void m_only_one_shown(char *primary_output_name, 
                              char *other_output_name, 
                              int index);
-static void m_changed_brightness(GSettings *settings, 
-                                 gchar *key, 
-                                 gpointer user_data);
+static void m_settings_changed(GSettings *settings, 
+                               gchar *key, 
+                               gpointer user_data);
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
 
 static void m_config_file_changed(GFileMonitor *monitor, 
@@ -62,7 +62,10 @@ static void m_config_file_changed(GFileMonitor *monitor,
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
 
-    printf("DEBUG m_config_file_changed %d\n", event_type);
+    /*
+    printf("DEBUG m_config_file_changed %d\n", 
+           event_type);
+    */
 }
 
 static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data) 
@@ -73,13 +76,23 @@ static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data)
     m_set_multi_monitors(screen, settings);
 }
 
-static void m_changed_brightness(GSettings *settings, 
-                                 gchar *key, 
-                                 gpointer user_data) 
+static void m_settings_changed(GSettings *settings, 
+                               gchar *key, 
+                               gpointer user_data) 
 {
     GnomeRRScreen *screen = (GnomeRRScreen *) user_data;
     
-    m_set_brightness(screen, settings);
+    if (strcmp(key, "brightness") == 0) {
+        m_set_brightness(screen, settings);
+        return;
+    }
+
+    if (strcmp(key, "copy-multi-monitors") == 0 || 
+        strcmp(key, "extend-multi-monitors") == 0 || 
+        strcmp(key, "only-monitor-shown") == 0) {
+        m_set_multi_monitors(screen, settings);
+        return;
+    }
 }
 
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings) 
@@ -154,6 +167,7 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
     GnomeRROutput **outputs = NULL;
     char *primary_output_name = NULL;
     char *other_output_name = NULL;
+    int output_index = 0;
     int i = 0;
                                                                                 
     config = gnome_rr_config_new_current(screen, NULL);                         
@@ -188,7 +202,11 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
     if (!primary_output_name || !other_output_name) 
         return;
 
-    printf("DEBUG primary %s, other %s\n", primary_output_name, other_output_name);
+    /*
+    printf("DEBUG primary %s, other %s\n", 
+           primary_output_name, 
+           other_output_name);
+    */
     if (g_settings_get_boolean(settings, "copy-multi-monitors")) {
         m_use_mirror(primary_output_name, other_output_name);
         return;
@@ -199,15 +217,22 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
         return;
     }
 
-    if (g_settings_get_int(settings, "only-monitors-shown") != 0) {
+    output_index = g_settings_get_int(settings, "only-monitors-shown");
+    if (output_index != 0) {
         m_only_one_shown(primary_output_name, 
                          other_output_name, 
-                         g_settings_get_int(settings, "only-monitors-shown"));
+                         output_index);
     }
+
+    if (config) {                                                               
+        g_object_unref(config);                                                 
+        config = NULL;                                                          
+    }   
 }
 
 static void m_use_mirror(char *primary_output_name, char *other_output_name) 
 {
+    /* xrandr --output LVDS --auto --output VGA-0 --auto --same-as LVDS */
     char *argv[] = {DEEPIN_XRANDR, 
                     "--output", 
                     primary_output_name, 
@@ -223,12 +248,48 @@ static void m_use_mirror(char *primary_output_name, char *other_output_name)
 
 static void m_use_extend(char *primary_output_name, char *other_output_name) 
 {
+    /* xrandr --output LVDS --auto --output VGA-0 --auto --right-of LVDS */
+    char *argv[] = {DEEPIN_XRANDR, 
+                    "--output", 
+                    primary_output_name, 
+                    "--auto", 
+                    "--output", 
+                    other_output_name, 
+                    "--auto", 
+                    "--right-of", 
+                    primary_output_name};
+    xrandr_main(9, argv);
 }
 
 static void m_only_one_shown(char *primary_output_name, 
                              char *other_output_name, 
                              int index) 
 {
+    /* xrandr --output LVDS --auto --output VGA-0 --off  */
+    if (index == 1) {
+        char *argv[] = {DEEPIN_XRANDR, 
+                        "--output", 
+                        primary_output_name, 
+                        "--auto", 
+                        "--output", 
+                        other_output_name, 
+                        "--off"};
+        xrandr_main(7, argv);
+        xrandr_cleanup();
+        return;
+    }
+
+    if (index == 2) {
+        char *argv[] = {DEEPIN_XRANDR, 
+                        "--output", 
+                        other_output_name, 
+                        "--auto", 
+                        "--output", 
+                        primary_output_name, 
+                        "--off"};
+        xrandr_main(7, argv);
+        xrandr_cleanup();
+    }
 }
 
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings) 
@@ -328,10 +389,10 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     /* TODO: GnomeRRScreen changed event */
     g_signal_connect(screen, "changed", m_screen_changed, settings);
     
-    /* TODO: GSettings changed brightness key event */
+    /* TODO: GSettings changed event */
     g_signal_connect(settings, 
-                     "changed::brightness", 
-                     m_changed_brightness, 
+                     "changed", 
+                     m_settings_changed, 
                      screen);
 
     m_set_output_names(screen, settings);

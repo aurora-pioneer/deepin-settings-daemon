@@ -2,8 +2,8 @@
  * Copyright © 2001 Keith Packard, member of The XFree86 Project, Inc.
  * Copyright © 2002 Hewlett Packard Company, Inc.
  * Copyright © 2006 Intel Corporation
- * Copyright (C) 2012 Deepin, Inc.
- *               2012 Zhai Xiang <zhaixiang@linuxdeepin.com>
+ * Copyright (C) 2012 ~ 2013 Deepin, Inc.
+ *               2012 ~ 2013 Zhai Xiang <zhaixiang@linuxdeepin.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -623,7 +623,8 @@ add_output (void)
     if (!output)
 	printf ("out of memory\n");
     output->next = NULL;
-    output->found = False;
+    /* FIXME: output found by default is False, but set True for DEBUG */
+    output->found = True;
     output->brightness = 1.0;
     *outputs_tail = output;
     outputs_tail = &output->next;
@@ -1477,7 +1478,6 @@ screen_apply (void)
 		fb_width, fb_height, fb_width_mm, fb_height_mm, dpi);
     if (dryrun)
 	return;
-    printf("DEBUG screen_apply %d %d %d %d\n", fb_width, fb_height, fb_width_mm, fb_height_mm);
     XRRSetScreenSize (dpy, root, fb_width, fb_height,
 		      fb_width_mm, fb_height_mm);
 }
