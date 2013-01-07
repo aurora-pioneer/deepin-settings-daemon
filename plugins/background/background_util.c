@@ -41,6 +41,8 @@
 static GPtrArray *picture_paths;		//an array of picture paths (strings).
 static guint	picture_num;		//number of pictures in GPtrArray.
 static guint	picture_index;		// the next background picture.
+//this is only used update current image in the gsettings
+static GSettings *Settings;
 
 static gulong	gsettings_background_duration;
 static gulong	gsettings_xfade_auto_interval; //use this time only when we use 
@@ -338,7 +340,11 @@ on_bg_duration_tick (gpointer user_data)
 
     //periodical transition : picture_index = (picture_index + 1) % picture_num;
     picture_index = random() % picture_num;
-    gchar *next_picture = g_ptr_array_index (picture_paths, picture_index);
+    const gchar *next_picture = g_ptr_array_index (picture_paths, picture_index);
+
+    //
+    g_settings_set_string (Settings, BG_CURRENT_PICT, next_picture);
+
     GError* error = NULL;
     fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_scale (next_picture, root_width, 
 	                                                       root_height, FALSE, &error);
@@ -396,7 +402,10 @@ setup_crossfade_timer ()
     fade_data->alpha = 0;
 
     // we don't use picture_index here.
-    gchar* current_bg_image = g_ptr_array_index (picture_paths, 0);
+    const gchar* current_bg_image = g_ptr_array_index (picture_paths, 0);
+
+    g_settings_set_string (Settings, BG_CURRENT_PICT, current_bg_image);
+
     GError* error = NULL;
     fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
 	                                                      root_height, FALSE, &error);
@@ -698,6 +707,8 @@ bg_util_init (GsdBackgroundManager* manager)
     gdk_screen = gdk_screen_get_default();
 
     manager->priv->settings = g_settings_new (BG_SCHEMA_ID);
+
+    Settings = manager->priv->settings;
 
     g_signal_connect (manager->priv->settings, "changed::picture-uris",
 		      G_CALLBACK (bg_settings_picture_uris_changed), NULL);

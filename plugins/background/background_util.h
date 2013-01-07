@@ -12,6 +12,7 @@
 
 #define BG_FPS		30		//in my implementation, the actual fps may not be 30.
 
+#define	BG_CURRENT_PICT "current-picture"
 #define BG_PICTURE_URIS	"picture-uris" //better renamed to picture-URIs
 #define DELIMITER	';'		//picture-uri string delimiter 
 #define BG_BG_DURATION	"background-duration"
