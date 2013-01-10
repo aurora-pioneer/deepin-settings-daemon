@@ -889,7 +889,7 @@ bg_util_init (GsdBackgroundManager* manager)
 		      G_CALLBACK (bg_settings_xfade_auto_interval_changed), NULL);
     g_signal_connect (manager->priv->settings, "changed::cross-fade-auto-mode",
 		      G_CALLBACK (bg_settings_xfade_auto_mode_changed), NULL);
-    g_signal_connect (manager->priv->settings, "chagned::draw-mode",
+    g_signal_connect (manager->priv->settings, "changed::draw-mode",
 		      G_CALLBACK (bg_settings_draw_mode_changed), NULL);
 
     initial_setup (manager->priv->settings);
