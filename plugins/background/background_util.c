@@ -48,6 +48,8 @@ static gulong	gsettings_background_duration;
 static gulong	gsettings_xfade_auto_interval; //use this time only when we use 
                                                //multiple background pictures.
 static gulong	gsettings_xfade_manual_interval;
+static BgXFadeAutoMode	gsettings_xfade_auto_mode;
+static BgDrawMode	gsettings_draw_mode;
 
 static const gchar* bg_props[2] = {"_XROOTPMAP_ID","ESETROOT_PMAP_ID"};
 static Atom bg1_atom;  
@@ -312,6 +314,23 @@ get_surface(Pixmap pixmap)
     return cs;
 }
 
+static guint
+get_next_picture_index()
+{
+    guint next_picture = 0;
+    switch (gsettings_xfade_auto_mode)
+    {
+	case XFADE_AUTO_MODE_RANDOM:
+            next_picture = random() % picture_num;
+	    break;
+	//default to draw in sequence.
+	case XFADE_AUTO_MODE_SEQUENTIAL:
+	default:
+	    next_picture = (picture_index+1) % picture_num;
+	    break;
+    }
+    return next_picture;
+}
 static gboolean 
 on_bg_duration_tick (gpointer user_data)
 {
@@ -338,8 +357,7 @@ on_bg_duration_tick (gpointer user_data)
     fade_data->pixmap = prev_pixmap;
     fade_data->fading_surface = get_surface (prev_pixmap);
 
-    //periodical transition : picture_index = (picture_index + 1) % picture_num;
-    picture_index = random() % picture_num;
+    picture_index = get_next_picture_index ();
     const gchar *next_picture = g_ptr_array_index (picture_paths, picture_index);
 
     //
@@ -555,6 +573,33 @@ bg_settings_xfade_auto_interval_changed (GSettings *settings, gchar *key, gpoint
 	setup_timers ();
 }
 
+static void
+bg_settings_xfade_auto_mode_changed (GSettings *settings, gchar *key, gpointer user_data)
+{
+    if (g_strcmp0 (key, BG_XFADE_AUTO_MODE))
+	return;
+
+    gsettings_xfade_auto_mode = g_settings_get_enum (settings, BG_XFADE_AUTO_MODE);
+
+    remove_timers ();
+
+    setup_timers ();
+}
+//TODO: draw mode: scaling, and tiling
+static void
+bg_settings_draw_mode_changed (GSettings *settings, gchar *key, gpointer user_data)
+{
+    if (g_strcmp0 (key, BG_DRAW_MODE))
+	return;
+
+    gsettings_draw_mode = g_settings_get_enum (settings, BG_DRAW_MODE);
+
+    remove_timers ();
+
+    setup_timers ();
+}
+
+
 static void 
 screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
 {
@@ -718,6 +763,10 @@ bg_util_init (GsdBackgroundManager* manager)
 		      G_CALLBACK (bg_settings_xfade_manual_interval_changed), NULL);
     g_signal_connect (manager->priv->settings, "changed::cross-fade-auto-interval",
 		      G_CALLBACK (bg_settings_xfade_auto_interval_changed), NULL);
+    g_signal_connect (manager->priv->settings, "changed::cross-fade-auto-mode",
+		      G_CALLBACK (bg_settings_xfade_auto_mode_changed), NULL);
+    g_signal_connect (manager->priv->settings, "chagned::draw-mode",
+		      G_CALLBACK (bg_settings_draw_mode_changed), NULL);
 
     initial_setup (manager->priv->settings);
 }

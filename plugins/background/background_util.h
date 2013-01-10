@@ -18,6 +18,22 @@
 #define BG_BG_DURATION	"background-duration"
 #define BG_XFADE_MANUAL_INTERVAL "cross-fade-manual-interval"     //manually change background
 #define BG_XFADE_AUTO_INTERVAL	 "cross-fade-auto-interval"       //automatically change background
+#define BG_XFADE_AUTO_MODE	 "cross-fade-auto-mode"		  //how next picture is chosen, random, or 
+#define BG_DRAW_MODE		 "draw-mode"			  //
+
+//the following enumerations should be synced with com.deepin.dde.background.gschema.xml
+typedef enum BgXFadeAutoMode BgXFadeAutoMode;
+enum BgXFadeAutoMode
+{
+    XFADE_AUTO_MODE_RANDOM = 1,
+    XFADE_AUTO_MODE_SEQUENTIAL = 2
+};
+typedef enum BgDrawMode BgDrawMode;
+enum BgDrawMode
+{
+    DRAW_MODE_SCALING = 1,
+    DRAW_MODE_TILING = 2
+};
 
 //exporting functions for gsd-background-manager.c
 extern void bg_util_init (GsdBackgroundManager* manager);
