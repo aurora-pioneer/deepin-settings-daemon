@@ -102,7 +102,7 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
     GnomeRROutput *output = NULL;
     char *output_name = NULL;
     double value = 0.0;
-    char value_str[BUF_SIZE];
+    char buffer[BUF_SIZE];
     int i = 0;
     
     config = gnome_rr_config_new_current(screen, NULL);
@@ -114,7 +114,7 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
         return;
 
     value = g_settings_get_double(settings, "brightness");
-    if (value <= 0.0 || value > 1.0) 
+    if (value <= 0.1 || value > 1.0) 
         return;
 
     while (output_infos[i]) {
@@ -141,15 +141,9 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
             continue;
         }
 
-        memset(value_str, 0, BUF_SIZE);
-        sprintf(value_str, "%f", value);
-        char *argv[] = {DEEPIN_XRANDR, 
-                        "--output", 
-                        output_name, 
-                        "--brightness", 
-                        value_str};
-        xrandr_main(5, argv);
-        xrandr_cleanup();
+        memset(buffer, 0, BUF_SIZE);
+        sprintf(buffer, "xrandr --output %s --brightness %f", output_name, value);
+        system(buffer);
         
         i++;
     }
