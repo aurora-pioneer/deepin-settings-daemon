@@ -21,12 +21,13 @@
 #define BG_XFADE_AUTO_MODE	 "cross-fade-auto-mode"		  //how next picture is chosen, random, or 
 #define BG_DRAW_MODE		 "draw-mode"			  //
 
+#define BG_DEFAULT_PICTURE	 "/usr/share/backgrounds/default_background.jpg"
 //the following enumerations should be synced with com.deepin.dde.background.gschema.xml
 typedef enum BgXFadeAutoMode BgXFadeAutoMode;
 enum BgXFadeAutoMode
 {
-    XFADE_AUTO_MODE_RANDOM = 1,
-    XFADE_AUTO_MODE_SEQUENTIAL = 2
+    XFADE_AUTO_MODE_SEQUENTIAL = 1,
+    XFADE_AUTO_MODE_RANDOM = 2
 };
 typedef enum BgDrawMode BgDrawMode;
 enum BgDrawMode
