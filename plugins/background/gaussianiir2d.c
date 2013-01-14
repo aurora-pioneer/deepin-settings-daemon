@@ -12,7 +12,6 @@
  * Implements the fast Gaussian convolution algorithm of Alvarez and Mazorra,
  * where the Gaussian is approximated by a cascade of first-order infinite 
  * impulsive response (IIR) filters.  Boundaries are handled with half-sample
- 
  * symmetric extension.
  * 
  * Gaussian convolution is approached as approximating the heat equation and 
@@ -99,25 +98,38 @@ void gaussianiir2d_c(unsigned char* image_c,
 		     long width, long height, 
 		     double sigma, long numsteps)
 {
-    guint32* _image_c = (unsigned char*)image_c;
+    guint32* _image_c = (guint32*)image_c;
+
     //1. unsigned char* ----> float*
     double* _image_f = g_new0 (double, width * height);
     int i = 0;
     int j = 0;
-    for (; i < width; i++)
-	for (; j < height; j++)
+
+    for (i = 0; i < width; i++)
+    {
+	for (j = 0; j < height; j++)
+	{
 	    _image_f[i + width * j] = (double) _image_c[i + width * j];
+	}
+    }
 
     //2.
+    g_print ("begin:\n");
     gaussianiir2d_f(_image_f, width, height, sigma, numsteps);
+    g_print ("end:\n");
 
-    //dump data
-    
+    //test: dump data
 
     //3. float* ----> unsigned char*
-    for (; i < width; i++)
-	for (; j < height; j++)
+    i = 0;
+    j = 0;
+    for (i = 0; i < width; i++)
+    {
+	for (j = 0; j < height; j++)
+	{
 	    _image_c[i + width * j] = (guint32) _image_f[i + width * j];
+	}
+    }
 
     g_free (_image_f);
 }

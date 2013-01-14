@@ -64,4 +64,7 @@ main (int argc, char** argv)
 
     //4. write out the picture.
     cairo_surface_write_to_png (surface, "gaussian2.png");
+
+    cairo_destroy (cr);
+    cairo_surface_destroy (surface);
 }
