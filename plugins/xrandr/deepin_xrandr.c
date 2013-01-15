@@ -27,9 +27,7 @@
 #include <libxml/parser.h>
 
 #include "gsd-xrandr-manager.h"
-#include "xrandr.h"
 
-#define DEEPIN_XRANDR "Deepin XRandR"
 #define BUF_SIZE 1024
 
 static GFile *m_config_file = NULL;
@@ -43,7 +41,12 @@ static void m_config_file_changed(GFileMonitor *monitor,
 static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data);
 static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings);
 static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings);
-static void m_use_mirror(char *primary_output_name, char *other_output_name);
+static void m_get_same_mode(GnomeRRMode **primary,                              
+                            GnomeRRMode **other,                                
+                            char *same);
+static void m_use_mirror(char *primary_output_name, 
+                         char *other_output_name, 
+                         char *same);
 static void m_use_extend(char *primary_output_name, char *other_output_name);
 static void m_only_one_shown(char *primary_output_name, 
                              char *other_output_name, 
@@ -154,13 +157,44 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
     }
 }
 
+static void m_get_same_mode(GnomeRRMode **primary, 
+                            GnomeRRMode **other, 
+                            char *same) 
+{
+    int i = 0;
+    int j = 0;
+    guint primary_width = 0;
+    guint primary_height = 0;
+
+    while (primary[i]) {
+        primary_width = gnome_rr_mode_get_width(primary[i]);
+        primary_height = gnome_rr_mode_get_height(primary[i]);
+        
+        j = 0;
+        while (other[j]) {
+            if (gnome_rr_mode_get_width(other[j]) == primary_width && 
+                gnome_rr_mode_get_height(other[j]) == primary_height) {
+                sprintf(same, "%dx%d", primary_width, primary_height);
+                return;
+            }
+            
+            j++;
+        }
+        
+        i++;
+    }
+}
+
 static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings) 
 {
     GnomeRRConfig *config = NULL;                                               
     GnomeRROutputInfo **output_infos = NULL;                                    
     GnomeRROutput **outputs = NULL;
+    GnomeRRMode **primary_mode = NULL;
+    GnomeRRMode **other_mode = NULL;
     char *primary_output_name = NULL;
     char *other_output_name = NULL;
+    char same_mode[BUF_SIZE] = {'\0'};
     int output_index = 0;
     int i = 0;
                                                                                 
@@ -183,11 +217,13 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
         }
         
         if (gnome_rr_output_info_get_primary(output_infos[i])) {
+            primary_mode = gnome_rr_output_list_modes(outputs[i]);
             primary_output_name = gnome_rr_output_info_get_name(output_infos[i]);
             i++;
             continue;
         }
 
+        other_mode = gnome_rr_output_list_modes(outputs[i]);
         other_output_name = gnome_rr_output_info_get_name(output_infos[i]);
         
         i++;
@@ -196,13 +232,9 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
     if (!primary_output_name || !other_output_name) 
         return;
 
-    /*
-    printf("DEBUG primary %s, other %s\n", 
-           primary_output_name, 
-           other_output_name);
-    */
     if (g_settings_get_boolean(settings, "copy-multi-monitors")) {
-        m_use_mirror(primary_output_name, other_output_name);
+        m_get_same_mode(primary_mode, other_mode, same_mode);
+        m_use_mirror(primary_output_name, other_output_name, same_mode);
         return;
     }
 
@@ -224,35 +256,35 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
     }   
 }
 
-static void m_use_mirror(char *primary_output_name, char *other_output_name) 
+static void m_use_mirror(char *primary_output_name, 
+                         char *other_output_name, 
+                         char *same) 
 {
-    /* xrandr --output LVDS --auto --output VGA-0 --auto --same-as LVDS */
-    char *argv[] = {DEEPIN_XRANDR, 
-                    "--output", 
-                    primary_output_name, 
-                    "--auto", 
-                    "--output", 
-                    other_output_name, 
-                    "--auto", 
-                    "--same-as", 
-                    primary_output_name};
-    xrandr_main(9, argv);
-    xrandr_cleanup();
+    /* xrandr --output LVDS --mode 1024x768 
+     *        --output VGA-0 --mode 1024x768 --same-as LVDS 
+     */
+    char buffer[BUF_SIZE] = {'\0'};
+    
+    sprintf(buffer, 
+            "xrandr --output %s --mode %s --output %s --mode %s --same-as %s", 
+            primary_output_name, 
+            same, 
+            other_output_name, 
+            same, 
+            primary_output_name);
+    system(buffer);
 }
 
 static void m_use_extend(char *primary_output_name, char *other_output_name) 
 {
     /* xrandr --output LVDS --auto --output VGA-0 --auto --right-of LVDS */
-    char *argv[] = {DEEPIN_XRANDR, 
-                    "--output", 
-                    primary_output_name, 
-                    "--auto", 
-                    "--output", 
-                    other_output_name, 
-                    "--auto", 
-                    "--right-of", 
-                    primary_output_name};
-    xrandr_main(9, argv);
+    char buffer[BUF_SIZE] = {'\0'};
+
+    sprintf(buffer, 
+            "xrandr --output %s --auto --output %s --auto --right-of %s", 
+            primary_output_name, 
+            other_output_name);
+    system(buffer);
 }
 
 static void m_only_one_shown(char *primary_output_name, 
@@ -261,28 +293,24 @@ static void m_only_one_shown(char *primary_output_name,
 {
     /* xrandr --output LVDS --auto --output VGA-0 --off  */
     if (index == 1) {
-        char *argv[] = {DEEPIN_XRANDR, 
-                        "--output", 
-                        primary_output_name, 
-                        "--auto", 
-                        "--output", 
-                        other_output_name, 
-                        "--off"};
-        xrandr_main(7, argv);
-        xrandr_cleanup();
+        char buffer[BUF_SIZE] = {'\0'};
+
+        sprintf(buffer, 
+                "xrandr --output %s --auto --output %s --off", 
+                primary_output_name, 
+                other_output_name);
+        system(buffer);
         return;
     }
 
     if (index == 2) {
-        char *argv[] = {DEEPIN_XRANDR, 
-                        "--output", 
-                        other_output_name, 
-                        "--auto", 
-                        "--output", 
-                        primary_output_name, 
-                        "--off"};
-        xrandr_main(7, argv);
-        xrandr_cleanup();
+        char buffer[BUF_SIZE] = {'\0'};
+
+        sprintf(buffer, 
+                "xrandr --output %s --auto --output %s --off", 
+                other_output_name, 
+                primary_output_name);
+        system(buffer);
     }
 }
 
