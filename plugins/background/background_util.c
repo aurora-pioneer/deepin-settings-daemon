@@ -97,6 +97,8 @@ typedef struct _xfade_data
 static void
 start_gaussian_helper (const char* _picture_path)
 {
+    g_mkdir_with_parents (BG_GAUSSIAN_PICT_DIR, 0666);
+
 #if 0
     //use symlink.
     //link file @_picture_path to /var/cache/background/gaussian.png"
