@@ -19,8 +19,15 @@ main (int argc, char** argv)
     double sigma = 0;
     long numsteps = 0; //numsteps should be >=4 
 
-    if (argc != 4)	
+    if ((argc == 2 && !g_strcmp0 (argv[2], "--help")) || 
+	argc != 4)
+    {
+	g_print ("background_helper:  a program to generate a gaussian-blurred\n"
+		 "		      image of the current background.\n"
+		 "Usage:\n"
+	         "	background_helper <sigma> <num of steps> <picture_path>");
 	return 1;
+    }
 
     sigma = g_strtod (argv[1], NULL);
     numsteps = (long) g_strtod (argv[2], NULL);
@@ -71,4 +78,6 @@ main (int argc, char** argv)
 
     cairo_destroy (cr);
     cairo_surface_destroy (surface);
+
+    return 0;
 }
