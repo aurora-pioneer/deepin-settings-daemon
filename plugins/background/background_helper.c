@@ -59,21 +59,19 @@ main (int argc, char** argv)
     gdk_cairo_set_source_pixbuf (cr, pixbuf, 0, 0);
     cairo_paint (cr);
     cairo_surface_flush (surface);
-
-//    cairo_surface_write_to_png (surface, "gaussian.png");
+    //original pictures.
+#if 1
+    cairo_surface_write_to_png (surface, BG_GAUSSIAN_PICT_PATH);
+#endif
 
     //3. IIR gaussian blur previous created surface.
     cairo_format_t format = CAIRO_FORMAT_INVALID;
     unsigned char* image_data = NULL;
+
     format = cairo_image_surface_get_format (surface);
-#if 1
-    if (format == CAIRO_FORMAT_ARGB32)
-	g_print ("CAIRO_FORMAT_ARGB32\n");
-    if (format == CAIRO_FORMAT_RGB24)
-	g_print ("CAIRO_FORMAT_RGB24\n");
-#endif
     if ((format == CAIRO_FORMAT_ARGB32) || (format == CAIRO_FORMAT_RGB24)) 
 	image_data = cairo_image_surface_get_data (surface);
+
 
     clock_t start = clock ();
     gaussianiir2d_c(image_data, root_width, root_height, sigma, numsteps);
@@ -81,9 +79,12 @@ main (int argc, char** argv)
     g_print ("time : %f\n", (end-start)/(float)CLOCKS_PER_SEC);
 
     //4. write out the picture.
-    //unlink (BG_GAUSSIAN_PICT_PATH);
-    //cairo_surface_write_to_png (surface, BG_GAUSSIAN_PICT_PATH);
-    cairo_surface_write_to_png (surface, "gaussian.png");
+#if 0
+    if we use symlink, uncomment this
+    unlink (BG_GAUSSIAN_PICT_PATH);
+#endif
+    cairo_surface_mark_dirty (surface);
+    cairo_surface_write_to_png (surface, BG_GAUSSIAN_PICT_PATH);
 
     cairo_destroy (cr);
     cairo_surface_destroy (surface);
