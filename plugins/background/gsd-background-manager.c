@@ -57,8 +57,6 @@ gboolean
 gsd_background_manager_start (GsdBackgroundManager *manager,
                               GError              **error)
 {
-        gboolean show_desktop_icons;
-
         g_debug ("Starting background manager");
         gnome_settings_profile_start (NULL);
 

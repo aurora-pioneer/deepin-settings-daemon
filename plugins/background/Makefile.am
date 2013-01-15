@@ -18,6 +18,8 @@ test_background_SOURCES = 		\
 test_background_CPPFLAGS = \
 	-I$(top_srcdir)/gnome-settings-daemon		\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
+	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"		\
+	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	$(AM_CPPFLAGS)
 
 test_background_CFLAGS = \
@@ -50,6 +52,8 @@ libbackground_la_CPPFLAGS = \
 	-I$(top_srcdir)/gnome-settings-daemon		\
 	-I$(top_srcdir)/plugins/background/libbackground   \
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
+	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"		\
+	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	$(AM_CPPFLAGS)
 
 libbackground_la_CFLAGS = \
@@ -71,6 +75,19 @@ plugin_in_files =		\
 	$(NULL)
 
 plugin_DATA = $(plugin_in_files:.gnome-settings-plugin.in=.gnome-settings-plugin)
+
+libexec_PROGRAMS = gsd-background-helper
+
+gsd_background_helper_SOURCES = 	\
+		background_helper.c 	\
+		gaussianiir2d.c
+
+gsd_background_helper_CFLAGS =		\
+		`pkg-config --cflags gtk+-3.0`
+
+gsd_background_helper_LDFLAGS=		\
+		`pkg-config --libs gtk+-3.0`
+
 
 EXTRA_DIST = 			\
 	$(plugin_in_files)	\

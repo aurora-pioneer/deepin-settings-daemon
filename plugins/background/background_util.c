@@ -21,6 +21,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <X11/X.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -91,6 +92,46 @@ typedef struct _xfade_data
 } xfade_data_t;
 
 /*
+ *	start gaussina helper in the background
+ */
+static void
+start_gaussian_helper (const char* _picture_path)
+{
+    //link file @_picture_path to /var/cache/background/gaussian.png"
+    unlink (BG_GAUSSIAN_PICT_PATH);
+    if (symlink (_picture_path, BG_GAUSSIAN_PICT_PATH))
+    {
+	g_debug ("start_gaussian_helper: symlink failed");
+    }
+    
+    g_debug ("write a gaussian-blurred image to "BG_GAUSSIAN_PICT_PATH);
+    g_debug (LIBEXECDIR);
+    //LIBEXECDIR is a CPP macro. see Makefile.am
+    char* command;
+#if 0
+    command = g_strdup_printf ("pkexec " LIBEXECDIR "/gsd-background-helper "
+			       "%lf %lu %s",
+			       BG_GAUSSIAN_SIGMA, BG_GAUSSIAN_NSTEPS, _picture_path);
+#endif
+    command = g_strdup_printf ("./gsd-background-helper "
+			       "%lf %lu %s",
+			       BG_GAUSSIAN_SIGMA, BG_GAUSSIAN_NSTEPS, _picture_path);
+
+    g_debug ("command : %s", command);
+
+    GError *error = NULL;
+    gboolean ret;
+    ret = g_spawn_command_line_async (command, &error);
+    if (ret == FALSE) 
+    {
+	g_debug ("Failed to launch '%s': %s", command, error->message);
+	g_error_free (error);
+    }
+
+    g_debug ("gsd-background-helper started");
+    g_free (command);
+}
+/*
  *	change root window x properties.
  *	TODO: change set_bg_props or _change_bg_xproperties 
  *	      to a better name.
@@ -104,7 +145,7 @@ _change_bg_xproperties (Pixmap pm)
     XChangeProperty (display, root, bg2_atom, pixmap_atom,
 		     32, PropModeReplace, (unsigned char*)&pm, 1);
     XFlush (display);
-    gdk_error_trap_pop ();
+    gdk_error_trap_pop_ignored ();
 }
 /*
  *    compositing two cairo surfaces. 
@@ -265,7 +306,7 @@ get_previous_background (void)
 	memcpy (&pbg2, prop, 4);
 	XFree (prop);
     }	
-    gdk_error_trap_pop ();
+    gdk_error_trap_pop_ignored ();
     //compare two pixmaps.
     g_assert (pbg1 == pbg2);
 
@@ -289,7 +330,7 @@ get_previous_background (void)
 	    // the drawable have been freed or resolution changed.
 	    pbg1 = None;
 	}
-	gdk_error_trap_pop ();
+	gdk_error_trap_pop_ignored ();
     }
 
     g_debug ("prev_pixmap = 0x%x", (unsigned) pbg1);
@@ -313,24 +354,130 @@ get_surface(Pixmap pixmap)
 	
     return cs;
 }
-
+#if 0
 static guint
-get_next_picture_index()
+get_current_picture_index ()
 {
-    guint next_picture = 0;
+    return picture_index;
+}
+#endif
+static const char* 
+get_current_picture_path ()
+{
+    const char* _pic = g_ptr_array_index (picture_paths, 
+	                                  picture_index);
+
+    return _pic;
+}
+// NOTE: this should be the only place to update picture_index
+static guint
+get_next_picture_index ()
+{
+    guint _next_picture = 0;
     switch (gsettings_xfade_auto_mode)
     {
 	case XFADE_AUTO_MODE_RANDOM:
-            next_picture = random() % picture_num;
+            _next_picture = random() % picture_num;
 	    break;
 	//default to draw in sequence.
 	case XFADE_AUTO_MODE_SEQUENTIAL:
 	default:
-	    next_picture = (picture_index+1) % picture_num;
+	    _next_picture = (picture_index+1) % picture_num;
 	    break;
     }
-    return next_picture;
+    //NOTE: update picture_index;
+    picture_index = _next_picture;
+
+    return _next_picture;
 }
+
+// NOTE: this should be the only place to update picture_index
+static const char*
+get_next_picture_path ()
+{
+    guint _next_picture_index = 0;
+    const gchar *_next_picture_path = NULL;
+
+    _next_picture_index = get_next_picture_index ();
+    _next_picture_path = g_ptr_array_index (picture_paths, 
+	                                    _next_picture_index);
+    return _next_picture_path;
+}
+
+static GdkPixbuf*
+get_xformed_gdk_pixbuf (const char* pict_path)
+{
+    g_debug ("picture_index : %d", picture_index);
+    GError* error = NULL;
+    GdkPixbuf* _pixbuf = NULL;
+    GdkPixbuf* _xformed_pixbuf = NULL;
+
+    _pixbuf = gdk_pixbuf_new_from_file (pict_path, &error);
+    if (error != NULL)
+    {
+	g_debug ("get_next_gdk_pixbuf: %s", error->message);
+	_pixbuf = gdk_pixbuf_new_from_file (BG_DEFAULT_PICTURE, NULL);
+    }
+
+    int w0, h0;
+    w0 = gdk_pixbuf_get_width (_pixbuf);
+    h0 = gdk_pixbuf_get_height (_pixbuf);
+    gboolean has_alpha;
+    has_alpha = gdk_pixbuf_get_has_alpha (_pixbuf);
+    int x, y;
+    int w, h;
+    switch (gsettings_draw_mode)
+    {
+	//NOTE: GDK_INTERP_TILES has nothing to do with tiling.
+	case DRAW_MODE_TILING:
+	    _xformed_pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB,
+					      has_alpha, 8,
+					      root_width, root_height);
+	    for (x = 0; x < root_width; x += w0)
+	    {
+		if (x + w0 <= root_width)
+		    w = w0;
+		else
+		    w = root_width - x;	    
+
+		for (y = 0; y < root_height; y += h0)
+		{
+		    if (y + h0 <= root_height)
+			h = h0;
+		    else
+			h = root_height - y;	    
+
+		    gdk_pixbuf_copy_area (_pixbuf,	   
+					  0, 0, w, h,
+					  _xformed_pixbuf,
+					  x, y);
+		}
+	    }
+	    break;
+	//default to draw scaling
+	case DRAW_MODE_SCALING:
+	default:
+	    _xformed_pixbuf = gdk_pixbuf_scale_simple (_pixbuf,
+						       root_width,
+						       root_height,
+						       GDK_INTERP_BILINEAR);
+	    break;
+    }
+    //TODO: generate a gaussian picture here.
+    g_object_unref (_pixbuf);
+
+    return _xformed_pixbuf;
+}
+#if 0
+static GdkPixbuf*
+get_next_xformed_gdk_pixbuf ()
+{
+    const char* _path = get_next_picture_path ();
+    GdkPixbuf* _pixbuf = get_xformed_gdk_pixbuf (_path);
+
+    return _pixbuf;
+}
+#endif
 static gboolean 
 on_bg_duration_tick (gpointer user_data)
 {
@@ -352,25 +499,15 @@ on_bg_duration_tick (gpointer user_data)
 				           root_depth);
 	_change_bg_xproperties (prev_pixmap);
     }
-    gdk_error_trap_pop ();
+    gdk_error_trap_pop_ignored ();
 
     fade_data->pixmap = prev_pixmap;
     fade_data->fading_surface = get_surface (prev_pixmap);
 
-    picture_index = get_next_picture_index ();
-    const gchar *next_picture = g_ptr_array_index (picture_paths, picture_index);
-
-    //
+    const char* next_picture = get_next_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, next_picture);
 
-    GError* error = NULL;
-    fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_scale (next_picture, root_width, 
-	                                                       root_height, FALSE, &error);
-    if (error != NULL)
-    {
-	g_debug ("background: %s", error->message);
-	return;
-    }
+    fade_data->end_pixbuf = get_xformed_gdk_pixbuf (next_picture);
 
     GSource* source = g_timeout_source_new (fade_data->interval*MSEC_PER_SEC);
 
@@ -414,24 +551,17 @@ setup_crossfade_timer ()
 				     root_depth);
 	_change_bg_xproperties (prev_pixmap);
     }
-    gdk_error_trap_pop ();
+    gdk_error_trap_pop_ignored ();
+
     fade_data->pixmap = prev_pixmap;
     fade_data->fading_surface = get_surface (prev_pixmap);
     fade_data->alpha = 0;
 
-    // we don't use picture_index here.
-    const gchar* current_bg_image = g_ptr_array_index (picture_paths, 0);
+    const char* current_picture = get_current_picture_path ();
+    g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
+    start_gaussian_helper (current_picture);
 
-    g_settings_set_string (Settings, BG_CURRENT_PICT, current_bg_image);
-
-    GError* error = NULL;
-    fade_data->end_pixbuf = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
-	                                                      root_height, FALSE, &error);
-    if (error != NULL)
-    {
-	g_debug ("background: %s", error->message);
-	return;
-    }
+    fade_data->end_pixbuf = get_xformed_gdk_pixbuf (current_picture);
 
     fade_data->total_duration = gsettings_xfade_manual_interval/MSEC_PER_SEC;
     fade_data->interval = TIME_PER_FRAME;
@@ -453,6 +583,7 @@ setup_timers ()
     if (gsettings_background_duration && picture_num > 1)
     {
 	g_debug ("setup_background_timer");
+	setup_crossfade_timer ();
 	setup_background_timer ();
     }
     else
@@ -525,6 +656,35 @@ bg_settings_picture_uris_changed (GSettings *settings, gchar *key, gpointer user
     parse_picture_uris (bg_image_uri);
     free (bg_image_uri);
 
+    const char* current_picture = get_current_picture_path ();
+    g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
+    start_gaussian_helper (current_picture);
+#if 0
+    GdkPixbuf* pb = get_xformed_gdk_pixbuf (current_picture);
+    g_assert (pb != NULL);
+
+    Pixmap prev_pixmap = get_previous_background();
+
+    gdk_error_trap_push ();
+    if (prev_pixmap == None)
+    {
+	Pixmap new_pixmap = XCreatePixmap (display, root, 
+				       root_width, root_height,
+				       root_depth);
+	prev_pixmap = new_pixmap;
+    }
+    gdk_error_trap_pop_ignored ();
+
+    xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
+    
+    fade_data->pixmap = prev_pixmap;
+    fade_data->fading_surface = get_surface (prev_pixmap);
+    fade_data->end_pixbuf = pb;
+    fade_data->alpha = 1.0;     
+
+    draw_background (fade_data);
+    free_fade_data (fade_data);
+#endif
     remove_timers ();
 
     setup_timers ();
@@ -581,6 +741,11 @@ bg_settings_xfade_auto_mode_changed (GSettings *settings, gchar *key, gpointer u
 
     gsettings_xfade_auto_mode = g_settings_get_enum (settings, BG_XFADE_AUTO_MODE);
 
+    if (gsettings_xfade_auto_mode == XFADE_AUTO_MODE_RANDOM)
+	g_debug ("XFADE_AUTO_MODE_RANDOM");
+    else if (gsettings_xfade_auto_mode == XFADE_AUTO_MODE_SEQUENTIAL)
+	g_debug ("XFADE_AUTO_MODE_SEQUENTIAL");
+
     remove_timers ();
 
     setup_timers ();
@@ -611,15 +776,12 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
     g_debug ("screen_size_changed: root_width = %d", root_width);
     g_debug ("screen_size_changed: root_height = %d", root_height);
 
-    gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
-    GError* error = NULL;
-    GdkPixbuf* pb = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
-	                                               root_height, FALSE, &error);
-    if (error != NULL)
-    {
-	g_debug ("background: %s", error->message);
-	return;
-    }
+    const char* current_picture = get_current_picture_path ();
+    g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
+    start_gaussian_helper (current_picture);
+
+    GdkPixbuf* pb = get_xformed_gdk_pixbuf (current_picture);
+
     g_assert (pb != NULL);
 
     /*
@@ -632,13 +794,13 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
     {
 	XFreePixmap (display, prev_pixmap);
     }
-    gdk_error_trap_pop ();
+    gdk_error_trap_pop_ignored ();
 
     Pixmap new_pixmap = XCreatePixmap (display, root, 
 				       root_width, root_height,
 				       root_depth);
 
-    g_debug ("screen_size_changed_cb: new_pixmap = 0x%x", new_pixmap);
+    g_debug ("screen_size_changed_cb: new_pixmap = 0x%x", (unsigned)new_pixmap);
     xfade_data_t* fade_data = g_new0 (xfade_data_t, 1);
     
     fade_data->pixmap = new_pixmap;
@@ -689,23 +851,31 @@ initial_setup (GSettings *settings)
     gsettings_xfade_manual_interval = g_settings_get_int (settings, BG_XFADE_MANUAL_INTERVAL);
     gsettings_xfade_auto_interval = g_settings_get_int (settings, BG_XFADE_AUTO_INTERVAL);
 
+    gsettings_xfade_auto_mode = g_settings_get_enum (settings, BG_XFADE_AUTO_MODE);
+    gsettings_draw_mode = g_settings_get_enum (settings, BG_DRAW_MODE);
+
+    if (gsettings_xfade_auto_mode == XFADE_AUTO_MODE_RANDOM)
+	g_debug ("XFADE_AUTO_MODE_RANDOM");
+    else if (gsettings_xfade_auto_mode == XFADE_AUTO_MODE_SEQUENTIAL)
+	g_debug ("XFADE_AUTO_MODE_SEQUENTIAL");
+
+    if (gsettings_draw_mode == DRAW_MODE_TILING)
+	g_debug ("DRAW_MODE_TILING");
+    else if (gsettings_draw_mode == DRAW_MODE_SCALING)
+	g_debug ("DRAW_MODE_SCALING");
     /*
      *	don't remove following comments:
      * 	to keep pixmap resource available
     */
     XSetCloseDownMode (display, RetainPermanent);
 
-    gchar* current_bg_image = g_ptr_array_index (picture_paths, picture_index);
-    GError* error = NULL;
-    GdkPixbuf* pb = gdk_pixbuf_new_from_file_at_scale (current_bg_image, root_width, 
-	                                               root_height, FALSE, &error);
-    if (error != NULL)
-    {
-	g_debug ("background: %s", error->message);
-	return;
-    }
-    //g_assert (pb != NULL);
+    const char* current_picture = get_current_picture_path ();
+    g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
+    start_gaussian_helper (current_picture);
 
+    GdkPixbuf* pb = get_xformed_gdk_pixbuf (current_picture);
+
+    g_assert (pb != NULL);
     /*
      *	no previous background, no cross fade effect.
      *	this is most likely the situation when we first start up.
@@ -765,8 +935,9 @@ bg_util_init (GsdBackgroundManager* manager)
 		      G_CALLBACK (bg_settings_xfade_auto_interval_changed), NULL);
     g_signal_connect (manager->priv->settings, "changed::cross-fade-auto-mode",
 		      G_CALLBACK (bg_settings_xfade_auto_mode_changed), NULL);
-    g_signal_connect (manager->priv->settings, "chagned::draw-mode",
+    g_signal_connect (manager->priv->settings, "changed::draw-mode",
 		      G_CALLBACK (bg_settings_draw_mode_changed), NULL);
 
     initial_setup (manager->priv->settings);
 }
+
