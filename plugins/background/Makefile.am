@@ -18,6 +18,8 @@ test_background_SOURCES = 		\
 test_background_CPPFLAGS = \
 	-I$(top_srcdir)/gnome-settings-daemon		\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
+	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"		\
+	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	$(AM_CPPFLAGS)
 
 test_background_CFLAGS = \
@@ -51,8 +53,7 @@ libbackground_la_CPPFLAGS = \
 	-I$(top_srcdir)/plugins/background/libbackground   \
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
 	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"		\
-	-DSBINDIR=\"$(sbindir)\"			\
-	-DLIBEXECDIR=\"$(libexecdir)\"			\
+	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	$(AM_CPPFLAGS)
 
 libbackground_la_CFLAGS = \

@@ -6,6 +6,11 @@
 #include "gsd-background-manager-private.h"
 
 #define DEEPIN_EXPORT
+//gaussian blur
+//#define BG_GAUSSIAN_PICT_PATH	"/var/cache/background/gaussian.png"
+#define BG_GAUSSIAN_PICT_PATH	"gaussian.png"
+#define BG_GAUSSIAN_SIGMA	10.0  //double
+#define BG_GAUSSIAN_NSTEPS	10UL  //long
 
 // all schema related information.
 #define	BG_SCHEMA_ID	"com.deepin.dde.background"
