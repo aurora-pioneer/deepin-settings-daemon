@@ -97,26 +97,30 @@ typedef struct _xfade_data
 static void
 start_gaussian_helper (const char* _picture_path)
 {
+    g_mkdir_with_parents (BG_GAUSSIAN_PICT_DIR, 0666);
+
+#if 0
+    //use symlink.
     //link file @_picture_path to /var/cache/background/gaussian.png"
     unlink (BG_GAUSSIAN_PICT_PATH);
     if (symlink (_picture_path, BG_GAUSSIAN_PICT_PATH))
     {
 	g_debug ("start_gaussian_helper: symlink failed");
     }
-    
+#endif 
     g_debug ("write a gaussian-blurred image to "BG_GAUSSIAN_PICT_PATH);
-    g_debug (LIBEXECDIR);
     //LIBEXECDIR is a CPP macro. see Makefile.am
     char* command;
-#if 0
-    command = g_strdup_printf ("pkexec " LIBEXECDIR "/gsd-background-helper "
+
+    command = g_strdup_printf (LIBEXECDIR "/gsd-background-helper "
 			       "%lf %lu %s",
 			       BG_GAUSSIAN_SIGMA, BG_GAUSSIAN_NSTEPS, _picture_path);
-#endif
+#if 0
+    //for testing locally.
     command = g_strdup_printf ("./gsd-background-helper "
 			       "%lf %lu %s",
 			       BG_GAUSSIAN_SIGMA, BG_GAUSSIAN_NSTEPS, _picture_path);
-
+#endif
     g_debug ("command : %s", command);
 
     GError *error = NULL;
