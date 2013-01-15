@@ -98,10 +98,13 @@ void gaussianiir2d_c(unsigned char* image_c,
 		     long width, long height, 
 		     double sigma, long numsteps)
 {
-    guint32* _image_c = (guint32*)image_c;
+    guint32* _image_i = (guint32*)image_c;
 
     //1. unsigned char* ----> float*
-    double* _image_f = g_new0 (double, width * height);
+    double* _image_f_red = g_new0 (double, width * height);
+    double* _image_f_green = g_new0 (double, width * height);
+    double* _image_f_blue = g_new0 (double, width * height);
+
     int i = 0;
     int j = 0;
 
@@ -109,27 +112,36 @@ void gaussianiir2d_c(unsigned char* image_c,
     {
 	for (j = 0; j < height; j++)
 	{
-	    _image_f[i + width * j] = (double) _image_c[i + width * j];
+	    _image_f_red[i + width * j] = (double) ((_image_i[i + width * j]&0x00ff0000)>>16);
+	    _image_f_green[i + width * j] = (double) ((_image_i[i + width * j]&0x0000ff00)>>8);
+	    _image_f_blue[i + width * j] = (double) (_image_i[i + width * j]&0x000000ff);
 	}
     }
 
     //2.
-    g_print ("begin:\n");
-    gaussianiir2d_f(_image_f, width, height, sigma, numsteps);
-    g_print ("end:\n");
+    gaussianiir2d_f(_image_f_red, width, height, sigma, numsteps);
+    gaussianiir2d_f(_image_f_green, width, height, sigma, numsteps);
+    gaussianiir2d_f(_image_f_blue, width, height, sigma, numsteps);
 
     //test: dump data
 
     //3. float* ----> unsigned char*
     i = 0;
     j = 0;
+    guint32 sum;
     for (i = 0; i < width; i++)
     {
 	for (j = 0; j < height; j++)
 	{
-	    _image_c[i + width * j] = (guint32) _image_f[i + width * j];
+#define CLAMP_COLOR(x) (guint32)((x)>255 ? 255 : (x)>=0 ? x : 0)
+	    sum = 0;
+	    sum += (CLAMP_COLOR(_image_f_red[i + width * j]) << 16);
+	    sum += (CLAMP_COLOR(_image_f_green[i + width * j]) << 8);
+	    sum += (CLAMP_COLOR(_image_f_blue[i + width * j]));
+	    _image_i[i + width * j] = sum ;
 	}
     }
-
-    g_free (_image_f);
+    g_free (_image_f_red);
+    g_free (_image_f_green);
+    g_free (_image_f_blue);
 }

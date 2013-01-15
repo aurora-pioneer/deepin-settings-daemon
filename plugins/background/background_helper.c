@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -60,7 +61,10 @@ main (int argc, char** argv)
 
     cairo_surface_write_to_png (surface, "gaussian1.png");
 
+    clock_t start = clock ();
     gaussianiir2d_c(image_data, root_width, root_height, sigma, numsteps);
+    clock_t end = clock ();
+    g_print ("time : %f\n", (end-start)/(float)CLOCKS_PER_SEC);
 
     //4. write out the picture.
     cairo_surface_write_to_png (surface, "gaussian2.png");
