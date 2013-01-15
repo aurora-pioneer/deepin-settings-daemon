@@ -55,7 +55,9 @@ static void m_settings_changed(GSettings *settings,
                                gchar *key, 
                                gpointer user_data);
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
+static void m_set_rotation(GnomeRRScreen *screen, GSettings *settings);
 
+/* TODO: backup_file xml changed handle */
 static void m_config_file_changed(GFileMonitor *monitor, 
                                   GFile *file, 
                                   GFile *other_file, 
@@ -64,11 +66,6 @@ static void m_config_file_changed(GFileMonitor *monitor,
 {
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
-
-    /*
-    printf("DEBUG m_config_file_changed %d\n", 
-           event_type);
-    */
 }
 
 static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data) 
@@ -95,6 +92,10 @@ static void m_settings_changed(GSettings *settings,
         strcmp(key, "only-monitor-shown") == 0) {
         m_set_multi_monitors(screen, settings);
         return;
+    }
+
+    if (strcmp(key, "rotation") == 0) {
+        m_set_rotation(screen, settings);
     }
 }
 
@@ -396,6 +397,16 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
         g_object_unref(config);
         config = NULL;
     }
+}
+
+static void m_set_rotation(GnomeRRScreen *screen, GSettings *settings) 
+{
+    char buffer[BUF_SIZE] = {'\0'};
+    char *rotation = NULL;
+                                                                                
+    rotation = g_settings_get_string(settings, "rotation");
+    sprintf(buffer, "xrandr -o %s", rotation);
+    system(buffer);
 }
 
 int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings) 

@@ -873,7 +873,7 @@ make_clone_setup (GsdXrandrManager *manager, GnomeRRScreen *screen)
 
                         if (best_rate > 0) {
                                 gnome_rr_output_info_set_active (info, TRUE);
-                                gnome_rr_output_info_set_rotation (info, GNOME_RR_ROTATION_0);
+                                //gnome_rr_output_info_set_rotation (info, GNOME_RR_ROTATION_0);
                                 gnome_rr_output_info_set_refresh_rate (info, best_rate);
                                 gnome_rr_output_info_set_geometry (info, 0, 0, width, height);
                         }
@@ -951,7 +951,7 @@ turn_on (GnomeRRScreen *screen,
         if (mode) {
                 gnome_rr_output_info_set_active (info, TRUE);
                 gnome_rr_output_info_set_geometry (info, x, y, gnome_rr_mode_get_width (mode), gnome_rr_mode_get_height (mode));
-                gnome_rr_output_info_set_rotation (info, GNOME_RR_ROTATION_0);
+                //gnome_rr_output_info_set_rotation (info, GNOME_RR_ROTATION_0);
                 gnome_rr_output_info_set_refresh_rate (info, gnome_rr_mode_get_freq (mode));
 
                 return TRUE;
@@ -1595,7 +1595,7 @@ handle_rotate_windows (GsdXrandrManager *mgr,
 
         /* Rotate */
 
-        gnome_rr_output_info_set_rotation (rotatable_output_info, next_rotation);
+        //gnome_rr_output_info_set_rotation (rotatable_output_info, next_rotation);
 
         success = apply_configuration (mgr, current, timestamp, show_error, TRUE);
         if (success)
@@ -1743,7 +1743,7 @@ get_allowed_rotations_for_output (GnomeRRConfig *config,
 
                 rotation_to_test = possible_rotations[i];
 
-                gnome_rr_output_info_set_rotation (output, rotation_to_test);
+                //gnome_rr_output_info_set_rotation (output, rotation_to_test);
 
                 if (gnome_rr_config_applicable (config, rr_screen, NULL)) { /* NULL-GError */
                         (*out_num_rotations)++;
@@ -1751,7 +1751,7 @@ get_allowed_rotations_for_output (GnomeRRConfig *config,
                 }
         }
 
-        gnome_rr_output_info_set_rotation (output, current_rotation);
+        //gnome_rr_output_info_set_rotation (output, current_rotation);
 
         if (*out_num_rotations == 0 || *out_rotations == 0) {
                 g_warning ("Huh, output %p says it doesn't support any rotations, and yet it has a current rotation?", output);
