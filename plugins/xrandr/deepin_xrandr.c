@@ -120,6 +120,13 @@ static void m_config_file_changed(GFileMonitor *monitor,
         }
         cur = cur->next;
     }
+
+    if (doc) {
+        xmlFreeDoc(doc);
+        doc = NULL;
+    }
+
+    xmlCleanupParser();
 }
 
 static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data) 
