@@ -1,1 +1,2 @@
-xrandr --output LVDS --mode 1024x768 --output VGA-0 --mode 1024x768 --same-as LVDS 
+xrandr --output LVDS --mode 1024x768 --output VGA-0 --mode 1024x768 --same-as LVDS
+xrandr --output LVDS --mode 800x600 --output VGA-0 --mode 800x600 --same-as LVDS

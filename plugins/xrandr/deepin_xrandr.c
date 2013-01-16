@@ -32,6 +32,7 @@
 
 static GFile *m_config_file = NULL;
 static GFileMonitor *m_config_file_monitor = NULL;
+static gboolean m_is_config_file_changed = FALSE;
 static gboolean m_is_copy_monitor = TRUE;
 static char *m_primary_output_name = NULL;
 static char *m_other_output_name = NULL;
@@ -115,9 +116,9 @@ static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur, gboolean is_clone)
         cur = cur->next;
     }
     
-    if (is_clone && m_is_copy_monitor) {
+    if (m_primary_output_name && m_other_output_name && 
+        is_clone && m_is_copy_monitor) {
         sprintf(buffer, "%sx%s", width, height);
-        printf("DEBUG same %s\n", buffer);
         m_use_mirror(m_primary_output_name, m_other_output_name, buffer);
     }
 }
@@ -138,6 +139,8 @@ static void m_config_file_changed(GFileMonitor *monitor,
 
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
+
+    m_is_config_file_changed = TRUE;
 
     filename = g_file_get_path(file);
     doc = xmlParseFile(filename);
@@ -325,8 +328,10 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
 
     if (g_settings_get_boolean(settings, "copy-multi-monitors")) {
         m_is_copy_monitor = TRUE;
-        m_get_same_mode(primary_mode, other_mode, same_mode);
-        m_use_mirror(primary_output_name, other_output_name, same_mode);
+        if (!m_is_config_file_changed) {
+            m_get_same_mode(primary_mode, other_mode, same_mode);
+            m_use_mirror(primary_output_name, other_output_name, same_mode);
+        }
         return;
     } else {
         m_is_copy_monitor = FALSE;
