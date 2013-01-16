@@ -77,9 +77,12 @@ static void m_config_file_changed(GFileMonitor *monitor,
                                   GFileMonitorEvent event_type, 
                                   gpointer user_data) 
 {
+    GnomeRRScreen *screen = (GnomeRRScreen*) user_data;
     char *filename = NULL;
     xmlDocPtr doc = NULL;
     xmlNodePtr cur = NULL;
+    char *output_name = NULL;
+    GnomeRROutput *output = NULL;
 
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
@@ -106,7 +109,15 @@ static void m_config_file_changed(GFileMonitor *monitor,
 
     cur = cur->xmlChildrenNode;
     while (cur) {
-        m_parse_output(doc, cur);
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "output")) {
+            output_name = xmlGetProp(cur, (const xmlChar *) "name");
+            if (output_name) {
+                output = gnome_rr_screen_get_output_by_name(screen, 
+                                                            output_name);
+                if (gnome_rr_output_is_connected(output)) 
+                    m_parse_output(doc, cur);
+            }
+        }
         cur = cur->next;
     }
 }
@@ -493,7 +504,7 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     g_signal_connect(m_config_file_monitor, 
                      "changed", 
                      m_config_file_changed, 
-                     NULL);
+                     screen);
 
     if (config) {
         g_object_unref(config);
