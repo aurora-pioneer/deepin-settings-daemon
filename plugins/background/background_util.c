@@ -94,10 +94,11 @@ typedef struct _xfade_data
 /*
  *	start gaussina helper in the background
  */
+#if 1
 static void
 start_gaussian_helper (const char* _picture_path)
 {
-    g_mkdir_with_parents (BG_GAUSSIAN_PICT_DIR, 0755);
+    //g_mkdir_with_parents (BG_GAUSSIAN_PICT_DIR, 0755);
 
 #if 0
     //use symlink.
@@ -108,7 +109,6 @@ start_gaussian_helper (const char* _picture_path)
 	g_debug ("start_gaussian_helper: symlink failed");
     }
 #endif 
-    g_debug ("write a gaussian-blurred image to "BG_GAUSSIAN_PICT_PATH);
     //LIBEXECDIR is a CPP macro. see Makefile.am
     char* command;
 
@@ -135,6 +135,7 @@ start_gaussian_helper (const char* _picture_path)
     g_debug ("gsd-background-helper started");
     g_free (command);
 }
+#endif
 /*
  *	change root window x properties.
  *	TODO: change set_bg_props or _change_bg_xproperties 
@@ -563,7 +564,9 @@ setup_crossfade_timer ()
 
     const char* current_picture = get_current_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
+    g_debug ("end set string");
     start_gaussian_helper (current_picture);
+    g_debug ("end helper");
 
     fade_data->end_pixbuf = get_xformed_gdk_pixbuf (current_picture);
 
@@ -651,6 +654,7 @@ bg_settings_picture_uris_changed (GSettings *settings, gchar *key, gpointer user
     if (g_strcmp0 (key, BG_PICTURE_URIS))
 	return;
 
+    g_debug ("picture_uris changed");
     g_ptr_array_free (picture_paths, TRUE);
     picture_paths = g_ptr_array_new_with_free_func (destroy_picture_path);
     picture_num = 0;
@@ -662,7 +666,9 @@ bg_settings_picture_uris_changed (GSettings *settings, gchar *key, gpointer user
 
     const char* current_picture = get_current_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
+    g_debug ("end set string");
     start_gaussian_helper (current_picture);
+    g_debug ("end helper");
 #if 0
     GdkPixbuf* pb = get_xformed_gdk_pixbuf (current_picture);
     g_assert (pb != NULL);
@@ -782,7 +788,9 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
 
     const char* current_picture = get_current_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
+    g_debug ("end set string");
     start_gaussian_helper (current_picture);
+    g_debug ("end helper");
 
     GdkPixbuf* pb = get_xformed_gdk_pixbuf (current_picture);
 

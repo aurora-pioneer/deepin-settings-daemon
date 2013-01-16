@@ -7,22 +7,23 @@
 
 #define DEEPIN_EXPORT
 //gaussian blur
-#define BG_GAUSSIAN_PICT_PATH	"/var/cache/background/gaussian.png"
-#define BG_GAUSSIAN_PICT_DIR	"/var/cache/background"
-//#define BG_GAUSSIAN_PICT_PATH	"gaussian.png"
+#define BG_GAUSSIAN_PICT_NAME	".deepin_background_gaussian.png"
+//#define BG_GAUSSIAN_PICT_PATH	"/var/cache/background/gaussian.png"
+//not used#define BG_GAUSSIAN_PICT_DIR	"/var/cache/background"
+//for test#define BG_GAUSSIAN_PICT_PATH	"gaussian.png"
 
 #define BG_GAUSSIAN_SIGMA	10.0  //double
 #define BG_GAUSSIAN_NSTEPS	10UL  //long
 
 // all schema related information.
-#define	BG_SCHEMA_ID	"com.deepin.dde.background"
+#define	BG_SCHEMA_ID		"com.deepin.dde.background"
 
-#define BG_FPS		30		//in my implementation, the actual fps may not be 30.
+#define BG_FPS			30		//in my implementation, the actual fps may not be 30.
 
-#define	BG_CURRENT_PICT "current-picture"
-#define BG_PICTURE_URIS	"picture-uris" //better renamed to picture-URIs
-#define DELIMITER	';'		//picture-uri string delimiter 
-#define BG_BG_DURATION	"background-duration"
+#define	BG_CURRENT_PICT		"current-picture"
+#define BG_PICTURE_URIS		"picture-uris" //better renamed to picture-URIs
+#define DELIMITER		';'		//picture-uri string delimiter 
+#define BG_BG_DURATION		"background-duration"
 #define BG_XFADE_MANUAL_INTERVAL "cross-fade-manual-interval"     //manually change background
 #define BG_XFADE_AUTO_INTERVAL	 "cross-fade-auto-interval"       //automatically change background
 #define BG_XFADE_AUTO_MODE	 "cross-fade-auto-mode"		  //how next picture is chosen, random, or 

@@ -17,6 +17,7 @@ main (int argc, char** argv)
     gtk_init (&argc, &argv);
     //0. parse arguments.
     const char* picture_path = NULL;
+    char* dest_picture_path = NULL;
     double sigma = 0;
     long numsteps = 0; //numsteps should be >=4 
 
@@ -33,10 +34,14 @@ main (int argc, char** argv)
     sigma = g_strtod (argv[1], NULL);
     numsteps = (long) g_strtod (argv[2], NULL);
     picture_path = g_strdup (argv[3]);
+    dest_picture_path = g_build_filename(g_get_tmp_dir (),
+					 BG_GAUSSIAN_PICT_NAME,
+					 NULL);
 #if 1
     g_print ("sigma: %f\n", sigma);
     g_print ("numsteps: %ld\n", numsteps);
     g_print ("picture_path: %s\n", picture_path);
+    g_print ("dest_picture_path: %s\n", dest_picture_path);
 #endif 
 
     //1. get screen size
@@ -47,6 +52,7 @@ main (int argc, char** argv)
     root_width = gdk_screen_get_width (gdkscreen);
     root_height = gdk_screen_get_height (gdkscreen);
 
+    cairo_status_t status = CAIRO_STATUS_SUCCESS;
     //2. create a cairo surface and draw background onto it.
     cairo_surface_t* surface = NULL;
     cairo_t* cr = NULL;
@@ -61,7 +67,8 @@ main (int argc, char** argv)
     cairo_surface_flush (surface);
     //original pictures.
 #if 1
-    cairo_surface_write_to_png (surface, BG_GAUSSIAN_PICT_PATH);
+    unlink (dest_picture_path);
+    cairo_surface_write_to_png (surface, dest_picture_path);
 #endif
 
     //3. IIR gaussian blur previous created surface.
@@ -72,22 +79,26 @@ main (int argc, char** argv)
     if ((format == CAIRO_FORMAT_ARGB32) || (format == CAIRO_FORMAT_RGB24)) 
 	image_data = cairo_image_surface_get_data (surface);
 
-
     clock_t start = clock ();
     gaussianiir2d_c(image_data, root_width, root_height, sigma, numsteps);
     clock_t end = clock ();
     g_print ("time : %f\n", (end-start)/(float)CLOCKS_PER_SEC);
 
     //4. write out the picture.
-#if 0
-    if we use symlink, uncomment this
-    unlink (BG_GAUSSIAN_PICT_PATH);
+#if 1
+    //if we use symlink, uncomment this
+    unlink (dest_picture_path);
 #endif
     cairo_surface_mark_dirty (surface);
-    cairo_surface_write_to_png (surface, BG_GAUSSIAN_PICT_PATH);
+    status = cairo_surface_write_to_png (surface, dest_picture_path);
+    if (status)
+    {
+	g_print ("gsd-background-helper: cairo status: %d", status);
+    }
 
     cairo_destroy (cr);
     cairo_surface_destroy (surface);
+    g_free (dest_picture_path);
 
     return 0;
 }
