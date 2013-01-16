@@ -55,7 +55,20 @@ static void m_settings_changed(GSettings *settings,
                                gchar *key, 
                                gpointer user_data);
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
-static void m_set_rotation(GnomeRRScreen *screen, GSettings *settings);
+static void m_set_rotation(char *rotation);
+
+static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur);
+
+static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur) 
+{
+    cur = cur->xmlChildrenNode;
+    while (cur) {
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "rotation")) {
+            m_set_rotation(xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+        }
+        cur = cur->next;
+    }
+}
 
 /* TODO: backup_file xml changed handle */
 static void m_config_file_changed(GFileMonitor *monitor, 
@@ -64,8 +77,38 @@ static void m_config_file_changed(GFileMonitor *monitor,
                                   GFileMonitorEvent event_type, 
                                   gpointer user_data) 
 {
+    char *filename = NULL;
+    xmlDocPtr doc = NULL;
+    xmlNodePtr cur = NULL;
+
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
+
+    filename = g_file_get_path(file);
+    doc = xmlParseFile(filename);
+    if (!doc) 
+        return;
+
+    cur = xmlDocGetRootElement(doc);
+    if (!cur) {
+        xmlFreeDoc(doc);
+        return;
+    }
+
+    cur = cur->xmlChildrenNode;
+    while (cur && xmlIsBlankNode(cur))  
+        cur = cur->next;
+
+    if (!cur) {
+        xmlFreeDoc(doc);
+        return;
+    }
+
+    cur = cur->xmlChildrenNode;
+    while (cur) {
+        m_parse_output(doc, cur);
+        cur = cur->next;
+    }
 }
 
 static void m_screen_changed(GnomeRRScreen *screen, gpointer user_data) 
@@ -92,10 +135,6 @@ static void m_settings_changed(GSettings *settings,
         strcmp(key, "only-monitor-shown") == 0) {
         m_set_multi_monitors(screen, settings);
         return;
-    }
-
-    if (strcmp(key, "rotation") == 0) {
-        m_set_rotation(screen, settings);
     }
 }
 
@@ -399,12 +438,10 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
     }
 }
 
-static void m_set_rotation(GnomeRRScreen *screen, GSettings *settings) 
+static void m_set_rotation(char *rotation) 
 {
     char buffer[BUF_SIZE] = {'\0'};
-    char *rotation = NULL;
-                                                                                
-    rotation = g_settings_get_string(settings, "rotation");
+    
     sprintf(buffer, "xrandr -o %s", rotation);
     system(buffer);
 }

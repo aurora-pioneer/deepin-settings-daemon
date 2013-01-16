@@ -45,10 +45,5 @@
       <_summary>Only which monitor shown</_summary>
       <_description>Only which monitor shown</_description>
     </key>
-    <key name="rotation" type="s">
-      <default>'normal'</default>
-      <_summary>Rotation</_summary>
-      <_description>Rotation</_description>
-    </key>
   </schema>
 </schemalist>
