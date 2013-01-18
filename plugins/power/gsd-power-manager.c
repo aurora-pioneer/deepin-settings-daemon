@@ -3,6 +3,8 @@
  * Copyright (C) 2007 William Jon McCann <mccann@jhu.edu>
  * Copyright (C) 2011 Richard Hughes <richard@hughsie.com>
  * Copyright (C) 2011 Ritesh Khadgaray <khadgaray@gmail.com>
+ * Copyright (C) 2013 Deepin, Inc.
+ *                    Zhai Xiang <zhaixiang@linuxdeepin.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +44,7 @@
 #include "gnome-settings-session.h"
 #include "gsd-enums.h"
 #include "gsd-power-manager.h"
+#include "deepin_power.h"
 
 #define GNOME_SESSION_DBUS_NAME                 "org.gnome.SessionManager"
 #define GNOME_SESSION_DBUS_PATH                 "/org/gnome/SessionManager"
@@ -3121,7 +3124,7 @@ idle_is_session_idle (GsdPowerManager *manager)
         return ret;
 }
 
-static gboolean
+static gboolean 
 idle_is_session_inhibited (GsdPowerManager *manager, guint mask)
 {
         gboolean ret;
@@ -3206,7 +3209,8 @@ static void idle_evaluate(GsdPowerManager *manager)
             g_source_remove (manager->priv->timeout_sleep_id);
             manager->priv->timeout_sleep_id = 0;
         }
-        /* TODO: DEBUG return; */
+        /* TODO: DEBUG */
+        return;
     }
 
         /* are we inhibited from going idle */
@@ -3420,6 +3424,7 @@ session_proxy_ready_cb (GObject *source_object,
         }
         g_signal_connect (manager->priv->session_proxy, "g-signal",
                           G_CALLBACK (idle_dbus_signal_cb), manager);
+        deepin_power_init(manager->priv->session_proxy, manager->priv->settings);
 }
 
 static void
@@ -3840,6 +3845,8 @@ void
 gsd_power_manager_stop (GsdPowerManager *manager)
 {
         g_debug ("Stopping power manager");
+    
+        deepin_power_cleanup();
 
         if (manager->priv->bus_cancellable != NULL) {
                 g_cancellable_cancel (manager->priv->bus_cancellable);

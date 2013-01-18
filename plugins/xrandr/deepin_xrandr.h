@@ -1,6 +1,6 @@
 /* 
- * Copyright (C) 2012 Deepin, Inc.
- *               2012 Zhai Xiang
+ * Copyright (C) 2012 ~ 2013 Deepin, Inc.
+ *               2012 ~ 2013 Zhai Xiang
  *
  * Author:     Zhai Xiang <zhaixiang@linuxdeepin.com>
  * Maintainer: Zhai Xiang <zhaixiang@linuxdeepin.com>
@@ -23,6 +23,6 @@
 #define DEEPIN_XRANDR_H
 
 int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings);
-void deepin_xrand_cleanup();
+void deepin_xrandr_cleanup();
 
 #endif /* DEEPIN_XRANDR_H */
