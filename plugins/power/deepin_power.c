@@ -38,17 +38,6 @@ static GtkWidget *m_window = NULL;
 static guint m_cookie = 0;
 
 static void m_on_setup_inhibit(GtkWidget *widget, gpointer user_data);
-static void m_inhibit_cb(GObject *source_object,                                
-                         GAsyncResult *res,                                     
-                         gpointer user_data);
-
-static void m_inhibit_cb(GObject *source_object, 
-                         GAsyncResult *res, 
-                         gpointer user_data) 
-{
-    
-    return;
-}
 
 static void m_on_setup_inhibit(GtkWidget *widget, gpointer user_data) 
 {
