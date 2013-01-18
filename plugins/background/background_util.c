@@ -36,7 +36,7 @@
 
 
 #define USEC_PER_SEC 1000000.0 // microseconds per second 
-#define MSEC_PER_SEC 1000.0    // milliseconds per second 
+#define MSEC_PER_SEC 1000.0    // milliseconds per second
 #define TIME_PER_FRAME	1.0/BG_FPS  // the interval between contingent frames
 //
 static GPtrArray *picture_paths;		//an array of picture paths (strings).
@@ -44,6 +44,8 @@ static guint	picture_num;		//number of pictures in GPtrArray.
 static guint	picture_index;		// the next background picture.
 //this is only used update current image in the gsettings
 static GSettings *Settings;
+//connect to AccountService DBus. and register background path
+static GDBusProxy* AccountsProxy = NULL;
 
 static gulong	gsettings_background_duration;
 static gulong	gsettings_xfade_auto_interval; //use this time only when we use 
@@ -774,6 +776,96 @@ bg_settings_draw_mode_changed (GSettings *settings, gchar *key, gpointer user_da
     setup_timers ();
 }
 
+static void
+register_account_service_background_path (const char* current_picture)
+{
+    GError* error = NULL;
+
+    if (AccountsProxy == NULL)
+    {
+	int flags = G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES|
+		    G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS;
+	
+        GDBusProxy* _proxy = NULL;
+	_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+						flags,
+						NULL,
+						"org.freedesktop.Accounts",
+						"/org/freedesktop/Accounts",
+						"org.freedesktop.Accounts",
+						NULL,
+						&error);
+	if (error != NULL)
+	{
+	    g_debug ("connect org.freedesktop.Accounts failed");
+	    g_error_free (error);
+	}
+
+	gint64 user_id = 0;
+	user_id = (gint64)geteuid ();
+	g_print ("call FindUserById: uid = %i\n", user_id);
+
+        GVariant* object_path_var = NULL;
+	error = NULL;
+	object_path_var = g_dbus_proxy_call_sync (_proxy, "FindUserById",
+						  g_variant_new ("(x)", user_id),
+						  G_DBUS_CALL_FLAGS_NONE,
+						  -1,
+						  NULL,
+						  &error);
+	if (error != NULL)
+	{
+	    g_debug ("FindUserById: %s", error->message);
+	    g_error_free (error);
+	}
+
+	char* object_path = NULL;
+	g_variant_get (object_path_var, "(o)", &object_path);
+	g_print ("object_path : %s\n", object_path);
+
+	g_variant_unref (object_path_var);
+	g_object_unref (_proxy);
+
+	//yeah, setup another proxy to set background
+	AccountsProxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+						       flags,
+						       NULL,
+						       "org.freedesktop.Accounts",
+						       object_path,
+						       "org.freedesktop.Accounts.User",
+						       NULL,
+						       &error);
+	if (error != NULL)
+	{
+	    g_debug ("connect to %s failed", object_path);
+	    g_error_free (error);
+	}
+	g_free (object_path);
+    }
+    
+    error = NULL;
+    g_dbus_proxy_call_sync (AccountsProxy, 
+			    "SetBackgroundFile",
+			    g_variant_new("(s)",current_picture),
+			    G_DBUS_CALL_FLAGS_NONE,
+			    -1, 
+			    NULL, 
+			    &error);
+    if (error != NULL)
+    {
+	g_debug ("org.freedesktop.Accounts.User: SetBackgroundFile %s failed", current_picture);
+	g_error_free (error);
+    }
+}
+static void
+bg_settings_current_picture_changed (GSettings *settings, gchar *key, gpointer user_data)
+{
+    if (g_strcmp0 (key, BG_CURRENT_PICT))
+	return;
+    const char* cur_pict = g_settings_get_string (settings, BG_CURRENT_PICT);
+
+    register_account_service_background_path (cur_pict);
+}
 
 static void 
 screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
@@ -949,6 +1041,9 @@ bg_util_init (GsdBackgroundManager* manager)
 		      G_CALLBACK (bg_settings_xfade_auto_mode_changed), NULL);
     g_signal_connect (manager->priv->settings, "changed::draw-mode",
 		      G_CALLBACK (bg_settings_draw_mode_changed), NULL);
+    //serialize access to current_picture.
+    g_signal_connect (manager->priv->settings, "changed::current-picture",
+		      G_CALLBACK (bg_settings_current_picture_changed), NULL);
 
     initial_setup (manager->priv->settings);
 }
