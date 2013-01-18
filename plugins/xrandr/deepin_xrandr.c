@@ -32,6 +32,10 @@
 
 static GFile *m_config_file = NULL;
 static GFileMonitor *m_config_file_monitor = NULL;
+static gboolean m_is_config_file_changed = FALSE;
+static gboolean m_is_copy_monitor = TRUE;
+static char *m_primary_output_name = NULL;
+static char *m_other_output_name = NULL;
 
 static void m_config_file_changed(GFileMonitor *monitor, 
                                   GFile *file, 
@@ -56,17 +60,66 @@ static void m_settings_changed(GSettings *settings,
                                gpointer user_data);
 static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
 static void m_set_rotation(char *rotation);
+static void m_parse_configuration(xmlDocPtr doc, 
+                                  xmlNodePtr cur, 
+                                  GnomeRRScreen *screen);
+static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur, gboolean is_clone);
 
-static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur);
-
-static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur) 
+static void m_parse_configuration(xmlDocPtr doc, 
+                                  xmlNodePtr cur, 
+                                  GnomeRRScreen *screen) 
 {
+    char *output_name = NULL;                       
+    char *clone = NULL;
+    GnomeRROutput *output = NULL;
+    gboolean is_clone = FALSE;
+
+    cur = cur->xmlChildrenNode;                                                 
+    while (cur) {                                                               
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "clone")) {                 
+            clone = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+            if (strcmp(clone, "yes") == 0) 
+                is_clone = TRUE;
+            else 
+                is_clone = FALSE;
+        }                                                                       
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "output")) {                
+            output_name = xmlGetProp(cur, (const xmlChar *) "name");            
+            if (output_name) {                                                  
+                output = gnome_rr_screen_get_output_by_name(screen,             
+                                                            output_name);          
+                if (gnome_rr_output_is_connected(output))                       
+                    m_parse_output(doc, cur, is_clone);                                   
+            }                                                                   
+        }                                                                       
+        cur = cur->next;                                                        
+    }         
+}
+
+static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur, gboolean is_clone) 
+{
+    char *width = NULL;
+    char *height = NULL;
+    char buffer[BUF_SIZE] = {'\0'};
+
     cur = cur->xmlChildrenNode;
     while (cur) {
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "width")) {                 
+            width = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1); 
+        }  
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "height")) {                 
+            height = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1); 
+        }  
         if (!xmlStrcmp(cur->name, (const xmlChar *) "rotation")) {
             m_set_rotation(xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
         }
         cur = cur->next;
+    }
+    
+    if (m_primary_output_name && m_other_output_name && 
+        is_clone && m_is_copy_monitor) {
+        sprintf(buffer, "%sx%s", width, height);
+        m_use_mirror(m_primary_output_name, m_other_output_name, buffer);
     }
 }
 
@@ -77,12 +130,17 @@ static void m_config_file_changed(GFileMonitor *monitor,
                                   GFileMonitorEvent event_type, 
                                   gpointer user_data) 
 {
+    GnomeRRScreen *screen = (GnomeRRScreen*) user_data;
     char *filename = NULL;
     xmlDocPtr doc = NULL;
     xmlNodePtr cur = NULL;
+    char *output_name = NULL;
+    GnomeRROutput *output = NULL;
 
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
+
+    m_is_config_file_changed = TRUE;
 
     filename = g_file_get_path(file);
     doc = xmlParseFile(filename);
@@ -96,17 +154,10 @@ static void m_config_file_changed(GFileMonitor *monitor,
     }
 
     cur = cur->xmlChildrenNode;
-    while (cur && xmlIsBlankNode(cur))  
-        cur = cur->next;
-
-    if (!cur) {
-        xmlFreeDoc(doc);
-        return;
-    }
-
-    cur = cur->xmlChildrenNode;
-    while (cur) {
-        m_parse_output(doc, cur);
+    while (cur) { 
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "configuration")) {
+            m_parse_configuration(doc, cur, screen);
+        }
         cur = cur->next;
     }
 }
@@ -272,10 +323,18 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
     if (!primary_output_name || !other_output_name) 
         return;
 
+    m_primary_output_name = primary_output_name;
+    m_other_output_name = other_output_name;
+
     if (g_settings_get_boolean(settings, "copy-multi-monitors")) {
-        m_get_same_mode(primary_mode, other_mode, same_mode);
-        m_use_mirror(primary_output_name, other_output_name, same_mode);
+        m_is_copy_monitor = TRUE;
+        if (!m_is_config_file_changed) {
+            m_get_same_mode(primary_mode, other_mode, same_mode);
+            m_use_mirror(primary_output_name, other_output_name, same_mode);
+        }
         return;
+    } else {
+        m_is_copy_monitor = FALSE;
     }
 
     if (g_settings_get_boolean(settings, "extend-multi-monitors")) {
@@ -456,6 +515,8 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     if (!config) 
         return -1;
 
+    m_is_copy_monitor = g_settings_get_boolean(settings, "copy-multi-monitors");
+
     /* TODO: GnomeRRScreen changed event */
     g_signal_connect(screen, "changed", m_screen_changed, settings);
     
@@ -493,7 +554,7 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     g_signal_connect(m_config_file_monitor, 
                      "changed", 
                      m_config_file_changed, 
-                     NULL);
+                     screen);
 
     if (config) {
         g_object_unref(config);

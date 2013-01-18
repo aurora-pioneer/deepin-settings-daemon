@@ -3079,6 +3079,7 @@ idle_set_mode (GsdPowerManager *manager, GsdPowerIdleMode mode)
         }
 }
 
+/* TODO: double check it */
 static gboolean
 idle_blank_cb (GsdPowerManager *manager)
 {
@@ -3186,28 +3187,27 @@ idle_sleep_cb (GsdPowerManager *manager)
         return FALSE;
 }
 
-static void
-idle_evaluate (GsdPowerManager *manager)
+static void idle_evaluate(GsdPowerManager *manager)
 {
-        gboolean is_idle_inhibited;
-        guint timeout_blank;
-        guint timeout_sleep;
-        gboolean on_battery;
+    gboolean is_idle_inhibited;
+    guint timeout_blank;
+    guint timeout_sleep;
+    gboolean on_battery;
 
-        /* check we are really idle */
-        if (!manager->priv->x_idle) {
-                idle_set_mode (manager, GSD_POWER_IDLE_MODE_NORMAL);
-                g_debug ("X not idle");
-                if (manager->priv->timeout_blank_id != 0) {
-                        g_source_remove (manager->priv->timeout_blank_id);
-                        manager->priv->timeout_blank_id = 0;
-                }
-                if (manager->priv->timeout_sleep_id != 0) {
-                        g_source_remove (manager->priv->timeout_sleep_id);
-                        manager->priv->timeout_sleep_id = 0;
-                }
-                return;
+    /* check we are really idle */
+    if (!manager->priv->x_idle) {
+        idle_set_mode (manager, GSD_POWER_IDLE_MODE_NORMAL);
+        g_debug ("X not idle");
+        if (manager->priv->timeout_blank_id != 0) {
+            g_source_remove (manager->priv->timeout_blank_id);
+            manager->priv->timeout_blank_id = 0;
         }
+        if (manager->priv->timeout_sleep_id != 0) {
+            g_source_remove (manager->priv->timeout_sleep_id);
+            manager->priv->timeout_sleep_id = 0;
+        }
+        /* TODO: DEBUG return; */
+    }
 
         /* are we inhibited from going idle */
         is_idle_inhibited = idle_is_session_inhibited (manager,
@@ -3235,6 +3235,7 @@ idle_evaluate (GsdPowerManager *manager)
         /* set up blank callback even when session is not idle,
          * but only if we actually want to blank. */
         on_battery = up_client_get_on_battery (manager->priv->up_client);
+        /* TODO: DEBUG it */
         if (on_battery) {
                 timeout_blank = g_settings_get_int (manager->priv->settings,
                                                     "sleep-display-battery");
