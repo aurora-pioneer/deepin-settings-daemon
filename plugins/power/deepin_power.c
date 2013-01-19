@@ -109,6 +109,7 @@ void deepin_power_init(GDBusProxy *session_proxy, GSettings *settings)
     
     m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_opacity(m_window, 0.0);
+    gtk_window_set_default_size(m_window, 0, 0);
     gtk_window_set_skip_taskbar_hint(m_window, FALSE);
     g_signal_connect(m_window, "show", G_CALLBACK(m_on_setup_inhibit), NULL);
     gtk_widget_show(m_window);
