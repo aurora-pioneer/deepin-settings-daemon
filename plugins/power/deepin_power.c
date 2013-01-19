@@ -26,10 +26,10 @@
 #define APP_ID "deepin-settings-daemon"
 
 typedef enum {                                                                  
-    GSM_INHIBITOR_FLAG_LOGOUT      = 1 << 0,                                
-    GSM_INHIBITOR_FLAG_SWITCH_USER = 1 << 1,                                
-    GSM_INHIBITOR_FLAG_SUSPEND     = 1 << 2,
-    GSM_INHIBITOR_FLAG_IDLE        = 1 << 4,
+    GSM_INHIBITOR_FLAG_LOGOUT      = 1,                                
+    GSM_INHIBITOR_FLAG_SWITCH_USER = 2,                                
+    GSM_INHIBITOR_FLAG_SUSPEND     = 4,
+    GSM_INHIBITOR_FLAG_IDLE        = 8,
 } GsmInhibitFlag;                                                 
 
 static GDBusProxy *m_session_proxy = NULL;
@@ -58,7 +58,7 @@ static void m_on_setup_inhibit(GtkWidget *widget, gpointer user_data)
             GSM_INHIBITOR_FLAG_IDLE;
     */
 
-    flags = GSM_INHIBITOR_FLAG_SUSPEND | GSM_INHIBITOR_FLAG_IDLE;
+    flags = GSM_INHIBITOR_FLAG_IDLE;
 
     retval = g_dbus_proxy_call_sync(m_session_proxy, 
                                     "Inhibit", 
@@ -107,13 +107,12 @@ void deepin_power_init(GDBusProxy *session_proxy, GSettings *settings)
     m_session_proxy = session_proxy;
     m_settings = settings;
     
-    /*
     m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_opacity(m_window, 0.0);
     gtk_window_set_skip_taskbar_hint(m_window, FALSE);
     g_signal_connect(m_window, "show", G_CALLBACK(m_on_setup_inhibit), NULL);
     gtk_widget_show(m_window);
     gtk_widget_set_visible(m_window, FALSE);
-    */
 }
 
 void deepin_power_cleanup() 
