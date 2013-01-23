@@ -71,18 +71,18 @@
       <description>The action to take when the system suspend button is pressed.</description>
     </key>
     <key name="button-hibernate" enum="org.gnome.settings-daemon.GsdPowerActionType">
-      <default>'hibernate'</default>
+      <default>'suspend'</default>
       <summary>Hibernate button action</summary>
       <description>The action to take when the system hibernate button is pressed.</description>
     </key>
     <key name="button-sleep" enum="org.gnome.settings-daemon.GsdPowerActionType">
-      <default>'hibernate'</default>
+      <default>'suspend'</default>
       <summary>Sleep button action</summary>
       <description>The action to take when the system sleep (non-specific type) button is pressed.</description>
     </key>
     <!-- See https://bugzilla.gnome.org/show_bug.cgi?id=652183 for rationale -->
     <key name="button-power" enum="org.gnome.settings-daemon.GsdPowerActionType">
-      <default>'suspend'</default>
+      <default>'shutdown'</default>
       <summary>Power button action</summary>
       <description>The action to take when the system power button is pressed.</description>
     </key>
