@@ -419,6 +419,7 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
     GnomeRROutputInfo **output_infos = NULL;
     GnomeRROutput **outputs = NULL;
     char output_name[BUF_SIZE];
+    char *rr_output_name = NULL;
     gchar **strv = NULL;
     int count = 0;
     int i = 0;
@@ -451,10 +452,15 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
     while (outputs[i] && output_infos[i]) {
         memset(output_name, 0, BUF_SIZE);
         if (gnome_rr_output_is_connected(outputs[i])) { 
-            sprintf(output_name, 
-                    "%s (%s)", 
-                    gnome_rr_output_info_get_display_name(output_infos[i]), 
-                    gnome_rr_output_get_name(outputs[i]));
+            rr_output_name = gnome_rr_output_get_name(outputs[i]);
+            if (strcmp(rr_output_name, "default") == 0) {
+                sprintf(output_name, "%s (%s)", "PC", rr_output_name);
+            } else {
+                sprintf(output_name, 
+                        "%s (%s)", 
+                        gnome_rr_output_info_get_display_name(output_infos[i]), 
+                        gnome_rr_output_get_name(outputs[i]));
+            }
         } else 
             strcpy(output_name, "NULL");
 
