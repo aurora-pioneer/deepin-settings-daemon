@@ -208,7 +208,7 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
         return;
 
     value = g_settings_get_double(settings, "brightness");
-    if (value <= 0.1 || value > 1.0) 
+    if (value < 0.1 || value > 1.0) 
         return;
 
     while (output_infos[i]) {
