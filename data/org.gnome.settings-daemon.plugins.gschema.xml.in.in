@@ -107,6 +107,56 @@
       <_summary>Priority to use for this plugin</_summary>
       <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
     </key>
+    <key name="key1" type="s">                                                  
+      <default>''</default>                                                        
+      <_summary>Key1</_summary>                                                 
+      <_description>Key1</_description>                                            
+    </key>      
+    <key name="key2" type="s">                                                  
+      <default>''</default>                                                        
+      <_summary>Key2</_summary>                                                 
+      <_description>Key2</_description>                                            
+    </key>      
+    <key name="key3" type="s">                                                  
+      <default>''</default>                                                        
+      <_summary>Key3</_summary>                                                 
+      <_description>Key3</_description>                                            
+    </key>      
+    <key name="key4" type="s">                                                  
+      <default>''</default>                                                        
+      <_summary>Key4</_summary>                                                 
+      <_description>Key4</_description>                                            
+    </key>      
+    <key name="key5" type="s">                                                  
+      <default>''</default>                                                        
+      <_summary>Key5</_summary>                                                 
+      <_description>Key5</_description>                                            
+    </key> 
+    <key name="key6" type="s">                                                  
+      <default>''</default>                                                     
+      <_summary>Key6</_summary>                                                 
+      <_description>Key6</_description>                                         
+    </key>                                                                      
+    <key name="key7" type="s">                                                  
+      <default>''</default>                                                     
+      <_summary>Key7</_summary>                                                 
+      <_description>Key7</_description>                                         
+    </key>                                                                      
+    <key name="key8" type="s">                                                  
+      <default>''</default>                                                     
+      <_summary>Key8</_summary>                                                 
+      <_description>Key8</_description>                                         
+    </key>                                                                      
+    <key name="key9" type="s">                                                  
+      <default>''</default>                                                     
+      <_summary>Key9</_summary>                                                 
+      <_description>Key9</_description>                                         
+    </key>                                                                      
+    <key name="key10" type="s">                                                  
+      <default>''</default>                                                     
+      <_summary>Key10</_summary>                                                 
+      <_description>Key10</_description>                                         
+    </key>                    
   </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.mouse" path="/org/gnome/settings-daemon/plugins/mouse/">
     <key name="active" type="b">
