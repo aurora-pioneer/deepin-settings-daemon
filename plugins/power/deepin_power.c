@@ -19,6 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <X11/Xlib.h>
 #include <gtk/gtk.h>
 #include <gio/gio.h>
 #include <dbus/dbus-glib.h>
@@ -34,12 +35,13 @@ typedef enum {
 
 static GDBusProxy *m_session_proxy = NULL;
 static GSettings *m_settings = NULL;
-static GtkWidget *m_window = NULL;
+static Display *m_display = NULL;                                               
+static Window m_window;
 static guint m_cookie = 0;
 
-static void m_on_setup_inhibit(GtkWidget *widget, gpointer user_data);
+static void m_do_inhibit();
 
-static void m_on_setup_inhibit(GtkWidget *widget, gpointer user_data) 
+static void m_do_inhibit() 
 {
     GVariant *retval = NULL;
     GError *error = NULL;
@@ -47,9 +49,11 @@ static void m_on_setup_inhibit(GtkWidget *widget, gpointer user_data)
     guint toplevel_xid = 0;                            
     guint flags = 0;
 
-    toplevel_xid = gdk_x11_window_get_xid(gtk_widget_get_window(m_window));
-    if (!toplevel_xid) 
+    toplevel_xid = m_window;
+    if (!toplevel_xid) { 
+        printf("DEBUG fail to get window xid\n");
         return;
+    }
 
     /* TODO: HACKER it is VIRUS!!!
     flags = GSM_INHIBITOR_FLAG_LOGOUT | 
@@ -98,6 +102,8 @@ static void m_do_uninhibit()
 
 void deepin_power_init(GDBusProxy *session_proxy, GSettings *settings) 
 {
+    XSetWindowAttributes attrib;
+        
     if (!session_proxy) 
         return;
 
@@ -106,14 +112,24 @@ void deepin_power_init(GDBusProxy *session_proxy, GSettings *settings)
 
     m_session_proxy = session_proxy;
     m_settings = settings;
-    
-    m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_opacity(m_window, 0.0);
-    gtk_window_set_default_size(m_window, 0, 0);
-    gtk_window_set_skip_taskbar_hint(m_window, TRUE);
-    g_signal_connect(m_window, "show", G_CALLBACK(m_on_setup_inhibit), NULL);
-    gtk_widget_show(m_window);
-    gtk_widget_set_visible(m_window, FALSE);
+
+    m_display= XOpenDisplay(NULL);
+    if (!m_display) 
+        return;
+
+    m_window = XCreateWindow(m_display,                                         
+                             DefaultRootWindow(m_display),                      
+                             0,                                                 
+                             0,                                                 
+                             0,                                               
+                             0,                                               
+                             0,                                                
+                             CopyFromParent,                                    
+                             InputOnly,                                       
+                             CopyFromParent,                                    
+                             0/*CWOverrideRedirect*/,                           
+                             &attrib);           
+    m_do_inhibit(); 
 }
 
 void deepin_power_cleanup() 
