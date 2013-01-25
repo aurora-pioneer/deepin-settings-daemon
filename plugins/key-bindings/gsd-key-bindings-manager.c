@@ -170,78 +170,24 @@ key_bindings_settings_changed (GSettings *settings, gchar *gsettings_key, gpoint
 	g_debug ("keybindings changed: %s : %s", gsettings_key, _string);
 
 	KeysAndCmd* _kandc_ptr = gsd_kb_util_parse_gsettings_value (gsettings_key, _string);
-	//1. if 
+	//1. new value is NULL, unbind previous keybindings
 	if (_kandc_ptr == NULL) //remove a previous key bindings.
 	{
 		g_hash_table_remove (_priv->gsettings_ht, gsettings_key);
 		return ;
 	}
-
+	//2. new value is not NULL, unbind previous keybindings.
+	//   and bind new keybindings.
 	g_hash_table_replace (_priv->gsettings_ht, g_strdup (gsettings_key), _kandc_ptr);
 
+	//3. this is the actual binding operation. this must
+	//   follow g_hash_table_replace. 
 	KeybinderHandler _handler = gsd_kb_handler_default;
 
 	g_debug ("bind %s -----> %s", _kandc_ptr->keystring, _kandc_ptr->cmdstring);
 	keybinder_bind (_kandc_ptr->keystring, _handler, _kandc_ptr->cmdstring);
-	
-	//-------------------------------------
-#if 0
-	//1. check gsettings_ht: key---> command string.
-	char* _prev_command_name1 = g_hash_table_lookup (_priv->keybindings_ht,
-							 gsettings_key);	
-	if (_prev_command_name1 != NULL)
-	{
-		//remove a keybinding from keybindings_ht.
-		g_hash_table_remove (_priv->keybindings_ht, _prev_command_name1);
-		//
-	}
-	
-	if (_str == NULL)	
-	{
-	    return;
-	}
-	else	//replace a key binding.
-	{
-	    
-	}
-
-
-
-
-	GHashTable* _keybindings_ht = (GHashTable*) user_data;
-	char* _str = g_settings_get_string (settings, key);
-
-	if (check_is_default(key))
-	{
-	    //default key bindings
-	}
-	else
-	{
-	    //empty slots:   <command> ';' <keys>
-	    char* _tmp = strchr (_str, BINDING_DELIMITER);
-	    *_tmp = NULL; //split _str into to two strings.
-	    char* _command_name = g_strdup (g_strstrip (_str));
-	    char* _keystring = g_strdup (g_strstrip (_tmp+1));
-
-	    g_debug ("keybindings: %s ----> %s", _keystring, _command_name);
-
-	    KeysAndHandler* kandh_ptr = gsd_kb_util_keys_and_handler_new (_command_name);
-
-	    char* _prev_command_name = NULL;
-	    KeysAndHandler* _prev_kandh_ptr = NULL;
-	    if (g_hash_table_lookup_extended (_keybindings_ht, _command_name, 
-					      &_prev_command_name, &_prev_kandh_ptr))
-	    {
-		//previous set command key bindings.
-	    }
-	    else
-	    {
-		g_hash_table_insert (_keybindings_ht, _command, _keybinding);
-		keybind_bind (_keybinding, handler, NULL);
-	    }
-	}
-#endif 
 }
+
 static void
 gsd_key_bindings_manager_init (GsdKeyBindingsManager *manager)
 {
