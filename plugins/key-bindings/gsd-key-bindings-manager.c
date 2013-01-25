@@ -167,17 +167,22 @@ key_bindings_settings_changed (GSettings *settings, gchar *gsettings_key, gpoint
 {	
 	GsdKeyBindingsManagerPrivate* _priv = (GsdKeyBindingsManagerPrivate*) user_data;
 	char* _string = g_settings_get_string (settings, gsettings_key);
+	g_debug ("keybindings changed: %s : %s", gsettings_key, _string);
 
-	//1. check whether the key  have already been set.
-	_priv->gsettings_ht;
 	KeysAndCmd* _kandc_ptr = gsd_kb_util_parse_gsettings_value (gsettings_key, _string);
+	//1. if 
 	if (_kandc_ptr == NULL) //remove a previous key bindings.
 	{
 		g_hash_table_remove (_priv->gsettings_ht, gsettings_key);
 		return ;
 	}
 
-	g_hash_table_replace (_priv->gsettings_ht, gsettings_key, _kandc_ptr);
+	g_hash_table_replace (_priv->gsettings_ht, g_strdup (gsettings_key), _kandc_ptr);
+
+	KeybinderHandler _handler = gsd_kb_handler_default;
+
+	g_debug ("bind %s -----> %s", _kandc_ptr->keystring, _kandc_ptr->cmdstring);
+	keybinder_bind (_kandc_ptr->keystring, _handler, _kandc_ptr->cmdstring);
 	
 	//-------------------------------------
 #if 0

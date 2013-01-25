@@ -77,7 +77,10 @@ gsd_kb_util_read_gsettings (GSettings* settings, GHashTable* gsettings_ht)
 	    _kandc_ptr = gsd_kb_util_parse_gsettings_value (_gsettings_key_str,
 							    _gsettings_value_str);
 	    if (_kandc_ptr == NULL)
+	    {
+		g_debug ("new KeysAndCmd is NULL");
 		continue;
+	    }
 
 	    KeybinderHandler _handler = gsd_kb_handler_default;
 
