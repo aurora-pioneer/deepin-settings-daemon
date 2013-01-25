@@ -39,11 +39,22 @@
 #include "gnome-settings-profile.h"
 #include "gsd-key-bindings-manager.h"
 
+#include "keybinder.h"
+#include "gsd-key-bindings-handler.h"
+#include "gsd-key-bindings-settings.h"
+#include "gsd-key-bindings-util.h"
+
 #define GSD_KEY_BINDINGS_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_KEY_BINDINGS_MANAGER, GsdKeyBindingsManagerPrivate))
 
 struct GsdKeyBindingsManagerPrivate
 {
         gboolean padding;
+	GSettings*  settings;		//setup in nit
+	//gsettings key --> command and keys struct
+	GHashTable* gsettings_ht;
+	//this hashtable is used for conflict detection
+	//to ensure that a single key can not be bound to multiple commands.
+	GHashTable* keyandcmd_ht;	
 };
 
 enum {
@@ -64,6 +75,15 @@ gsd_key_bindings_manager_start (GsdKeyBindingsManager *manager,
 {
         g_debug ("Starting key-bindings manager");
         gnome_settings_profile_start (NULL);
+
+        manager->priv = GSD_KEY_BINDINGS_MANAGER_GET_PRIVATE (manager);
+	GsdKeyBindingsManagerPrivate* _priv = manager->priv;
+
+	//1. read intial key bindings.
+	gsd_kb_util_read_gsettings (_priv->settings, _priv->gsettings_ht);
+
+	//2. check for conflicts.
+
         gnome_settings_profile_end (NULL);
         return TRUE;
 }
@@ -72,6 +92,11 @@ void
 gsd_key_bindings_manager_stop (GsdKeyBindingsManager *manager)
 {
         g_debug ("Stopping key bindings manager");
+
+        manager->priv = GSD_KEY_BINDINGS_MANAGER_GET_PRIVATE (manager);
+	GsdKeyBindingsManagerPrivate* _priv = manager->priv;
+
+	//1. clear key bindings.
 }
 
 static void
@@ -134,10 +159,101 @@ gsd_key_bindings_manager_class_init (GsdKeyBindingsManagerClass *klass)
         g_type_class_add_private (klass, sizeof (GsdKeyBindingsManagerPrivate));
 }
 
+
+static void 
+key_bindings_settings_changed (GSettings *settings, gchar *gsettings_key, gpointer user_data)
+{	
+	GsdKeyBindingsManagerPrivate* _priv = (GsdKeyBindingsManagerPrivate*) user_data;
+	char* _string = g_settings_get_string (settings, gsettings_key);
+
+	//1. check whether the key  have already been set.
+	_priv->gsettings_ht;
+	KeysAndCmd* _kandc_ptr = gsd_kb_util_parse_gsettings_value (gsettings_key, _string);
+	if (_kandc_ptr == NULL) //remove a previous key bindings.
+	{
+		g_hash_table_remove (_priv->gsettings_ht, gsettings_key);
+		return ;
+	}
+
+	g_hash_table_replace (_priv->gsettings_ht, gsettings_key, _kandc_ptr);
+	
+	//-------------------------------------
+#if 0
+	//1. check gsettings_ht: key---> command string.
+	char* _prev_command_name1 = g_hash_table_lookup (_priv->keybindings_ht,
+							 gsettings_key);	
+	if (_prev_command_name1 != NULL)
+	{
+		//remove a keybinding from keybindings_ht.
+		g_hash_table_remove (_priv->keybindings_ht, _prev_command_name1);
+		//
+	}
+	
+	if (_str == NULL)	
+	{
+	    return;
+	}
+	else	//replace a key binding.
+	{
+	    
+	}
+
+
+
+
+	GHashTable* _keybindings_ht = (GHashTable*) user_data;
+	char* _str = g_settings_get_string (settings, key);
+
+	if (check_is_default(key))
+	{
+	    //default key bindings
+	}
+	else
+	{
+	    //empty slots:   <command> ';' <keys>
+	    char* _tmp = strchr (_str, BINDING_DELIMITER);
+	    *_tmp = NULL; //split _str into to two strings.
+	    char* _command_name = g_strdup (g_strstrip (_str));
+	    char* _keystring = g_strdup (g_strstrip (_tmp+1));
+
+	    g_debug ("keybindings: %s ----> %s", _keystring, _command_name);
+
+	    KeysAndHandler* kandh_ptr = gsd_kb_util_keys_and_handler_new (_command_name);
+
+	    char* _prev_command_name = NULL;
+	    KeysAndHandler* _prev_kandh_ptr = NULL;
+	    if (g_hash_table_lookup_extended (_keybindings_ht, _command_name, 
+					      &_prev_command_name, &_prev_kandh_ptr))
+	    {
+		//previous set command key bindings.
+	    }
+	    else
+	    {
+		g_hash_table_insert (_keybindings_ht, _command, _keybinding);
+		keybind_bind (_keybinding, handler, NULL);
+	    }
+	}
+#endif 
+}
 static void
 gsd_key_bindings_manager_init (GsdKeyBindingsManager *manager)
 {
         manager->priv = GSD_KEY_BINDINGS_MANAGER_GET_PRIVATE (manager);
+	GsdKeyBindingsManagerPrivate* _priv = manager->priv;
+
+	//1. connect X server and initialize  keybinder library.
+	keybinder_init ();
+
+	//2. init gsettings_key  ----> keysandcmd hashtable.
+	_priv->gsettings_ht = g_hash_table_new_full (g_str_hash, g_str_equal,
+						     gsd_kb_util_key_free_func, 
+						     gsd_kb_util_value_free_func);
+						     	
+	_priv->keyandcmd_ht = g_hash_table_new (g_direct_hash, g_direct_equal);
+	//3.  get GSettings.
+	_priv->settings = g_settings_new (KEY_BINDING_SCHEMA_ID);
+	g_signal_connect (_priv->settings, "changed",
+		          G_CALLBACK (key_bindings_settings_changed), _priv);
 
 }
 
