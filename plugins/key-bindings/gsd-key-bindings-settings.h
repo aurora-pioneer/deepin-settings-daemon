@@ -3,15 +3,15 @@
 
 
 
-#define KEY_BINDING_SCHEMA_ID	"org.gnome.settings-daemon.plugins.key-bindings"
+#define KEY_BINDING_SCHEMA_ID			"org.gnome.settings-daemon.plugins.key-bindings"
 //default key binding slots
 
 
 
 //empty key binding slots
-#define BINDING_DELIMITER	';' //semicolon
-#define NUM_EMPTY_SLOTS		10
-#define KB_EMPTY_KEY1		"key1"
+#define KEY_BINDING_DELIMITER			';' //semicolon
+#define NUM_OF_KEY_BINDING_SLOTS		10
+#define KEY_BINDING_KEY_PREFIX			"key"
 
 
 

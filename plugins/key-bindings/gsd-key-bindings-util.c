@@ -31,7 +31,7 @@ gsd_kb_util_parse_gsettings_value (char* gsettings_key, char* string)
 	else
 	{
 	    //empty slots:   <command> ';' <keys>
-	    char* _tmp = strchr (string, BINDING_DELIMITER);
+	    char* _tmp = strchr (string, KEY_BINDING_DELIMITER);
 	    if (_tmp == NULL)  //no ';', invalid, return NULL.
 		return NULL;
 	    *_tmp = '\0'; //split _str into to two strings.
@@ -46,7 +46,7 @@ gsd_kb_util_parse_gsettings_value (char* gsettings_key, char* string)
 	if ((!strlen(_cmdstring))||(!strlen(_keystring))) //either string is 0-length, invalid.
 		return NULL;
 	
-	g_debug ("keybindings: %s ----> %s", _keystring, _cmdstring);
+	g_debug ("parse keybindings: %s ----> %s", _keystring, _cmdstring);
 
 	KeysAndCmd* _kandc_ptr = g_new0 (KeysAndCmd, 1);
 	_kandc_ptr->keystring = _keystring;
@@ -67,15 +67,25 @@ gsd_kb_util_read_gsettings (GSettings* settings, GHashTable* gsettings_ht)
 	//1. read default key 
 	
 	//2. read other keys.
-	_gsettings_key_str = "key1"; //use macros defined in gsd-key-bindings-settings.h
-	_gsettings_value_str = g_settings_get_string (settings, _gsettings_key_str);
-	_kandc_ptr = gsd_kb_util_parse_gsettings_value (_gsettings_key_str,
-							_gsettings_value_str);
+	int i =0;
+	for (; i < NUM_OF_KEY_BINDING_SLOTS; i++)
+	{
+	    //use macros defined in gsd-key-bindings-settings.h
+	    _gsettings_key_str = g_strdup_printf (KEY_BINDING_KEY_PREFIX"%d", i + 1); 
+	    g_debug ("gsettings key : %s", _gsettings_key_str);
+	    _gsettings_value_str = g_settings_get_string (settings, _gsettings_key_str);
+	    _kandc_ptr = gsd_kb_util_parse_gsettings_value (_gsettings_key_str,
+							    _gsettings_value_str);
+	    if (_kandc_ptr == NULL)
+		continue;
 
-	KeybinderHandler _handler = gsd_kb_handler_default;
-	keybinder_bind (_kandc_ptr->keystring, _handler, _kandc_ptr->cmdstring);
+	    KeybinderHandler _handler = gsd_kb_handler_default;
+
+	    g_debug ("bind %s -----> %s", _kandc_ptr->keystring, _kandc_ptr->cmdstring);
+	    keybinder_bind (_kandc_ptr->keystring, _handler, _kandc_ptr->cmdstring);
 	    
-	g_hash_table_insert (gsettings_ht, _gsettings_key_str, _kandc_ptr);
+	    g_hash_table_insert (gsettings_ht, _gsettings_key_str, _kandc_ptr);
+	}
 }
 
 void 
@@ -93,6 +103,7 @@ gsd_kb_util_value_free_func (gpointer data)
 	//Currently we only support one handler. 
 	KeybinderHandler _handler = gsd_kb_handler_default;
 
+	g_debug ("unbind %s -----> %s", _keystring, _cmdstring);
 	keybinder_unbind (_keystring, _handler);
 
 	g_free (_keystring);
