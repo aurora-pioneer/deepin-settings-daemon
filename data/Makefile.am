@@ -10,7 +10,6 @@ gsettings_SCHEMAS =							\
 	org.gnome.settings-daemon.peripherals.gschema.xml		\
 	org.gnome.settings-daemon.plugins.gschema.xml			\
 	org.gnome.settings-daemon.plugins.keyboard.gschema.xml		\
-	org.gnome.settings-daemon.plugins.key-bindings.gschema.xml	\
 	org.gnome.settings-daemon.plugins.power.gschema.xml		\
 	org.gnome.settings-daemon.plugins.color.gschema.xml		\
 	org.gnome.settings-daemon.plugins.media-keys.gschema.xml	\
