@@ -97,6 +97,8 @@ gsd_key_bindings_manager_stop (GsdKeyBindingsManager *manager)
 	GsdKeyBindingsManagerPrivate* _priv = manager->priv;
 
 	//1. clear key bindings.
+	g_hash_table_remove_all (_priv->gsettings_ht);
+	g_hash_table_remove_all (_priv->keyandcmd_ht);
 }
 
 static void
@@ -261,12 +263,23 @@ static void
 gsd_key_bindings_manager_finalize (GObject *object)
 {
         GsdKeyBindingsManager *key_bindings_manager;
+	GsdKeyBindingsManagerPrivate* _priv;
 
         g_return_if_fail (object != NULL);
         g_return_if_fail (GSD_IS_KEY_BINDINGS_MANAGER (object));
 
         key_bindings_manager = GSD_KEY_BINDINGS_MANAGER (object);
 
+	//finalize priv stuff
+	_priv = key_bindings_manager->priv;
+	//1. disconnect signals
+	g_signal_handlers_disconnect_by_func (_priv->settings, 
+					      key_bindings_settings_changed,
+					      _priv);
+	//2. free hashtable and unbind keybindings.
+	g_hash_table_destroy (_priv->keyandcmd_ht);
+	g_hash_table_destroy (_priv->gsettings_ht);
+	
         g_return_if_fail (key_bindings_manager->priv != NULL);
 
         G_OBJECT_CLASS (gsd_key_bindings_manager_parent_class)->finalize (object);
