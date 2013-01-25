@@ -10,7 +10,7 @@
 
 //empty key binding slots
 #define KEY_BINDING_DELIMITER			';' //semicolon
-#define NUM_OF_KEY_BINDING_SLOTS		10
+#define NUM_OF_KEY_BINDING_SLOTS		20
 #define KEY_BINDING_KEY_PREFIX			"key"
 
 
