@@ -531,6 +531,9 @@ on_bg_duration_tick (gpointer user_data)
 
     const char* next_picture = get_next_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, next_picture);
+    g_debug ("on_bg_duration_tick: end set string");
+    start_gaussian_helper (next_picture);
+    g_debug ("on_bg_duration_tick: end helper");
 
     fade_data->end_pixbuf = get_xformed_gdk_pixbuf (next_picture);
 
