@@ -6,7 +6,6 @@ enabled_plugins =	\
 	automount	\
 	background	\
 	clipboard	\
-	color		\
 	cursor		\
 	datetime	\
 	dummy		\
@@ -22,7 +21,9 @@ enabled_plugins =	\
 	key-bindings	\
     $(NULL)
 
-disabled_plugins = $(NULL)
+disabled_plugins = \
+    color
+    $(NULL)
 
 if BUILD_GCONF_BRIDGE
 enabled_plugins += gconf
