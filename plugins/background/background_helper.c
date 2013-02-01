@@ -38,10 +38,10 @@ main (int argc, char** argv)
 					 BG_GAUSSIAN_PICT_NAME,
 					 NULL);
 #if 1
-    g_print ("sigma: %f\n", sigma);
-    g_print ("numsteps: %ld\n", numsteps);
-    g_print ("picture_path: %s\n", picture_path);
-    g_print ("dest_picture_path: %s\n", dest_picture_path);
+    g_debug ("sigma: %f", sigma);
+    g_debug ("numsteps: %ld", numsteps);
+    g_debug ("picture_path: %s", picture_path);
+    g_debug ("dest_picture_path: %s", dest_picture_path);
 #endif 
 
     //1. get screen size
@@ -82,7 +82,7 @@ main (int argc, char** argv)
     clock_t start = clock ();
     gaussianiir2d_c(image_data, root_width, root_height, sigma, numsteps);
     clock_t end = clock ();
-    g_print ("time : %f\n", (end-start)/(float)CLOCKS_PER_SEC);
+    g_debug ("time : %f", (end-start)/(float)CLOCKS_PER_SEC);
 
     //4. write out the picture.
 #if 1
@@ -93,7 +93,7 @@ main (int argc, char** argv)
     status = cairo_surface_write_to_png (surface, dest_picture_path);
     if (status)
     {
-	g_print ("gsd-background-helper: cairo status: %d", status);
+	g_debug ("gsd-background-helper: cairo status: %d", status);
     }
 
     cairo_destroy (cr);

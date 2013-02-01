@@ -40,6 +40,7 @@
 #define TIME_PER_FRAME	1.0/BG_FPS  // the interval between contingent frames
 //
 static GPtrArray *picture_paths;		//an array of picture paths (strings).
+static char*	prev_picture = NULL;		//to track 
 static guint	picture_num;		//number of pictures in GPtrArray.
 static guint	picture_index;		// the next background picture.
 //this is only used update current image in the gsettings
@@ -112,8 +113,25 @@ start_gaussian_helper (const char* _picture_path)
     }
 #endif 
     //LIBEXECDIR is a CPP macro. see Makefile.am
-    char* command;
 
+    g_print ("_picture_path: %s\n", _picture_path);
+    if (!g_strcmp0 (prev_picture, _picture_path))
+    {
+	//no need to generate pictures.
+	if (prev_picture!=NULL)
+	{
+	   g_print ("start_gaussian_helper: alread started for this picture: %s\n", prev_picture);
+	}
+	return ;
+    }
+    else
+    {
+	g_free (prev_picture);
+	prev_picture = NULL;
+	prev_picture = g_strdup (_picture_path);
+    }
+
+    char* command;
     command = g_strdup_printf (LIBEXECDIR "/gsd-background-helper "
 			       "%lf %lu %s",
 			       BG_GAUSSIAN_SIGMA, BG_GAUSSIAN_NSTEPS, _picture_path);
@@ -513,6 +531,9 @@ on_bg_duration_tick (gpointer user_data)
 
     const char* next_picture = get_next_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, next_picture);
+    g_debug ("on_bg_duration_tick: end set string");
+    start_gaussian_helper (next_picture);
+    g_debug ("on_bg_duration_tick: end helper");
 
     fade_data->end_pixbuf = get_xformed_gdk_pixbuf (next_picture);
 
@@ -566,9 +587,9 @@ setup_crossfade_timer ()
 
     const char* current_picture = get_current_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
-    g_debug ("end set string");
+    g_debug ("setup_crossfade_timer: end set string");
     start_gaussian_helper (current_picture);
-    g_debug ("end helper");
+    g_debug ("setup_crossfade_timer: end helper");
 
     fade_data->end_pixbuf = get_xformed_gdk_pixbuf (current_picture);
 
@@ -656,6 +677,7 @@ bg_settings_picture_uris_changed (GSettings *settings, gchar *key, gpointer user
     if (g_strcmp0 (key, BG_PICTURE_URIS))
 	return;
 
+
     g_debug ("picture_uris changed");
     g_ptr_array_free (picture_paths, TRUE);
     picture_paths = g_ptr_array_new_with_free_func (destroy_picture_path);
@@ -668,9 +690,9 @@ bg_settings_picture_uris_changed (GSettings *settings, gchar *key, gpointer user
 
     const char* current_picture = get_current_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
-    g_debug ("end set string");
+    g_debug ("bg_settings_picture_uris_changed: end set string");
     start_gaussian_helper (current_picture);
-    g_debug ("end helper");
+    g_debug ("bg_settings_picture_uris_changed: end helper");
 #if 0
     GdkPixbuf* pb = get_xformed_gdk_pixbuf (current_picture);
     g_assert (pb != NULL);
@@ -803,7 +825,7 @@ register_account_service_background_path (const char* current_picture)
 
 	gint64 user_id = 0;
 	user_id = (gint64)geteuid ();
-	g_print ("call FindUserById: uid = %i\n", user_id);
+	g_debug ("call FindUserById: uid = %i", user_id);
 
         GVariant* object_path_var = NULL;
 	error = NULL;
@@ -821,7 +843,7 @@ register_account_service_background_path (const char* current_picture)
 
 	char* object_path = NULL;
 	g_variant_get (object_path_var, "(o)", &object_path);
-	g_print ("object_path : %s\n", object_path);
+	g_debug ("object_path : %s", object_path);
 
 	g_variant_unref (object_path_var);
 	g_object_unref (_proxy);
@@ -880,9 +902,9 @@ screen_size_changed_cb (GdkScreen* screen, gpointer user_data)
 
     const char* current_picture = get_current_picture_path ();
     g_settings_set_string (Settings, BG_CURRENT_PICT, current_picture);
-    g_debug ("end set string");
+    g_debug ("screen_size_changed_cb: end set string");
     start_gaussian_helper (current_picture);
-    g_debug ("end helper");
+    g_debug ("screen_size_changed_cb: end helper");
 
     GdkPixbuf* pb = get_xformed_gdk_pixbuf (current_picture);
 
