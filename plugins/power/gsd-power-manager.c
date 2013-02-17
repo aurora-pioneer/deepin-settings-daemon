@@ -44,7 +44,6 @@
 #include "gnome-settings-session.h"
 #include "gsd-enums.h"
 #include "gsd-power-manager.h"
-#include "deepin_power.h"
 
 #define LOCK_CMD "lock"
 
@@ -3429,7 +3428,6 @@ session_proxy_ready_cb (GObject *source_object,
         }
         g_signal_connect (manager->priv->session_proxy, "g-signal",
                           G_CALLBACK (idle_dbus_signal_cb), manager);
-        deepin_power_init(manager->priv->session_proxy, manager->priv->settings);
 }
 
 static void
@@ -3859,8 +3857,6 @@ void
 gsd_power_manager_stop (GsdPowerManager *manager)
 {
         g_debug ("Stopping power manager");
-    
-        deepin_power_cleanup();
 
         if (manager->priv->bus_cancellable != NULL) {
                 g_cancellable_cancel (manager->priv->bus_cancellable);

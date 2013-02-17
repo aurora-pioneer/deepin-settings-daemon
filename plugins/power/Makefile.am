@@ -13,9 +13,7 @@ libpower_la_SOURCES = 					\
 	gsd-power-manager.c				\
 	gsd-power-manager.h				\
 	gsd-power-plugin.c				\
-	gsd-power-plugin.h              \
-    deepin_power.c                  \
-    deepin_power.h
+	gsd-power-plugin.h
 
 libpower_la_CPPFLAGS = \
 	-I$(top_srcdir)/data/				\
