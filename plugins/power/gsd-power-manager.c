@@ -46,6 +46,8 @@
 #include "gsd-power-manager.h"
 #include "deepin_power.h"
 
+#define LOCK_CMD "lock"
+
 #define GNOME_SESSION_DBUS_NAME                 "org.gnome.SessionManager"
 #define GNOME_SESSION_DBUS_PATH                 "/org/gnome/SessionManager"
 #define GNOME_SESSION_DBUS_PATH_PRESENCE        "/org/gnome/SessionManager/Presence"
@@ -3201,6 +3203,7 @@ static void idle_evaluate(GsdPowerManager *manager)
     if (!manager->priv->x_idle) {
         idle_set_mode (manager, GSD_POWER_IDLE_MODE_NORMAL);
         g_debug ("X not idle");
+        printf("DEBUG X not idle\n");
         if (manager->priv->timeout_blank_id != 0) {
             g_source_remove (manager->priv->timeout_blank_id);
             manager->priv->timeout_blank_id = 0;
@@ -3212,6 +3215,8 @@ static void idle_evaluate(GsdPowerManager *manager)
         /* TODO: DEBUG */
         return;
     }
+
+    printf("DEBUG X idle\n");
 
         /* are we inhibited from going idle */
         is_idle_inhibited = idle_is_session_inhibited (manager,
@@ -3537,31 +3542,37 @@ out:
 static void
 lock_screensaver (GsdPowerManager *manager)
 {
-        gboolean do_lock;
+    gboolean do_lock;
 
-        do_lock = g_settings_get_boolean (manager->priv->settings_screensaver,
+    do_lock = g_settings_get_boolean(manager->priv->settings_screensaver,
                                           "lock-enabled");
-        if (!do_lock)
-                return;
+    if (!do_lock)
+        return;
 
-        if (manager->priv->screensaver_proxy != NULL) {
-                g_debug ("doing gnome-screensaver lock");
-                g_dbus_proxy_call (manager->priv->screensaver_proxy,
-                                   "Lock",
-                                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
-                                   NULL, NULL, NULL);
-        } else {
-                /* connect to the screensaver first */
-                g_dbus_proxy_new_for_bus (G_BUS_TYPE_SESSION,
-                                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-                                          NULL,
-                                          GS_DBUS_NAME,
-                                          GS_DBUS_PATH,
-                                          GS_DBUS_INTERFACE,
-                                          NULL,
-                                          sleep_cb_screensaver_proxy_ready_cb,
-                                          manager);
-        }
+    system(LOCK_CMD);
+
+    if (manager->priv->screensaver_proxy != NULL) {
+        g_debug("doing gnome-screensaver lock");
+        g_dbus_proxy_call(manager->priv->screensaver_proxy,
+                          "Lock",
+                          NULL, 
+                          G_DBUS_CALL_FLAGS_NONE, 
+                          -1, 
+                          NULL, 
+                          NULL, 
+                          NULL);
+    } else {
+        /* connect to the screensaver first */
+        g_dbus_proxy_new_for_bus(G_BUS_TYPE_SESSION,
+                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+                                 NULL,
+                                 GS_DBUS_NAME,
+                                 GS_DBUS_PATH,
+                                 GS_DBUS_INTERFACE,
+                                 NULL,
+                                 sleep_cb_screensaver_proxy_ready_cb,
+                                 manager);
+    }
 }
 
 static void
@@ -3572,9 +3583,11 @@ upower_notify_sleep_cb (UpClient *client,
         gboolean do_lock;
 
         do_lock = g_settings_get_boolean (manager->priv->settings_screensaver,
-                                          "ubuntu-lock-on-suspend");
+                                          "lock-enabled");
         if (!do_lock)
                 return;
+
+        system(LOCK_CMD);
 
         if (manager->priv->screensaver_proxy != NULL) {
                 g_debug ("doing gnome-screensaver lock");
@@ -3636,6 +3649,7 @@ idle_idletime_alarm_expired_cb (GpmIdletime *idletime,
                                 GsdPowerManager *manager)
 {
         g_debug ("idletime alarm: %i", alarm_id);
+        printf("idletime alarm: %i", alarm_id);
         manager->priv->x_idle = TRUE;
         idle_evaluate (manager);
 }
