@@ -342,7 +342,7 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
         return;
     }
 
-    output_index = g_settings_get_int(settings, "only-monitors-shown");
+    output_index = g_settings_get_int(settings, "only-monitor-shown");
     if (output_index != 0) {
         m_only_one_shown(primary_output_name, 
                          other_output_name, 
@@ -382,7 +382,8 @@ static void m_use_extend(char *primary_output_name, char *other_output_name)
     sprintf(buffer, 
             "xrandr --output %s --auto --output %s --auto --right-of %s", 
             primary_output_name, 
-            other_output_name);
+            other_output_name, 
+            primary_output_name);
     system(buffer);
 }
 
