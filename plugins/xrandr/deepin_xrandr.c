@@ -36,6 +36,8 @@ static gboolean m_is_config_file_changed = FALSE;
 static gboolean m_is_copy_monitor = TRUE;
 static char *m_primary_output_name = NULL;
 static char *m_other_output_name = NULL;
+static gboolean m_only2_shown = FALSE;
+static gboolean m_only1_shown = FALSE;
 
 static void m_config_file_changed(GFileMonitor *monitor, 
                                   GFile *file, 
@@ -392,25 +394,39 @@ static void m_only_one_shown(char *primary_output_name,
                              int index) 
 {
     /* xrandr --output LVDS --auto --output VGA-0 --off  */
-    if (index == 1) {
+    if (index == 1 && !m_only1_shown) {
         char buffer[BUF_SIZE] = {'\0'};
-
+        sprintf(buffer, "xrandr --output %s --primary", primary_output_name);
+        printf("DEBUG %s\n", buffer);
+        system(buffer);
+        memset(buffer, 0, BUF_SIZE);
         sprintf(buffer, 
                 "xrandr --output %s --auto --output %s --off", 
                 primary_output_name, 
                 other_output_name);
+        printf("DEBUG %s\n", buffer);
         system(buffer);
+        m_only1_shown = TRUE;
+        m_only2_shown = FALSE;
         return;
     }
 
-    if (index == 2) {
+    if (index == 2 && !m_only2_shown) {
         char buffer[BUF_SIZE] = {'\0'};
 
+        sprintf(buffer, "xrandr --output %s --primary", primary_output_name);
+        printf("DEBUG %s\n", buffer);
+        system(buffer);
+        memset(buffer, 0, BUF_SIZE);
         sprintf(buffer, 
                 "xrandr --output %s --auto --output %s --off", 
                 other_output_name, 
                 primary_output_name);
+        printf("DEBUG %s\n", buffer);
         system(buffer);
+        m_only1_shown = FALSE;
+        m_only2_shown = TRUE;
+        return;
     }
 }
 
