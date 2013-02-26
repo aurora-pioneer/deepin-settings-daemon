@@ -46,6 +46,7 @@
 #include "gsd-power-manager.h"
 
 #define LOCK_CMD "lock"
+#define BUFFER_SIZE 1024
 
 #define GNOME_SESSION_DBUS_NAME                 "org.gnome.SessionManager"
 #define GNOME_SESSION_DBUS_PATH                 "/org/gnome/SessionManager"
@@ -221,6 +222,9 @@ static void      lock_screensaver (GsdPowerManager *manager);
 G_DEFINE_TYPE (GsdPowerManager, gsd_power_manager, G_TYPE_OBJECT)
 
 static gpointer manager_object = NULL;
+static UpDevice *engine_get_primary_device(GsdPowerManager *manager);
+static UpDevice *engine_get_first_device(GsdPowerManager *manager);
+static GVariant *device_to_variant_blob(UpDevice *device);
 
 GQuark
 gsd_power_manager_error_quark (void)
@@ -759,6 +763,39 @@ engine_recalculate_state_summary (GsdPowerManager *manager)
         return FALSE;
 }
 
+static void m_update_device_percentage(GsdPowerManager *manager) 
+{
+    UpDevice *device = NULL;
+    GVariant *value = NULL;
+    gchar object_path[BUFFER_SIZE] = {'\0'};                                               
+    UpDeviceKind kind;
+    gchar device_icon[BUFFER_SIZE] = {'\0'};                                                     
+    gdouble percentage = 0.0;
+    UpDeviceState state;    
+    guint64 time_state = 0;
+
+    device = engine_get_primary_device(manager);
+    if (!device) {                                           
+        /* it might be in AC */
+        device = engine_get_first_device(manager);
+        if (!device) 
+            return;
+    }                                                               
+                                                                            
+    value = device_to_variant_blob(device);
+    g_variant_get(value, 
+                  "(susdut)", 
+                  &object_path,                                     
+                  &kind,                                            
+                  &device_icon,                                     
+                  &percentage,                                      
+                  &state,                                           
+                  &time_state);
+    //printf("DEBUG percentage %f\n", percentage);
+    g_settings_set_int(manager->priv->settings, "percentage", (int)percentage);
+    g_object_unref(device);
+}
+
 static void
 engine_recalculate_state (GsdPowerManager *manager)
 {
@@ -769,8 +806,11 @@ engine_recalculate_state (GsdPowerManager *manager)
         state_changed = engine_recalculate_state_summary (manager);
 
         /* only emit if the icon or summary has changed */
-        if (icon_changed || state_changed)
-                engine_emit_changed (manager, icon_changed, state_changed);
+        if (icon_changed || state_changed) {
+            /* TODO: update percentage */
+            m_update_device_percentage(manager);
+            engine_emit_changed (manager, icon_changed, state_changed);
+        }
 }
 
 static UpDevice *
@@ -1809,7 +1849,6 @@ engine_device_changed_cb (UpClient *client, UpDevice *device, GsdPowerManager *m
                       NULL);
 
         g_debug ("%s state is now %s", up_device_get_object_path (device), up_device_state_to_string (state));
-
         /* see if any interesting state changes have happened */
         state_old = GPOINTER_TO_INT(g_object_get_data (G_OBJECT(device), "engine-state-old"));
         if (state_old != state) {
@@ -1884,6 +1923,30 @@ engine_get_primary_device (GsdPowerManager *manager)
                 break;
         }
         return device;
+}
+
+static UpDevice *engine_get_first_device(GsdPowerManager *manager)                            
+{                                                                               
+    guint i;                                                         
+    UpDevice *device = NULL;                                                
+    UpDevice *device_tmp;                                                   
+    UpDeviceKind kind;                                                      
+                                                                                
+    for (i = 0; i < manager->priv->devices_array->len; i++) {                   
+        device_tmp = g_ptr_array_index(manager->priv->devices_array, i);
+                                                                                
+        /* get device properties */                                     
+        g_object_get(device_tmp, "kind", &kind, NULL);
+        
+        /* not battery */                                               
+        if (kind != UP_DEVICE_KIND_BATTERY)                             
+            continue;                                               
+                                                                    
+        /* use composite device to cope with multiple batteries */      
+        device = g_object_ref(engine_get_composite_device(manager, device_tmp));
+        break;                                                          
+    }                                                                       
+    return device;                                                          
 }
 
 static void
@@ -2253,6 +2316,7 @@ do_lid_open_action (GsdPowerManager *manager)
 
 }
 
+/* TODO: good checking whether or not is laptop */
 static gboolean
 is_laptop (GnomeRRScreen *screen, GnomeRROutputInfo *output)
 {
@@ -2531,7 +2595,7 @@ out:
 }
 
 /**
- * backlight_helper_set_value:
+ * TODO: backlight_helper_set_value:
  *
  * Sets a brightness value using the PolicyKit helper.
  *
@@ -3189,6 +3253,7 @@ idle_sleep_cb (GsdPowerManager *manager)
         return FALSE;
 }
 
+/* TODO: idle handle */
 static void idle_evaluate(GsdPowerManager *manager)
 {
     gboolean is_idle_inhibited;
@@ -3200,7 +3265,6 @@ static void idle_evaluate(GsdPowerManager *manager)
     if (!manager->priv->x_idle) {
         idle_set_mode (manager, GSD_POWER_IDLE_MODE_NORMAL);
         g_debug ("X not idle");
-        printf("DEBUG X not idle\n");
         if (manager->priv->timeout_blank_id != 0) {
             g_source_remove (manager->priv->timeout_blank_id);
             manager->priv->timeout_blank_id = 0;
@@ -3209,11 +3273,8 @@ static void idle_evaluate(GsdPowerManager *manager)
             g_source_remove (manager->priv->timeout_sleep_id);
             manager->priv->timeout_sleep_id = 0;
         }
-        /* TODO: DEBUG */
         return;
     }
-
-    printf("DEBUG X idle\n");
 
         /* are we inhibited from going idle */
         is_idle_inhibited = idle_is_session_inhibited (manager,
@@ -3241,7 +3302,6 @@ static void idle_evaluate(GsdPowerManager *manager)
         /* set up blank callback even when session is not idle,
          * but only if we actually want to blank. */
         on_battery = up_client_get_on_battery (manager->priv->up_client);
-        /* TODO: DEBUG it */
         if (on_battery) {
                 timeout_blank = g_settings_get_int (manager->priv->settings,
                                                     "sleep-display-battery");
@@ -4052,7 +4112,7 @@ handle_method_call_screen (GsdPowerManager *manager,
 }
 
 static GVariant *
-device_to_variant_blob (UpDevice *device)
+device_to_variant_blob(UpDevice *device)
 {
         const gchar *object_path;
         gchar *device_icon;

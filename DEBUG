@@ -15,3 +15,10 @@ r
 
 n 下一步
 p output_name 查看变量的内存地址 && 该地址对应的值
+
+dbus-send --print-reply \
+            --system \
+            --dest=org.freedesktop.UPower \
+            /org/freedesktop/UPower/devices/battery_BAT1 \
+            org.freedesktop.DBus.Properties.GetAll \
+            string:org.freedesktop.UPower.Device
