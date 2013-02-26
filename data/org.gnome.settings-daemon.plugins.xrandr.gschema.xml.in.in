@@ -20,6 +20,11 @@
       <_summary>Whether to turn off specific monitors after boot</_summary>
       <_description>'clone' will display the same thing on all monitors, 'dock' will switch off the internal monitor, 'do-nothing' will use the default Xorg behaviour (extend the desktop in recent versions)</_description>
     </key>
+    <key name="is-laptop" type="b">
+      <default>false</default>
+      <_summary>Is laptop or not</_summary>
+      <_description>Is laptop or not</_description>
+    </key>
     <key name="brightness" type="d">
       <default>1.0</default>
       <_summary>Brightness</_summary>

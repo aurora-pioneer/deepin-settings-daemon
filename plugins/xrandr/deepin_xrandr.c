@@ -441,6 +441,7 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
     int count = 0;
     int i = 0;
     size_t output_name_length = 0;
+    gboolean is_laptop = FALSE;
 
     config = gnome_rr_config_new_current(screen, NULL);
     if (!config) 
@@ -470,6 +471,8 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
         memset(output_name, 0, BUF_SIZE);
         if (gnome_rr_output_is_connected(outputs[i])) { 
             rr_output_name = gnome_rr_output_get_name(outputs[i]);
+            if (strstr(rr_output_name, "LVDS"))
+                is_laptop = TRUE;
             if (strcmp(rr_output_name, "default") == 0) {
                 sprintf(output_name, "%s (%s)", "PC", rr_output_name);
             } else {
@@ -494,7 +497,8 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
         i++;
     }
     strv[count] = NULL;
-   
+  
+    g_settings_set_boolean(settings, "is-laptop", is_laptop);
     g_settings_set_strv(settings, "output-names", strv);
     g_settings_sync();
 
