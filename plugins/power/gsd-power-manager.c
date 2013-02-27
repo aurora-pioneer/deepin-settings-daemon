@@ -791,7 +791,7 @@ static void m_update_device_percentage(GsdPowerManager *manager)
                   &percentage,                                      
                   &state,                                           
                   &time_state);
-    //printf("DEBUG percentage %f\n", percentage);
+    printf("DEBUG power percentage %f\n", percentage);
     g_settings_set_int(manager->priv->settings, "percentage", (int)percentage);
     g_settings_sync();
     g_object_unref(device);
