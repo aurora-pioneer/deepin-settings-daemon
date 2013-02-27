@@ -10,8 +10,8 @@
       <_summary>Priority to use for this plugin</_summary>
       <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
     </key>
-    <key name="percentage" type="i">
-      <default>100</default>
+    <key name="percentage" type="d">
+      <default>100.0</default>
       <_summary>Primary or first device percentage</_summary>
       <_description>Primary or first device percentage</_description>
     </key>

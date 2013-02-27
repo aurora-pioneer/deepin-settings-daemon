@@ -21,7 +21,7 @@
       <_description>Key2</_description>                                            
     </key>      
     <key name="key3" type="s">                                                  
-      <default>"/usr/bin/lock;&lt;Super&gt;L"</default>                                                        
+      <default>"/usr/bin/dlock;&lt;Super&gt;L"</default>                                                        
       <_summary>Key3</_summary>                                                 
       <_description>Key3</_description>                                            
     </key>      

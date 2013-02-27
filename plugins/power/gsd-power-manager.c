@@ -45,7 +45,7 @@
 #include "gsd-enums.h"
 #include "gsd-power-manager.h"
 
-#define LOCK_CMD "lock"
+#define LOCK_CMD "dlock"
 #define BUFFER_SIZE 1024
 
 #define GNOME_SESSION_DBUS_NAME                 "org.gnome.SessionManager"
@@ -791,8 +791,8 @@ static void m_update_device_percentage(GsdPowerManager *manager)
                   &percentage,                                      
                   &state,                                           
                   &time_state);
-    printf("DEBUG power percentage %f\n", percentage);
-    g_settings_set_int(manager->priv->settings, "percentage", (int)percentage);
+    //printf("DEBUG power percentage %f\n", percentage);
+    g_settings_set_double(manager->priv->settings, "percentage", percentage);
     g_settings_sync();
     g_object_unref(device);
 }
