@@ -664,7 +664,7 @@ parse_picture_uris (gchar * pic_uri)
     //ensure we don't have a empty picture uris
     if (picture_num == 0)
     {
-	g_ptr_array_add (picture_paths, BG_DEFAULT_PICTURE);
+	g_ptr_array_add (picture_paths, g_strdup(BG_DEFAULT_PICTURE));
 	picture_num =1;
     }
 }
