@@ -661,6 +661,12 @@ parse_picture_uris (gchar * pic_uri)
 	    g_debug ("picture %d: %s", picture_num, filename_ptr);
 	}
     }
+    //ensure we don't have a empty picture uris
+    if (picture_num == 0)
+    {
+	g_ptr_array_add (picture_paths, BG_DEFAULT_PICTURE);
+	picture_num =1;
+    }
 }
 static void
 destroy_picture_path (gpointer data)
