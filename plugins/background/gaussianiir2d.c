@@ -1,5 +1,7 @@
+/*
+ *	
+ */
 #include <math.h>
-
 #include "gaussianiir2d.h"
 
 /**
@@ -94,6 +96,53 @@ gaussianiir2d_f (double *image,
     return;
 }
 
+void gaussianiir2d_pixbuf_c(unsigned char* image_data, 
+			    int width, int height,
+			    int rowstride, int n_channels, 
+			    double sigma, double numsteps)
+{
+    //1. unsigned char* ----> float*
+    double* _image_f_red = g_new0 (double, width * height);
+    double* _image_f_green = g_new0 (double, width * height);
+    double* _image_f_blue = g_new0 (double, width * height);
+
+    int i = 0;
+    int j = 0;
+
+    for (i = 0; i < width; i++)
+    {
+	for (j = 0; j < height; j++)
+	{
+	    _image_f_red[i + width * j] = (double) (image_data[j*rowstride +i*n_channels + 0]);
+	    _image_f_green[i + width * j] = (double) (image_data[j*rowstride +i*n_channels + 1]);
+	    _image_f_blue[i + width * j] = (double) (image_data[j*rowstride +i*n_channels + 2]);
+	}
+    }
+
+    //2.
+    gaussianiir2d_f(_image_f_red, width, height, sigma, numsteps);
+    gaussianiir2d_f(_image_f_green, width, height, sigma, numsteps);
+    gaussianiir2d_f(_image_f_blue, width, height, sigma, numsteps);
+
+    //test: dump data
+
+    //3. float* ----> unsigned char*
+    i = 0;
+    j = 0;
+    for (i = 0; i < width; i++)
+    {
+	for (j = 0; j < height; j++)
+	{
+	    image_data[j*rowstride +i*n_channels + 0] = _image_f_red[i+width*j];
+	    image_data[j*rowstride +i*n_channels + 1] = _image_f_green[i+width*j];
+	    image_data[j*rowstride +i*n_channels + 2] = _image_f_blue[i+width*j];
+	}
+    }
+    g_free (_image_f_red);
+    g_free (_image_f_green);
+    g_free (_image_f_blue);
+}
+#if 0
 void gaussianiir2d_c(unsigned char* image_c, 
 		     long width, long height, 
 		     double sigma, long numsteps)
@@ -145,3 +194,4 @@ void gaussianiir2d_c(unsigned char* image_c,
     g_free (_image_f_green);
     g_free (_image_f_blue);
 }
+#endif
