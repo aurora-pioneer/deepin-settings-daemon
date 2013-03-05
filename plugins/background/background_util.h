@@ -6,8 +6,6 @@
 #include "gsd-background-manager-private.h"
 
 #define DEEPIN_EXPORT
-//gaussian blur
-#define BG_GAUSSIAN_PICT_NAME	".deepin_background_gaussian.png"
 //#define BG_GAUSSIAN_PICT_PATH	"/var/cache/background/gaussian.png"
 //not used#define BG_GAUSSIAN_PICT_DIR	"/var/cache/background"
 //for test#define BG_GAUSSIAN_PICT_PATH	"gaussian.png"
