@@ -64,8 +64,6 @@ gsd_background_manager_start (GsdBackgroundManager *manager,
 	// connect gsettings signals.
 	bg_util_init (manager);
 
-	bg_util_connect_screen_signals (manager);
-
         gnome_settings_profile_end (NULL);
 
         return TRUE;
@@ -78,22 +76,14 @@ gsd_background_manager_stop (GsdBackgroundManager *manager)
 
         g_debug ("Stopping background manager");
 
-	bg_util_disconnect_screen_signals (manager);
-
-//        if (manager->priv->proxy) {
-//                disconnect_session_manager_listener (manager);
-//                g_object_unref (manager->priv->proxy);
-//        }
-
-        if (p->settings != NULL) {
-                g_object_unref (p->settings);
-                p->settings = NULL;
+        if (p->deepin_settings != NULL) {
+                g_object_unref (p->deepin_settings);
+                p->deepin_settings = NULL;
         }
-
-//       if (p->bg != NULL) {
-//                g_object_unref (p->bg);
-//                p->bg = NULL;
-//        }
+        if (p->gnome_settings != NULL) {
+                g_object_unref (p->gnome_settings);
+                p->gnome_settings = NULL;
+        }
 }
 
 static GObject *

@@ -31,7 +31,10 @@
 
 struct GsdBackgroundManagerPrivate
 {
-        GSettings   *settings;
+        GSettings   *deepin_settings;
+	GSettings   *gnome_settings;
+        //connect to AccountService DBus. and register background path
+        GDBusProxy  *accounts_proxy;
 
         GDBusProxy  *proxy;
         guint        proxy_signal_id;
