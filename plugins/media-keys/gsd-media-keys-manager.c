@@ -2037,22 +2037,24 @@ do_action (GsdMediaKeysManager *manager,
                 do_url_action (manager, "ghelp", timestamp);
                 break;
         case SCREENSHOT_KEY:
-                execute (manager, "gnome-screenshot", FALSE);
+                //execute (manager, "gnome-screenshot", FALSE);
+                execute (manager, "deepin-screenshot", FALSE);
                 break;
         case WINDOW_SCREENSHOT_KEY:
-                execute (manager, "gnome-screenshot --window", FALSE);
+                //execute (manager, "gnome-screenshot --window", FALSE);
                 break;
         case AREA_SCREENSHOT_KEY:
-                execute (manager, "gnome-screenshot --area", FALSE);
+                //execute (manager, "gnome-screenshot --area", FALSE);
                 break;
         case SCREENSHOT_CLIP_KEY:
-                execute (manager, "gnome-screenshot --clipboard", FALSE);
+                //execute (manager, "gnome-screenshot --clipboard", FALSE);
+                execute (manager, "deepin-screenshot -d 5", FALSE);
                 break;
         case WINDOW_SCREENSHOT_CLIP_KEY:
-                execute (manager, "gnome-screenshot --window --clipboard", FALSE);
+                //execute (manager, "gnome-screenshot --window --clipboard", FALSE);
                 break;
         case AREA_SCREENSHOT_CLIP_KEY:
-                execute (manager, "gnome-screenshot --area --clipboard", FALSE);
+                //execute (manager, "gnome-screenshot --area --clipboard", FALSE);
                 break;
         case WWW_KEY:
                 do_url_action (manager, "http", timestamp);
