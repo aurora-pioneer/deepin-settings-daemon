@@ -88,7 +88,7 @@ start_gaussian_helper (const char* cur_pict_path)
     //LIBEXECDIR is a CPP macro. see Makefile.am
     char* command = NULL;
 
-#if 0
+#if 1
     command = g_strdup_printf (LIBEXECDIR "/gsd-background-helper "
 			       "%lf %lu %s",
 			       BG_GAUSSIAN_SIGMA, BG_GAUSSIAN_NSTEPS, cur_pict_path);
