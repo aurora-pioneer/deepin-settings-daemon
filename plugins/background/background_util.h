@@ -10,6 +10,10 @@
 #define BG_GAUSSIAN_SIGMA	10.0  //double
 #define BG_GAUSSIAN_NSTEPS	10UL  //long
 
+//GNOME compatitible
+#define GNOME_BG_SCHEMA_ID	"org.gnome.desktop.background"
+#define GNOME_BG_PICTURE_URI	"picture-uri"
+
 // all schema related information.
 #define	BG_SCHEMA_ID		"com.deepin.dde.background"
 

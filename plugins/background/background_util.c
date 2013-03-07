@@ -260,6 +260,19 @@ bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer user_dat
 }
 
 static void
+gnome_bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer user_data)
+{
+    if (g_strcmp0 (key, GNOME_BG_PICTURE_URI))
+	return;
+
+    GsdBackgroundManager* manager = user_data;
+
+    char* pict_uri = g_settings_get_string (settings, GNOME_BG_PICTURE_URI);
+    g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, pict_uri);
+    g_free (pict_uri);
+}
+
+static void
 initial_setup (GsdBackgroundManager* manager)
 {
     prev_pict_path = NULL;
@@ -280,10 +293,13 @@ bg_util_init (GsdBackgroundManager* manager)
     manager->priv->accounts_proxy = NULL;
 
     manager->priv->deepin_settings = g_settings_new (BG_SCHEMA_ID);
-    //manager->priv->gnome_settings = g_settings_new (GNOME_BG_SCHEMA_ID);
+    manager->priv->gnome_settings = g_settings_new (GNOME_BG_SCHEMA_ID);
 
     //serialize access to current picture.
     g_signal_connect (manager->priv->deepin_settings, "changed::current-picture",
 		      G_CALLBACK (bg_settings_cur_pict_changed), manager);
+    g_signal_connect (manager->priv->gnome_settings, "changed::picture-uri",
+		      G_CALLBACK (gnome_bg_settings_cur_pict_changed), manager);
+
     initial_setup (manager);
 }
