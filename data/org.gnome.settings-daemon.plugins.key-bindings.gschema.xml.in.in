@@ -15,15 +15,15 @@
       <_summary>Key1</_summary>                                                 
       <_description>Key1</_description>                                            
     </key>      
-    <key name="key2" type="s">                                                  
-      <default>"/usr/bin/gnome-terminal;&lt;Ctrl&gt;&lt;Alt&gt;T"</default>
-      <_summary>Key2</_summary>                                                 
-      <_description>Key2</_description>                                            
+    <key name="key2" type="s">
+      <default>"/usr/bin/nautilus;&lt;Super&gt;E"</default>
+      <_summary>Key2</_summary>
+      <_description>Key2</_description>
     </key>      
-    <key name="key3" type="s">                                                  
-      <default>"/usr/bin/dlock;&lt;Super&gt;L"</default>                                                        
-      <_summary>Key3</_summary>                                                 
-      <_description>Key3</_description>                                            
+    <key name="key3" type="s">
+      <default>"/usr/bin/gnome-terminal;&lt;Ctrl&gt;&lt;Alt&gt;T"</default>
+      <_summary>Key3</_summary>
+      <_description>Key3</_description>
     </key>      
     <key name="key4" type="s">                                                  
       <default>''</default>                                                        
