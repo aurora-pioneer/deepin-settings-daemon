@@ -1,7 +1,6 @@
 NULL =
 
 enabled_plugins =	\
-	a11y-keyboard	\
 	a11y-settings	\
 	automount	\
 	background	\
@@ -11,7 +10,6 @@ enabled_plugins =	\
 	dummy		\
 	power		\
 	housekeeping    \
-	keyboard	\
 	media-keys	\
 	mouse		\
 	sound		\
@@ -22,7 +20,9 @@ enabled_plugins =	\
     $(NULL)
 
 disabled_plugins = \
-    color
+    a11y-keyboard	\
+	keyboard	\
+	color	\
     $(NULL)
 
 if BUILD_GCONF_BRIDGE

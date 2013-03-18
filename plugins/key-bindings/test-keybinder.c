@@ -9,7 +9,7 @@
 #include <gtk/gtk.h>
 #include <keybinder.h>
 
-#define EXAMPLE_KEY "<Ctrl>A"
+#define EXAMPLE_KEY "<Super>"
 
 void handler (const char *keystring, void *user_data) {
   printf("Handle %s (%p)!\n", keystring, user_data);
