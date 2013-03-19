@@ -2031,10 +2031,12 @@ do_action (GsdMediaKeysManager *manager,
                 do_url_action (manager, "mailto", timestamp);
                 break;
         case SCREENSAVER_KEY:
-                execute (manager, "gnome-screensaver-command --lock", FALSE);
+                //execute (manager, "gnome-screensaver-command --lock", FALSE);
+                execute (manager, "dlock", FALSE);
                 break;
         case HELP_KEY:
-                do_url_action (manager, "ghelp", timestamp);
+                //do_url_action (manager, "ghelp", timestamp);
+                execute (manager, "deepin-user-manual", FALSE);
                 break;
         case SCREENSHOT_KEY:
                 //execute (manager, "gnome-screenshot", FALSE);
@@ -2042,9 +2044,11 @@ do_action (GsdMediaKeysManager *manager,
                 break;
         case WINDOW_SCREENSHOT_KEY:
                 //execute (manager, "gnome-screenshot --window", FALSE);
+                execute (manager, "deepin-screenshot -w", FALSE);
                 break;
         case AREA_SCREENSHOT_KEY:
                 //execute (manager, "gnome-screenshot --area", FALSE);
+                execute (manager, "deepin-screenshot -f", FALSE);
                 break;
         case SCREENSHOT_CLIP_KEY:
                 //execute (manager, "gnome-screenshot --clipboard", FALSE);

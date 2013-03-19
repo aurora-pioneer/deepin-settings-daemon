@@ -3155,7 +3155,7 @@ idle_blank_cb (GsdPowerManager *manager)
                          idle_mode_to_string (manager->priv->current_idle_mode));
                 return FALSE;
         }
-        idle_set_mode (manager, GSD_POWER_IDLE_MODE_BLANK);
+        //idle_set_mode (manager, GSD_POWER_IDLE_MODE_BLANK);
         return FALSE;
 }
 
@@ -3221,6 +3221,7 @@ idle_is_session_inhibited (GsdPowerManager *manager, guint mask)
         return ret;
 }
 
+/* TODO: please double check it the kernel might be broken after inhibited */
 static gboolean
 idle_sleep_cb (GsdPowerManager *manager)
 {
@@ -3250,7 +3251,7 @@ idle_sleep_cb (GsdPowerManager *manager)
 
         /* send to sleep, and cancel timeout */
         g_debug ("sending to SLEEP");
-        idle_set_mode (manager, GSD_POWER_IDLE_MODE_SLEEP);
+        //idle_set_mode (manager, GSD_POWER_IDLE_MODE_SLEEP);
         return FALSE;
 }
 
