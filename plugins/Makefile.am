@@ -2,12 +2,14 @@ NULL =
 
 enabled_plugins =	\
 	a11y-settings	\
+	a11y-keyboard	\
 	automount	\
 	background	\
 	clipboard	\
 	cursor		\
 	datetime	\
 	dummy		\
+	keyboard	\
 	power		\
 	housekeeping    \
 	media-keys	\
@@ -20,8 +22,6 @@ enabled_plugins =	\
     $(NULL)
 
 disabled_plugins = \
-    a11y-keyboard	\
-	keyboard	\
 	color	\
     $(NULL)
 
