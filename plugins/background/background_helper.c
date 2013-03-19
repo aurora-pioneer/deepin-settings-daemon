@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/un.h>
+#include <sys/socket.h>
 //remove dependency on gtk
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -219,12 +221,38 @@ bg_blur_pict_generate (const char* src_uri,
     g_free (tmp_path);
     return 0;
 }
+
+static gboolean 
+is_app_running (void)
+{
+    char* path = "/tmp/gsd/background/helper";
+    int server_sockfd;
+    socklen_t server_len;
+    struct sockaddr_un server_addr;
+
+    server_addr.sun_path[0] = '\0'; //abstract namespace socket.
+    strcpy(server_addr.sun_path+1, path);
+    server_addr.sun_family = AF_UNIX;
+    server_len = 1 + strlen(path) + offsetof(struct sockaddr_un, sun_path);
+
+    server_sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    if (0 == bind(server_sockfd, (struct sockaddr *)&server_addr, server_len)) 
+        return FALSE;
+    else 
+        return TRUE;
+    
+}
 /*
  *	./a.out <sigma> <numsteps> <picture_uri>
  */
 int
 main (int argc, char** argv)
 {
+    //exit if a gsd-background-helper is already running
+    if (is_app_running ())
+	return EXIT_SUCCESS;
+
     if ((argc == 2 && !g_strcmp0 (argv[2], "--help")) || 
 	argc != 4)
     {
@@ -272,6 +300,7 @@ main (int argc, char** argv)
     
     if (G_LIKELY (blur_path !=  NULL))
     {
+	g_debug ("blurred picture exists");
 	//symlink to this file
 	unlink (BG_GAUSSIAN_PICT_PATH);
 	(void)symlink (blur_path, BG_GAUSSIAN_PICT_PATH);
@@ -279,6 +308,7 @@ main (int argc, char** argv)
     }
     else
     {
+	g_debug ("blurred picture does not exist");
         //create the picture. 
 	//we should not re-symlink BG_GAUSSIAN_PICT_PATH even after we
 	//have created it. because at the time of the re-symlink the current
