@@ -39,6 +39,8 @@
 
 #include "background_util.h"
 
+#define BG_GAUSSIAN_PICT_PATH	"/tmp/.deepin_background_gaussian.png"
+
 /*
  *	how to generate gaussian blurred images:
  *	background plugin (A); gsd-background-helper (B)
@@ -67,8 +69,8 @@ static char* prev_pict_path = NULL;
  *	gsd-background-helper completes this drawing); 
  */
 //worklist
-static GPtrArray*   work_list = NULL;
-static GHashTable*  src_uri_ht = NULL; 
+//static GPtrArray*   work_list = NULL;
+//static GHashTable*  src_uri_ht = NULL; 
 
 //
 static void register_account_service_background_path (GsdBackgroundManager* manager, const char* cur_pict);
@@ -112,8 +114,9 @@ start_gaussian_helper (const char* cur_pict_path)
     if (cur_pict_path == NULL)
 	return ;
 
-    //quick return 2. 
-    
+    unlink (BG_GAUSSIAN_PICT_PATH);
+    (void)symlink (cur_pict_path, BG_GAUSSIAN_PICT_PATH);
+
     //LIBEXECDIR is a CPP macro. see Makefile.am
     char* command = NULL;
 
@@ -319,9 +322,9 @@ initial_setup (GsdBackgroundManager* manager)
 DEEPIN_EXPORT void
 bg_util_init (GsdBackgroundManager* manager)
 {
-    work_list = g_ptr_array_new ();
-    src_uri_ht = g_hash_table_new_full (g_str_hash, g_str_equal,
-					g_free, NULL);
+    //work_list = g_ptr_array_new ();
+    //src_uri_ht = g_hash_table_new_full (g_str_hash, g_str_equal,
+    //					g_free, NULL);
 
     manager->priv->accounts_proxy = NULL;
 

@@ -270,18 +270,24 @@ main (int argc, char** argv)
     char* blur_path = NULL;
     blur_path = bg_blur_pict_factory_lookup (src_uri, dest_path, src_mtime);
     
-    //create the picture.
-    if (G_UNLIKELY (blur_path  == NULL))
+    if (G_LIKELY (blur_path !=  NULL))
     {
+	//symlink to this file
+	unlink (BG_GAUSSIAN_PICT_PATH);
+	(void)symlink (blur_path, BG_GAUSSIAN_PICT_PATH);
+	g_free (blur_path);
+    }
+    else
+    {
+        //create the picture. 
+	//we should not re-symlink BG_GAUSSIAN_PICT_PATH even after we
+	//have created it. because at the time of the re-symlink the current
+	//picture is changed.
 	blur_path = bg_blur_pict_generate (src_uri, dest_path, src_mtime,
 					   sigma, numsteps);
 	if (blur_path == NULL)
 	    return EXIT_FAILURE;
     }
-    //symlink to this file
-    unlink (BG_GAUSSIAN_PICT_PATH);
-    (void)symlink (blur_path, BG_GAUSSIAN_PICT_PATH);
-    g_free (blur_path);
 
     return EXIT_SUCCESS;
 }
