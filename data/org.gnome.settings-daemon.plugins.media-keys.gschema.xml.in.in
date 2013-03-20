@@ -21,7 +21,7 @@
       <_description>Binding to eject an optical disc.</_description>
     </key>
     <key name="help" type="s">
-      <default>'&lt;Alt&gt;F1'</default>
+      <default>'F12'</default>
       <_summary>Launch help browser</_summary>
       <_description>Binding to launch the help browser.</_description>
     </key>
