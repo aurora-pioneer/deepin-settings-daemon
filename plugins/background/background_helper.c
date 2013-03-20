@@ -302,8 +302,8 @@ main (int argc, char** argv)
     {
 	g_debug ("blurred picture exists");
 	//symlink to this file
-	unlink (BG_GAUSSIAN_PICT_PATH);
-	(void)symlink (blur_path, BG_GAUSSIAN_PICT_PATH);
+	//unlink (BG_GAUSSIAN_PICT_PATH);
+	//(void)symlink (blur_path, BG_GAUSSIAN_PICT_PATH);
 	g_free (blur_path);
     }
     else
