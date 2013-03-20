@@ -114,8 +114,8 @@ start_gaussian_helper (const char* cur_pict_path)
     if (cur_pict_path == NULL)
 	return ;
 
-    unlink (BG_GAUSSIAN_PICT_PATH);
-    (void)symlink (cur_pict_path, BG_GAUSSIAN_PICT_PATH);
+    //unlink (BG_GAUSSIAN_PICT_PATH);
+    //(void)symlink (cur_pict_path, BG_GAUSSIAN_PICT_PATH);
 
     //LIBEXECDIR is a CPP macro. see Makefile.am
     char* command = NULL;
