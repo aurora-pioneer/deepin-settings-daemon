@@ -39,10 +39,38 @@
 
 #include "background_util.h"
 
+#define BG_GAUSSIAN_PICT_PATH	"/tmp/.deepin_background_gaussian.png"
+
+/*
+ *	how to generate gaussian blurred images:
+ *	background plugin (A); gsd-background-helper (B)
+ *	A: 1. setup a worklist (ensure that all src_uri are distinct.)
+ *	A: 2. use socketpair for bidirectional communication
+ *	      pass the other end to gsd-background-helper.
+ *	A: 3. pass a src_uri to gsd-background-helper.
+ *	A: x. user chooses another background image. A add this src_uri to
+ *	      the worklist.
+ *	B: 4. generate a blurred image for the src_uri by 3.
+ *	      then return OK to A.
+ *	A: 5. A receives OK. send another src_uri to gsd-background-helper.
+ *	      and remove it from worklist.
+ *	A: 6. when the worklist is empty send NULL to terminate gsd-background-helper.
+ *
+ *	some quick return cases 
+ */
 
 //previous picture
-static char* prev_pict_path;
-
+static char* prev_pict_path = NULL;
+/*
+ *	we have a single copy of every src_uri. it can only be freed by g_hash_table_destroy
+ *	GPtrArray is act as a queue: old elements are removed from the head; new elements 
+ *	are appended to the end.
+ *	src_uri_ht: src_uri ---> status (initialized to 0 (on work_list) and set to 1 when 
+ *	gsd-background-helper completes this drawing); 
+ */
+//worklist
+//static GPtrArray*   work_list = NULL;
+//static GHashTable*  src_uri_ht = NULL; 
 
 //
 static void register_account_service_background_path (GsdBackgroundManager* manager, const char* cur_pict);
@@ -82,8 +110,12 @@ update_prev_pict_path (const char* cur_pict_path)
 static void
 start_gaussian_helper (const char* cur_pict_path)
 {
+    //quick return 1. 
     if (cur_pict_path == NULL)
 	return ;
+
+    //unlink (BG_GAUSSIAN_PICT_PATH);
+    //(void)symlink (cur_pict_path, BG_GAUSSIAN_PICT_PATH);
 
     //LIBEXECDIR is a CPP macro. see Makefile.am
     char* command = NULL;
@@ -290,6 +322,10 @@ initial_setup (GsdBackgroundManager* manager)
 DEEPIN_EXPORT void
 bg_util_init (GsdBackgroundManager* manager)
 {
+    //work_list = g_ptr_array_new ();
+    //src_uri_ht = g_hash_table_new_full (g_str_hash, g_str_equal,
+    //					g_free, NULL);
+
     manager->priv->accounts_proxy = NULL;
 
     manager->priv->deepin_settings = g_settings_new (BG_SCHEMA_ID);
