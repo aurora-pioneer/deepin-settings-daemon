@@ -1,5 +1,4 @@
-*找一枚deepin-settings-daemon的维护者, 比如涩兔子, 让他ssh上来把最新的tarball
-编译安装到测试机上
+git clone git@github.com:linuxdeepin/deepin-settings-daemon.git
 
 修改Makefile.am, 设置 AM_CFLAGS = -g, 让gcc编译器打开 symbole table 导入支持
 
@@ -7,7 +6,7 @@
 查看一下该daemon的pid是多少 ps aux | grep gnome-settings-daemon
 
 *在开一个终端 sudo gdb
-attach _pid_
+attach _pid_ （注入进程）
 
 设置断点
 b /home/zhaixiang/Projects/deepin-settings-daemon/plugins/xrandr/deepin_xrandr.c:169
@@ -16,9 +15,9 @@ r
 n 下一步
 p output_name 查看变量的内存地址 && 该地址对应的值
 
-dbus-send --print-reply \
-            --system \
-            --dest=org.freedesktop.UPower \
-            /org/freedesktop/UPower/devices/battery_BAT1 \
-            org.freedesktop.DBus.Properties.GetAll \
-            string:org.freedesktop.UPower.Device
+*在手动运行gnome-settings-daemon之前，要kill系统自动启动的gsd两次
+
+*手动启动gsd，借助htop查看CPU占用
+
+valgrind检查内存泄露
+start-stop-daemon --start --background --exec valgrind -- --tool=memcheck --leak-check=yes --log-file=/home/zhaixiang/gsd.log /usr/lib/gnome-settings-daemon/gnome-settings-daemon
