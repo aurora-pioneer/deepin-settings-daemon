@@ -142,7 +142,7 @@ bg_blur_pict_make_cache_dir ()
 
     if (!g_file_test (cache_dir, G_FILE_TEST_IS_DIR))
     {
-	g_mkdir (cache_dir, 0700);
+	g_mkdir_with_parents (cache_dir, 0700);
 	retval = TRUE;
     }
     g_free (cache_dir);
