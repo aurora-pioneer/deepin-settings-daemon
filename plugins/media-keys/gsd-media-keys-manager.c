@@ -2011,7 +2011,8 @@ do_action (GsdMediaKeysManager *manager,
                 do_sound_action (manager, deviceid, VOLUME_UP_KEY, TRUE);
                 break;
         case LOGOUT_KEY:
-                do_logout_action (manager);
+                execute (manager, "python /usr/share/deepin-system-settings/modules/power/src/tray_shutdown_plugin.py logout", FALSE);
+                //do_logout_action (manager);
                 break;
         case EJECT_KEY:
                 do_eject_action (manager);
@@ -2114,7 +2115,8 @@ do_action (GsdMediaKeysManager *manager,
 		do_toggle_contrast_action (manager);
 		break;
         case POWER_KEY:
-                do_config_power_action (manager, "button-power");
+                execute (manager, "python /usr/share/deepin-system-settings/modules/power/src/tray_shutdown_plugin.py shutdown", FALSE);
+                //do_config_power_action (manager, "button-power");
                 break;
         case SLEEP_KEY:
                 do_config_power_action (manager, "button-sleep");

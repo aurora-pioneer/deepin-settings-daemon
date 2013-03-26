@@ -4,6 +4,12 @@
  *	and use methods similar to those specified in freedesktop
  *	thumbnail spec.
  *	PNG namespace used here:
+ *	because PNG option doesn't support ISO9569 encoding.
+ *	
+ *	NOTES: 
+ *	1. file path encoding. (suffixed with _bs64)
+ *	 1) generate: encode src_uri in base64 and saved as an option in PNG
+ *	 2) lookup  : 
  */
 #include <math.h>
 #include <stdlib.h>
@@ -18,8 +24,6 @@
 
 #include "gaussianiir2d.h"
 
-//gaussian blur
-#define BG_GAUSSIAN_PICT_PATH	"/tmp/.deepin_background_gaussian.png"
 
 #define	BG_BLUR_PICT_CACHE_DIR "gaussian-background"
 #define BG_EXT_URI	 "tEXt::Blur::URI"
@@ -107,11 +111,14 @@ bg_blur_pict_is_valid (GdkPixbuf* pixbuf,
 {
     g_debug ("bg_blur_pict_is_valid:");
     //1. check if the original uri matches the provided @uri
-    const char *blur_uri;
-    blur_uri = gdk_pixbuf_get_option (pixbuf, BG_EXT_URI);
-    if (!blur_uri)
+    const char *blur_uri_bs64;
+    blur_uri_bs64 = gdk_pixbuf_get_option (pixbuf, BG_EXT_URI);
+    if (!blur_uri_bs64)
 	return FALSE;
-    if (strcmp (src_uri, blur_uri) != 0)
+    char* src_uri_bs64 = g_base64_encode (src_uri, strlen (src_uri)+1);
+    gboolean is_equal =(strcmp (src_uri_bs64, blur_uri_bs64) == 0);
+    g_free (src_uri_bs64);
+    if (!is_equal)
 	return FALSE;
   
     //2. check if the modification time matches
@@ -203,21 +210,30 @@ bg_blur_pict_generate (const char* src_uri,
     close (tmp_fd);
 
     // save pixbuf
+    char* src_uri_bs64;
     char mtime_str[21];
     gboolean saved_ok;
+    error = NULL;
+
     g_snprintf (mtime_str, 21, "%ld",  src_mtime);
+    src_uri_bs64 = g_base64_encode (src_uri, strlen (src_uri)+1);
     saved_ok = gdk_pixbuf_save (pixbuf,
 				tmp_path,
-				"png", NULL,
-				BG_EXT_URI, src_uri,
+				"png", &error,
+				BG_EXT_URI, src_uri_bs64,
 				BG_EXT_MTIME, mtime_str,
 				NULL);
-
     if (saved_ok)
     {
 	g_chmod (tmp_path, 0600);
 	g_rename (tmp_path, dest_path);
     }
+    else
+    {
+	g_debug ("background_helper: %s", error->message);
+	g_error_free (error);
+    }
+    g_free (src_uri_bs64);
     g_free (tmp_path);
     return 0;
 }
