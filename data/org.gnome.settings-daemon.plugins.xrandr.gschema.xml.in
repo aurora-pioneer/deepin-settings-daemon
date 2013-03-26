@@ -1,0 +1,54 @@
+<schemalist>
+  <schema gettext-domain="gnome-settings-daemon" id="org.gnome.settings-daemon.plugins.xrandr" path="/org/gnome/settings-daemon/plugins/xrandr/">
+    <key name="active" type="b">
+      <default>true</default>
+      <_summary>Activation of this plugin</_summary>
+      <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
+    </key>
+    <key name="default-configuration-file" type="s">
+      <default>'/etc/gnome-settings-daemon/xrandr/monitors.xml'</default>
+      <_summary>File for default configuration for RandR</_summary>
+      <_description>The XRandR plugin will look for a default configuration in the file specified by this key. This is similar to the ~/.config/monitors.xml that normally gets stored in users' home directories.  If a user does not have such a file, or has one that does not match the user's setup of monitors, then the file specified by this key will be used instead.</_description>
+    </key>
+    <key name="priority" type="i">
+      <default>2</default>
+      <_summary>Priority to use for this plugin</_summary>
+      <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
+    </key>
+    <key name="default-monitors-setup" enum="org.gnome.settings-daemon.GsdXrandrBootBehaviour">
+      <default>'do-nothing'</default>
+      <_summary>Whether to turn off specific monitors after boot</_summary>
+      <_description>'clone' will display the same thing on all monitors, 'dock' will switch off the internal monitor, 'do-nothing' will use the default Xorg behaviour (extend the desktop in recent versions)</_description>
+    </key>
+    <key name="is-laptop" type="b">
+      <default>false</default>
+      <_summary>Is laptop or not</_summary>
+      <_description>Is laptop or not</_description>
+    </key>
+    <key name="brightness" type="d">
+      <default>1.0</default>
+      <_summary>Brightness</_summary>
+      <_description>Brightness</_description>
+    </key>
+    <key name="output-names" type="as">
+      <default>['']</default>
+      <_summary>Output connected by name</_summary>
+      <_description>Output connected by name</_description>
+    </key>
+    <key name="copy-multi-monitors" type="b">
+      <default>true</default>
+      <_summary>Copy multi monitors</_summary>
+      <_description>Copy multi monitors</_description>
+    </key>
+    <key name="extend-multi-monitors" type="b">
+      <default>false</default>
+      <_summary>Extend multi monitors</_summary>
+      <_description>Extend multi monitors</_description>
+    </key>
+    <key name="only-monitor-shown" type="i">
+      <default>0</default>
+      <_summary>Only which monitor shown</_summary>
+      <_description>Only which monitor shown</_description>
+    </key>
+  </schema>
+</schemalist>

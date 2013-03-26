@@ -77,10 +77,6 @@
 #define GSD_POWER_DBUS_INTERFACE_SCREEN         "org.gnome.SettingsDaemon.Power.Screen"
 #define GSD_POWER_DBUS_INTERFACE_KEYBOARD       "org.gnome.SettingsDaemon.Power.Keyboard"
 
-#define GS_DBUS_NAME                            "org.gnome.ScreenSaver"
-#define GS_DBUS_PATH                            "/"
-#define GS_DBUS_INTERFACE                       "org.gnome.ScreenSaver"
-
 #define GSD_POWER_MANAGER_NOTIFY_TIMEOUT_NEVER          0 /* ms */
 #define GSD_POWER_MANAGER_NOTIFY_TIMEOUT_SHORT          10 * 1000 /* ms */
 #define GSD_POWER_MANAGER_NOTIFY_TIMEOUT_LONG           30 * 1000 /* ms */
@@ -163,7 +159,6 @@ struct GsdPowerManagerPrivate
         GnomeSettingsSession    *session;
         gboolean                 lid_is_closed;
         GSettings               *settings;
-        GSettings               *settings_screensaver;
         UpClient                *up_client;
         GDBusNodeInfo           *introspection_data;
         GDBusConnection         *connection;
@@ -193,7 +188,6 @@ struct GsdPowerManagerPrivate
         ca_context              *canberra_context;
         ca_proplist             *critical_alert_loop_props;
         guint32                  critical_alert_timeout_id;
-        GDBusProxy              *screensaver_proxy;
         GDBusProxy              *session_proxy;
         GDBusProxy              *session_presence_proxy;
         GpmIdletime             *idletime;
@@ -217,7 +211,6 @@ static UpDevice *engine_update_composite_device (GsdPowerManager *manager, UpDev
 static GIcon    *engine_get_icon (GsdPowerManager *manager);
 static gchar    *engine_get_summary (GsdPowerManager *manager);
 static void      do_power_action_type (GsdPowerManager *manager, GsdPowerActionType action_type);
-static void      lock_screensaver (GsdPowerManager *manager);
 
 G_DEFINE_TYPE (GsdPowerManager, gsd_power_manager, G_TYPE_OBJECT)
 
@@ -2388,10 +2381,7 @@ do_lid_closed_action (GsdPowerManager *manager)
                         g_warning ("to prevent damage, now forcing suspend");
                         do_power_action_type (manager, GSD_POWER_ACTION_SUSPEND);
                         return;
-                } else {
-                        /* maybe lock the screen if the lid is closed */
-                        lock_screensaver (manager);
-                }
+                } 
         }
 
         /* ensure we turn the panel back on after resume */
@@ -3423,30 +3413,6 @@ gsd_power_manager_class_init (GsdPowerManagerClass *klass)
 }
 
 static void
-sleep_cb_screensaver_proxy_ready_cb (GObject *source_object,
-                            GAsyncResult *res,
-                            gpointer user_data)
-{
-        GError *error = NULL;
-        GsdPowerManager *manager = GSD_POWER_MANAGER (user_data);
-
-        manager->priv->screensaver_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
-        if (manager->priv->screensaver_proxy == NULL) {
-                g_warning ("Could not connect to gnome-screensaver: %s",
-                           error->message);
-                g_error_free (error);
-                return;
-        }
-
-        /* Finish the upower_notify_sleep_cb() call by locking the screen */
-        g_debug ("gnome-screensaver activated, doing gnome-screensaver lock");
-        g_dbus_proxy_call (manager->priv->screensaver_proxy,
-                           "Lock",
-                           NULL, G_DBUS_CALL_FLAGS_NONE, -1,
-                           NULL, NULL, NULL);
-}
-
-static void
 idle_dbus_signal_cb (GDBusProxy *proxy,
                      const gchar *sender_name,
                      const gchar *signal_name,
@@ -3598,59 +3564,11 @@ out:
 }
 
 static void
-lock_screensaver (GsdPowerManager *manager)
-{
-    system(LOCK_CMD);
-
-    if (manager->priv->screensaver_proxy != NULL) {
-        g_debug("doing gnome-screensaver lock");
-        g_dbus_proxy_call(manager->priv->screensaver_proxy,
-                          "Lock",
-                          NULL, 
-                          G_DBUS_CALL_FLAGS_NONE, 
-                          -1, 
-                          NULL, 
-                          NULL, 
-                          NULL);
-    } else {
-        /* connect to the screensaver first */
-        g_dbus_proxy_new_for_bus(G_BUS_TYPE_SESSION,
-                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-                                 NULL,
-                                 GS_DBUS_NAME,
-                                 GS_DBUS_PATH,
-                                 GS_DBUS_INTERFACE,
-                                 NULL,
-                                 sleep_cb_screensaver_proxy_ready_cb,
-                                 manager);
-    }
-}
-
-static void
 upower_notify_sleep_cb (UpClient *client,
                         UpSleepKind sleep_kind,
                         GsdPowerManager *manager)
 {
         system(LOCK_CMD);
-
-        if (manager->priv->screensaver_proxy != NULL) {
-                g_debug ("doing gnome-screensaver lock");
-                g_dbus_proxy_call (manager->priv->screensaver_proxy,
-                                   "Lock",
-                                   NULL, G_DBUS_CALL_FLAGS_NONE, -1,
-                                   NULL, NULL, NULL);
-        } else {
-                /* connect to the screensaver first */
-                g_dbus_proxy_new_for_bus (G_BUS_TYPE_SESSION,
-                                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-                                          NULL,
-                                          GS_DBUS_NAME,
-                                          GS_DBUS_PATH,
-                                          GS_DBUS_INTERFACE,
-                                          NULL,
-                                          sleep_cb_screensaver_proxy_ready_cb,
-                                          manager);
-        }
 }
 
 static void
@@ -3660,16 +3578,6 @@ upower_notify_resume_cb (UpClient *client,
 {
         gboolean ret;
         GError *error = NULL;
-
-        /* this displays the unlock dialogue so the user doesn't have
-         * to move the mouse or press any key before the window comes up */
-        if (manager->priv->screensaver_proxy != NULL) {
-                g_dbus_proxy_call (manager->priv->screensaver_proxy,
-                                   "SimulateUserActivity",
-                                   NULL,
-                                   G_DBUS_CALL_FLAGS_NONE,
-                                   -1, NULL, NULL, NULL);
-        }
 
         /* close existing notifications on resume, the system power
          * state is probably different now */
@@ -3763,7 +3671,6 @@ gsd_power_manager_start (GsdPowerManager *manager,
         manager->priv->settings = g_settings_new (GSD_POWER_SETTINGS_SCHEMA);
         g_signal_connect (manager->priv->settings, "changed",
                           G_CALLBACK (engine_settings_key_changed_cb), manager);
-        manager->priv->settings_screensaver = g_settings_new ("org.gnome.desktop.screensaver");
         manager->priv->up_client = up_client_new ();
         g_signal_connect (manager->priv->up_client, "notify-sleep",
                           G_CALLBACK (upower_notify_sleep_cb), manager);
@@ -3934,11 +3841,9 @@ gsd_power_manager_stop (GsdPowerManager *manager)
 
         g_object_unref (manager->priv->session);
         g_object_unref (manager->priv->settings);
-        g_object_unref (manager->priv->settings_screensaver);
         g_object_unref (manager->priv->up_client);
         manager->priv->session = NULL;
         manager->priv->settings = NULL;
-        manager->priv->settings_screensaver = NULL;
         manager->priv->up_client = NULL;
 
         if (manager->priv->x11_screen != NULL) {
