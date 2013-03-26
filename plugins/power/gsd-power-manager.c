@@ -3600,13 +3600,6 @@ out:
 static void
 lock_screensaver (GsdPowerManager *manager)
 {
-    gboolean do_lock;
-
-    do_lock = g_settings_get_boolean(manager->priv->settings_screensaver,
-                                          "lock-enabled");
-    if (!do_lock)
-        return;
-
     system(LOCK_CMD);
 
     if (manager->priv->screensaver_proxy != NULL) {
@@ -3638,13 +3631,6 @@ upower_notify_sleep_cb (UpClient *client,
                         UpSleepKind sleep_kind,
                         GsdPowerManager *manager)
 {
-        gboolean do_lock;
-
-        do_lock = g_settings_get_boolean (manager->priv->settings_screensaver,
-                                          "lock-enabled");
-        if (!do_lock)
-                return;
-
         system(LOCK_CMD);
 
         if (manager->priv->screensaver_proxy != NULL) {
