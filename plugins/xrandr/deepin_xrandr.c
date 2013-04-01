@@ -561,9 +561,10 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
         return -1;
 
     sprintf(backup_filename, "%s/.config/monitors.xml", pw->pw_dir);
-    /* TODO: create monitors.xml if it is not exist */
-    if (access(backup_filename, 0) == -1) 
-        gnome_rr_config_save(config, NULL);
+    if (access(backup_filename, 0) == 0) 
+        remove(backup_filename);
+
+    gnome_rr_config_save(config, NULL);
 
     m_config_file = g_file_new_for_path(backup_filename);
     if (!m_config_file) 
