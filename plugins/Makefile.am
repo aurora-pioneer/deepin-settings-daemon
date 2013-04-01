@@ -16,14 +16,14 @@ enabled_plugins =	\
 	mouse		\
 	sound		\
 	wacom		\
-	color		\
 	xrandr		\
 	xsettings	\
 	key-bindings	\
     $(NULL)
 
 disabled_plugins = \
-    $(NULL)
+    color	\
+	$(NULL)
 
 if BUILD_GCONF_BRIDGE
 enabled_plugins += gconf
