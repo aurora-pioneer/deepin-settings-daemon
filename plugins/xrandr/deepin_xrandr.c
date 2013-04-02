@@ -555,6 +555,7 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
 
     m_set_output_names(screen, settings);
     m_set_brightness(screen, settings);
+    m_set_multi_monitors(screen, settings);
 
     pw = getpwuid(getuid());
     if (!pw) 
