@@ -131,6 +131,11 @@
       <_summary>Copy a screenshot of an area to clipboard</_summary>
       <_description>Binding to copy a screenshot of an area to clipboard.</_description>
     </key>
+    <key type="s" name="terminal">
+      <default>'&lt;Primary&gt;&lt;Alt&gt;t'</default>
+      <summary>Launch terminal</summary>
+      <description>Binding to launch the terminal.</description>
+    </key>
     <key name="www" type="s">
       <default>'XF86WWW'</default>
       <_summary>Launch web browser</_summary>
