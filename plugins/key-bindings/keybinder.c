@@ -10,15 +10,6 @@
 
 #include "keybinder.h"
 
-/* Uncomment the next line to print a debug trace. */
-/* #define DEBUG */
-
-#ifdef DEBUG
-#  define TRACE(x) x
-#else
-#  define TRACE(x) do {} while (FALSE);
-#endif
-
 #define MODIFIERS_ERROR ((GdkModifierType)(-1))
 #define MODIFIERS_NONE 0
 
@@ -144,7 +135,7 @@ grab_ungrab_with_ignorable_modifiers (GdkWindow *rootwin,
 	}
 	gdk_flush();
 	if (gdk_error_trap_pop()) {
-		TRACE (g_print ("Failed grab/ungrab!\n"));
+		g_debug ("Failed grab/ungrab!");
 		if (grab) {
 			/* On error, immediately release keys again */
 			grab_ungrab_with_ignorable_modifiers(rootwin,
@@ -198,8 +189,8 @@ grab_ungrab (GdkWindow *rootwin,
 		}
 
 
-		TRACE (g_print("grab/ungrab keycode: %d, lev: %d, grp: %d, ",
-			keys[k].keycode, keys[k].level, keys[k].group));
+		g_debug ("grab/ungrab keycode: %d, lev: %d, grp: %d",
+			keys[k].keycode, keys[k].level, keys[k].group);
 		if (use_xkb_extension) {
 			add_modifiers = FinallyGetModifiersForKeycode(xmap,
 		                                              keys[k].keycode,
@@ -215,8 +206,8 @@ grab_ungrab (GdkWindow *rootwin,
 		if (add_modifiers == MODIFIERS_ERROR) {
 			continue;
 		}
-		TRACE (g_print("modifiers: 0x%x (consumed: 0x%x)\n",
-		               add_modifiers | modifiers, add_modifiers));
+		g_debug ("modifiers: 0x%x (consumed: 0x%x)",
+		          add_modifiers | modifiers, add_modifiers);
 		if (grab_ungrab_with_ignorable_modifiers(rootwin,
 		                                         keys[k].keycode,
 		                                         add_modifiers | modifiers,
@@ -288,8 +279,8 @@ do_grab_key (struct Binding *binding)
 
 	binding->keyval = keysym;
 	binding->modifiers = modifiers;
-	TRACE (g_print ("Grabbing keyval: %d, vmodifiers: 0x%x, name: %s\n",
-	                keysym, modifiers, binding->keystring));
+	g_debug ("Grabbing keyval: %d, vmodifiers: 0x%x, name: %s",
+	         keysym, modifiers, binding->keystring);
 
 	/* Map virtual modifiers to non-virtual modifiers */
 	gdk_keymap_map_virtual_modifiers(keymap, &modifiers);
@@ -319,8 +310,8 @@ do_ungrab_key (struct Binding *binding)
 	if (keymap == NULL || rootwin == NULL)
 		return FALSE;
 
-	TRACE (g_print ("Ungrabbing keyval: %d, vmodifiers: 0x%x, name: %s\n",
-	                binding->keyval, binding->modifiers, binding->keystring));
+	g_debug ("Ungrabbing keyval: %d, vmodifiers: 0x%x, name: %s",
+	         binding->keyval, binding->modifiers, binding->keystring);
 
 	/* Map virtual modifiers to non-virtual modifiers */
 	modifiers = binding->modifiers;
@@ -347,9 +338,8 @@ filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 	case KeyPress:
 		modifiers = xevent->xkey.state;
 
-		TRACE (g_print ("Got KeyPress keycode: %d, modifiers: 0x%x\n", 
-				xevent->xkey.keycode, 
-				xevent->xkey.state));
+		g_debug ("Got KeyPress keycode: %d, modifiers: 0x%x", 
+			 xevent->xkey.keycode, xevent->xkey.state);
 
 		if (use_xkb_extension) {
 			gdk_keymap_translate_keyboard_state(
@@ -371,9 +361,8 @@ filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 		gdk_keymap_add_virtual_modifiers(keymap, &modifiers);
 		modifiers &= mod_mask;
 
-		TRACE (g_print ("Translated keyval: %d, vmodifiers: 0x%x, name: %s\n",
-		                keyval, modifiers,
-		                gtk_accelerator_name(keyval, modifiers)));
+		g_debug ("Translated keyval: %d, vmodifiers: 0x%x, name: %s",
+		          keyval, modifiers, gtk_accelerator_name(keyval, modifiers));
 
 		/*
 		 * Set the last event time for use when showing
@@ -392,8 +381,8 @@ filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 
 			if (keyvalues_equal(binding->keyval, keyval) &&
 			    modifiers_equal(binding->modifiers, modifiers)) {
-				TRACE (g_print ("Calling handler for '%s'...\n", 
-						binding->keystring));
+				g_debug ("Calling handler for '%s'...", 
+					 binding->keystring);
 
 				(binding->handler) (binding->keystring, 
 						    binding->user_data);
@@ -403,7 +392,7 @@ filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 		processing_event = FALSE;
 		break;
 	case KeyRelease:
-		TRACE (g_print ("Got KeyRelease! \n"));
+		g_debug ("Got KeyRelease!");
 		break;
 	}
 
@@ -417,7 +406,7 @@ keymap_changed (GdkKeymap *map)
 
 	(void) map;
 
-	TRACE (g_print ("Keymap changed! Regrabbing keys..."));
+	g_debug ("Keymap changed! Regrabbing keys...");
 
 	for (iter = bindings; iter != NULL; iter = iter->next) {
 		struct Binding *binding = iter->data;
@@ -462,7 +451,7 @@ keybinder_init ()
 	                                           &majver, &minver);
 
 	use_xkb_extension = detected_xkb_extension;
-	TRACE(g_print("XKB: %d, version: %d, %d\n", use_xkb_extension, majver, minver));
+	g_debug ("XKB: %d, version: %d, %d", use_xkb_extension, majver, minver);
 
 	gdk_window_add_filter (rootwin, filter_func, NULL);
 
@@ -599,7 +588,7 @@ keybinder_unbind (const char *keystring, KeybinderHandler handler)
 		do_ungrab_key (binding);
 		bindings = g_slist_remove (bindings, binding);
 
-		TRACE (g_print("unbind, notify: %p\n", binding->notify));
+		g_debug ("unbind, notify: %p", binding->notify);
 		if (binding->notify) {
 			binding->notify(binding->user_data);
 		}
@@ -632,7 +621,7 @@ void keybinder_unbind_all (const char *keystring)
 		do_ungrab_key (binding);
 		bindings = g_slist_remove (bindings, binding);
 
-		TRACE (g_print("unbind_all, notify: %p\n", binding->notify));
+		g_debug ("unbind_all, notify: %p", binding->notify);
 		if (binding->notify) {
 			binding->notify(binding->user_data);
 		}
