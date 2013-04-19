@@ -44,6 +44,7 @@
 #include "gnome-settings-session.h"
 #include "gsd-enums.h"
 #include "gsd-power-manager.h"
+#include "deepin_power.h"
 
 #define LOCK_CMD "dlock"
 #define BUFFER_SIZE 1024
@@ -3763,6 +3764,7 @@ gsd_power_manager_start (GsdPowerManager *manager,
         manager->priv->settings = g_settings_new (GSD_POWER_SETTINGS_SCHEMA);
         g_signal_connect (manager->priv->settings, "changed",
                           G_CALLBACK (engine_settings_key_changed_cb), manager);
+        deepin_power_init(manager->priv->settings);
         manager->priv->settings_screensaver = g_settings_new ("org.gnome.desktop.screensaver");
         manager->priv->up_client = up_client_new ();
         g_signal_connect (manager->priv->up_client, "notify-sleep",
@@ -3903,6 +3905,8 @@ void
 gsd_power_manager_stop (GsdPowerManager *manager)
 {
         g_debug ("Stopping power manager");
+
+        deepin_power_cleanup();
 
         if (manager->priv->bus_cancellable != NULL) {
                 g_cancellable_cancel (manager->priv->bus_cancellable);

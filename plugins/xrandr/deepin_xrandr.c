@@ -554,7 +554,6 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
                      screen);
 
     m_set_output_names(screen, settings);
-    m_set_brightness(screen, settings);
     m_set_multi_monitors(screen, settings);
 
     pw = getpwuid(getuid());
@@ -566,6 +565,8 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
         remove(backup_filename);
 
     gnome_rr_config_save(config, NULL);
+
+    m_set_brightness(screen, settings);
 
     m_config_file = g_file_new_for_path(backup_filename);
     if (!m_config_file) 
