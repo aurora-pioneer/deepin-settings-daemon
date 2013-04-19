@@ -86,7 +86,8 @@ gsd_background_helper_CFLAGS =		\
 		`pkg-config --cflags gtk+-3.0`
 
 gsd_background_helper_LDFLAGS=		\
-		`pkg-config --libs gtk+-3.0`
+		`pkg-config --libs gtk+-3.0` \
+		-lm
 
 
 EXTRA_DIST = 			\
