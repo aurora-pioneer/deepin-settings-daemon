@@ -16,12 +16,12 @@
       <_description>Key1</_description>                                            
     </key>      
     <key name="key2" type="s">
-      <default>"/usr/bin/nautilus;&lt;Super&gt;E"</default>
+      <default>"/usr/bin/gnome-terminal;&lt;Control&gt;&lt;Alt&gt;T"</default>
       <_summary>Key2</_summary>
       <_description>Key2</_description>
     </key>      
     <key name="key3" type="s">
-      <default>"/usr/bin/gnome-terminal;&lt;Ctrl&gt;&lt;Alt&gt;T"</default>
+      <default>"/usr/bin/dlock;&lt;Super&gt;L"</default>
       <_summary>Key3</_summary>
       <_description>Key3</_description>
     </key>      
@@ -31,37 +31,37 @@
       <_description>Key4</_description>                                            
     </key>      
     <key name="key5" type="s">                                                  
-      <default>''</default>                                                        
+      <default>'python /usr/share/deepin-system-settings/modules/power/src/tray_shutdown_plugin.py logout;&lt;Primary&gt;&lt;Alt&gt;Delete'</default>
       <_summary>Key5</_summary>                                                 
       <_description>Key5</_description>                                            
     </key> 
     <key name="key6" type="s">                                                  
-      <default>''</default>                                                     
+      <default>'/usr/bin/deepin-user-manual;F12'</default>                                                     
       <_summary>Key6</_summary>                                                 
       <_description>Key6</_description>                                         
     </key>                                                                      
     <key name="key7" type="s">                                                  
-      <default>''</default>                                                     
+      <default>'/usr/bin/deepin-screenshot;&lt;Control&gt;&lt;Alt&gt;a'</default>                                                     
       <_summary>Key7</_summary>                                                 
       <_description>Key7</_description>                                         
     </key>                                                                      
     <key name="key8" type="s">                                                  
-      <default>''</default>                                                     
+      <default>'/usr/bin/deepin-screenshot -f;Print'</default>                                                     
       <_summary>Key8</_summary>                                                 
       <_description>Key8</_description>                                         
     </key>                                                                      
     <key name="key9" type="s">                                                  
-      <default>''</default>                                                     
+      <default>'/usr/bin/deepin-screenshot -w;&lt;Alt&gt;Print'</default>                                                     
       <_summary>Key9</_summary>                                                 
       <_description>Key9</_description>                                         
     </key>                                                                      
     <key name="key10" type="s">                                                  
-      <default>''</default>                                                     
+      <default>'/usr/bin/deepin-screenshot -d 5;&lt;Control&gt;Print'</default>                                                     
       <_summary>Key10</_summary>                                                 
       <_description>Key10</_description>                                         
     </key>                    
     <key name="key11" type="s">                                                  
-      <default>''</default>                                                     
+      <default>'/usr/bin/nautilus;&lt;Super&gt;e'</default>                                                     
       <_summary>Key11</_summary>                                                 
       <_description>Key11</_description>                                         
     </key>                   
