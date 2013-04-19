@@ -21,7 +21,7 @@
       <_description>Binding to eject an optical disc.</_description>
     </key>
     <key name="help" type="s">
-      <default>'F12'</default>
+      <default>''</default>
       <_summary>Launch help browser</_summary>
       <_description>Binding to launch the help browser.</_description>
     </key>
@@ -51,7 +51,7 @@
       <_description>Binding to start playback (or toggle play/pause).</_description>
     </key>
     <key name="logout" type="s">
-      <default>'&lt;Control&gt;&lt;Alt&gt;Delete'</default>
+      <default>''</default>
       <_summary>Log out</_summary>
       <_description>Binding to log out.</_description>
     </key>
@@ -67,7 +67,7 @@
     </key>
     <key name="screensaver" type="s">
       <!--default>'&lt;Control&gt;&lt;Alt&gt;l'</default-->
-      <default>'&lt;Super&gt;l'</default>
+      <default>''</default>
       <_summary>Lock screen</_summary>
       <_description>Binding to lock the screen.</_description>
     </key>
@@ -97,25 +97,25 @@
       <_description>Binding to raise the system volume.</_description>
     </key>
     <key name="screenshot" type="s">
-      <default>'&lt;Control&gt;&lt;Alt&gt;a'</default>
+      <default>''</default>
       <_summary>Take a screenshot</_summary>
       <_description>Binding to take a screenshot.</_description>
     </key>
     <key name="window-screenshot" type="s">
       <!--<default>'&lt;Alt&gt;Print'</default>-->
-      <default>'&lt;Alt&gt;Print'</default>
+      <default>''</default>
       <_summary>Take a screenshot of a window</_summary>
       <_description>Binding to take a screenshot of a window.</_description>
     </key>
     <key name="area-screenshot" type="s">
       <!--<default>'&lt;Shift&gt;Print'</default>-->
-      <default>'Print'</default>
+      <default>''</default>
       <_summary>Take a screenshot of an area</_summary>
       <_description>Binding to take a screenshot of an area.</_description>
     </key>
     <!--<key name="screenshot-clip" type="s">-->
     <key name="screenshot-delay" type="s">
-      <default>'&lt;Control&gt;Print'</default>
+      <default>''</default>
       <_summary>Copy a screenshot to clipboard</_summary>
       <_description>Binding to copy a screenshot to clipboard.</_description>
     </key>
@@ -132,7 +132,7 @@
       <_description>Binding to copy a screenshot of an area to clipboard.</_description>
     </key>
     <key type="s" name="terminal">
-      <default>'&lt;Primary&gt;&lt;Alt&gt;t'</default>
+      <default>''</default>
       <summary>Launch terminal</summary>
       <description>Binding to launch the terminal.</description>
     </key>
