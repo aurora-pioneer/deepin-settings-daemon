@@ -20,9 +20,7 @@
  */
 
 #include <gio/gio.h>
-#include <limits.h>
 #include <pwd.h>
-#include <unistd.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
@@ -41,80 +39,114 @@ static const char m_powers_plan_xml[] =
 "      <close-monitor>0</close-monitor>\n"                                      
 "      <suspend>0</suspend>\n"                                                  
 "    </plan>\n"
+"    <plan name=\"customized\">\n"
+"      <close-monitor>600</close-monitor>\n"
+"      <suspend>600</suspend>\n"
+"    </plan>\n"
 "  </configuration>\n"
 "</powers>\n";
 
-static GFile *m_config_file = NULL;
-static GFileMonitor *m_config_file_monitor = NULL;
+static char *m_backup_filename = NULL;
 
-static void m_config_file_changed(GFileMonitor *monitor, 
-                                  GFile *file, 
-                                  GFile *other_file, 
-                                  GFileMonitorEvent event_type, 
-                                  gpointer user_data);
+static void m_parse_plan(xmlDocPtr doc, xmlNodePtr cur, GSettings *settings);
+static void m_parse_configuration(xmlDocPtr doc, 
+                                  xmlNodePtr cur, 
+                                  GSettings *settings, 
+                                  char *current_plan);
 static void m_settings_changed(GSettings *settings, 
                                gchar *key, 
                                gpointer user_data);
 
-static void m_config_file_changed(GFileMonitor *monitor, 
-                                  GFile *file, 
-                                  GFile *other_file, 
-                                  GFileMonitorEvent event_type, 
-                                  gpointer user_data) 
-{
-    char *filename = NULL;
-    xmlDocPtr doc = NULL;
-    xmlNodePtr cur = NULL;
-
-    if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
-        return;
-
-    filename = g_file_get_path(file);
-    doc = xmlParseFile(filename);
-    if (!doc) 
-        return;
-
-    cur = xmlDocGetRootElement(doc);
-    if (!cur) {
-        xmlFreeDoc(doc);
-        return;
+static void m_parse_plan(xmlDocPtr doc, xmlNodePtr cur, GSettings *settings)    
+{                                                                               
+    char *close_monitor = NULL;                                                         
+    char *suspend = NULL;
+    int close_monitor_value = 0;
+    int suspend_value = 0;    
+                                                                                
+    cur = cur->xmlChildrenNode;                                                 
+    while (cur) {                                                               
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "close-monitor")) {                 
+            close_monitor = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);         
+        }                                                                       
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "suspend")) {                
+            suspend = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);        
+        }                                                                       
+        cur = cur->next;                                                        
     }
+    close_monitor_value = atoi(close_monitor);
+    suspend_value = atoi(suspend);
+    g_settings_set_int(settings, "sleep-display-ac", close_monitor_value);
+    g_settings_set_int(settings, "sleep-display-battery", close_monitor_value);
+    g_settings_set_int(settings, "sleep-inactive-ac-timeout", suspend_value);
+    g_settings_set_int(settings, "sleep-inactive-battery-timeout", suspend_value);
+}
 
-    cur = cur->xmlChildrenNode;
-    /*
-    while (cur) { 
-        if (!xmlStrcmp(cur->name, (const xmlChar *) "configuration")) {
+static void m_parse_configuration(xmlDocPtr doc,                                
+                                  xmlNodePtr cur,                               
+                                  GSettings *settings, 
+                                  char *current_plan)                        
+{                                                                               
+    char *plan_name = NULL;                                                         
+                                                                                 
+    cur = cur->xmlChildrenNode;                                                  
+    while (cur) {                                                                
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "plan")) {                
+            plan_name = xmlGetProp(cur, (const xmlChar *) "name");            
+            if (strcmp(plan_name, current_plan) == 0) {
+                m_parse_plan(doc, cur, settings);
+                break;
+            }                
         }
-        cur = cur->next;
-    }
-    */
+        cur = cur->next;                                                        
+    }                                                                           
 }
 
 static void m_settings_changed(GSettings *settings, 
                                gchar *key, 
                                gpointer user_data) 
 {
+    gchar *current_plan = NULL;
+    xmlDocPtr doc = NULL;
+    xmlNodePtr cur = NULL;
+
+    if (strcmp(key, "current-plan") != 0) 
+        return;
+
+    current_plan = g_settings_get_string(settings, "current-plan");
+    
+    doc = xmlParseFile(m_backup_filename);
+    if (!doc) 
+        return;
+    cur = xmlDocGetRootElement(doc);
+    if (!cur) {
+        xmlFreeDoc(doc);
+        return;
+    }
+    cur = cur->xmlChildrenNode;
+    while (cur) {                                                               
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "configuration")) {         
+            m_parse_configuration(doc, cur, settings, current_plan);                            
+        }                                                                       
+        cur = cur->next;                                                        
+    }
 }
 
 int deepin_power_init(GSettings *settings) 
 {
-    char backup_filename[PATH_MAX] = {'\0'}; 
     struct passwd *pw = NULL;
     FILE *fptr = NULL;
-    
-    /* TODO: GSettings changed event */
-    g_signal_connect(settings, 
-                     "changed", 
-                     m_settings_changed, 
-                     NULL);
 
     pw = getpwuid(getuid());
     if (!pw) 
         return -1;
-
-    sprintf(backup_filename, "%s/.config/powers.xml", pw->pw_dir);
-    if (access(backup_filename, 0) != 0) {
-        fptr = fopen(backup_filename, "w+");
+    m_backup_filename = malloc(PATH_MAX * sizeof(char));
+    if (m_backup_filename == NULL) 
+        return -1;
+    memset(m_backup_filename, 0, PATH_MAX);
+    sprintf(m_backup_filename, "%s/.config/powers.xml", pw->pw_dir);
+    if (access(m_backup_filename, 0) != 0) {
+        fptr = fopen(m_backup_filename, "w+");
         if (fptr == NULL) 
             return -1;
         fwrite(m_powers_plan_xml, 1, strlen(m_powers_plan_xml), fptr);
@@ -123,22 +155,9 @@ int deepin_power_init(GSettings *settings)
         fptr = NULL;
     }
 
-    m_config_file = g_file_new_for_path(backup_filename);
-    if (!m_config_file) 
-        return -1;
-
-    m_config_file_monitor = g_file_monitor_file(m_config_file, 
-                                                G_FILE_MONITOR_NONE, 
-                                                NULL, 
-                                                NULL);
-    if (!m_config_file_monitor) { 
-        return -1;
-    }
-
-    /* TODO: GFile changed event */
-    g_signal_connect(m_config_file_monitor, 
-                     "changed", 
-                     m_config_file_changed, 
+    g_signal_connect(settings,                                                  
+                     "changed",                                                 
+                     m_settings_changed,                                        
                      NULL);
 
     return 0;
@@ -146,15 +165,9 @@ int deepin_power_init(GSettings *settings)
 
 void deepin_power_cleanup() 
 {
+    if (m_backup_filename) {
+        free(m_backup_filename);
+        m_backup_filename = NULL;
+    }
     xmlCleanupParser();
-    
-    if (m_config_file_monitor) {
-        g_object_unref(m_config_file_monitor);
-        m_config_file_monitor = NULL;
-    }
-    
-    if (m_config_file) {
-        g_object_unref(m_config_file);
-        m_config_file = NULL;
-    }
 }
