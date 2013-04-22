@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2007 William Jon McCann <mccann@jhu.edu>
+ * Copyright (C) 2013 Linux Deepin Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,40 +18,40 @@
  *
  */
 
-#ifndef __GSD_DUMMY_MANAGER_H
-#define __GSD_DUMMY_MANAGER_H
+#ifndef __GSD_IDLEDELAY_MANAGER_H
+#define __GSD_IDLEDELAY_MANAGER_H
 
 #include <glib-object.h>
 
 G_BEGIN_DECLS
 
-#define GSD_TYPE_DUMMY_MANAGER         (gsd_dummy_manager_get_type ())
-#define GSD_DUMMY_MANAGER(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), GSD_TYPE_DUMMY_MANAGER, GsdDummyManager))
-#define GSD_DUMMY_MANAGER_CLASS(k)     (G_TYPE_CHECK_CLASS_CAST((k), GSD_TYPE_DUMMY_MANAGER, GsdDummyManagerClass))
-#define GSD_IS_DUMMY_MANAGER(o)        (G_TYPE_CHECK_INSTANCE_TYPE ((o), GSD_TYPE_DUMMY_MANAGER))
-#define GSD_IS_DUMMY_MANAGER_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), GSD_TYPE_DUMMY_MANAGER))
-#define GSD_DUMMY_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), GSD_TYPE_DUMMY_MANAGER, GsdDummyManagerClass))
+#define GSD_TYPE_IDLEDELAY_MANAGER         (gsd_idledelay_manager_get_type ())
+#define GSD_IDLEDELAY_MANAGER(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), GSD_TYPE_IDLEDELAY_MANAGER, GsdIdledelayManager))
+#define GSD_IDLEDELAY_MANAGER_CLASS(k)     (G_TYPE_CHECK_CLASS_CAST((k), GSD_TYPE_IDLEDELAY_MANAGER, GsdIdledelayManagerClass))
+#define GSD_IS_IDLEDELAY_MANAGER(o)        (G_TYPE_CHECK_INSTANCE_TYPE ((o), GSD_TYPE_IDLEDELAY_MANAGER))
+#define GSD_IS_IDLEDELAY_MANAGER_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), GSD_TYPE_IDLEDELAY_MANAGER))
+#define GSD_IDLEDELAY_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), GSD_TYPE_IDLEDELAY_MANAGER, GsdIdledelayManagerClass))
 
-typedef struct GsdDummyManagerPrivate GsdDummyManagerPrivate;
+typedef struct GsdIdledelayManagerPrivate GsdIdledelayManagerPrivate;
 
 typedef struct
 {
         GObject                     parent;
-        GsdDummyManagerPrivate *priv;
-} GsdDummyManager;
+        GsdIdledelayManagerPrivate *priv;
+} GsdIdledelayManager;
 
 typedef struct
 {
         GObjectClass   parent_class;
-} GsdDummyManagerClass;
+} GsdIdledelayManagerClass;
 
-GType                   gsd_dummy_manager_get_type            (void);
+GType                   gsd_idledelay_manager_get_type            (void);
 
-GsdDummyManager *       gsd_dummy_manager_new                 (void);
-gboolean                gsd_dummy_manager_start               (GsdDummyManager *manager,
+GsdIdledelayManager *       gsd_idledelay_manager_new                 (void);
+gboolean                gsd_idledelay_manager_start               (GsdIdledelayManager *manager,
                                                                GError         **error);
-void                    gsd_dummy_manager_stop                (GsdDummyManager *manager);
+void                    gsd_idledelay_manager_stop                (GsdIdledelayManager *manager);
 
 G_END_DECLS
 
-#endif /* __GSD_DUMMY_MANAGER_H */
+#endif /* __GSD_IDLEDELAY_MANAGER_H */

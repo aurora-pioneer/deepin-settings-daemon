@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2007 William Jon McCann <mccann@jhu.edu>
+ * Copyright (C) 2012 Linux Deepin Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef __GSD_DUMMY_PLUGIN_H__
-#define __GSD_DUMMY_PLUGIN_H__
+#ifndef __GSD_IDLEDELAY_PLUGIN_H__
+#define __GSD_IDLEDELAY_PLUGIN_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -29,31 +29,31 @@
 
 G_BEGIN_DECLS
 
-#define GSD_TYPE_DUMMY_PLUGIN                (gsd_dummy_plugin_get_type ())
-#define GSD_DUMMY_PLUGIN(o)                  (G_TYPE_CHECK_INSTANCE_CAST ((o), GSD_TYPE_DUMMY_PLUGIN, GsdDummyPlugin))
-#define GSD_DUMMY_PLUGIN_CLASS(k)            (G_TYPE_CHECK_CLASS_CAST((k), GSD_TYPE_DUMMY_PLUGIN, GsdDummyPluginClass))
-#define GSD_IS_DUMMY_PLUGIN(o)               (G_TYPE_CHECK_INSTANCE_TYPE ((o), GSD_TYPE_DUMMY_PLUGIN))
-#define GSD_IS_DUMMY_PLUGIN_CLASS(k)         (G_TYPE_CHECK_CLASS_TYPE ((k), GSD_TYPE_DUMMY_PLUGIN))
-#define GSD_DUMMY_PLUGIN_GET_CLASS(o)        (G_TYPE_INSTANCE_GET_CLASS ((o), GSD_TYPE_DUMMY_PLUGIN, GsdDummyPluginClass))
+#define GSD_TYPE_IDLEDELAY_PLUGIN                (gsd_idledelay_plugin_get_type ())
+#define GSD_IDLEDELAY_PLUGIN(o)                  (G_TYPE_CHECK_INSTANCE_CAST ((o), GSD_TYPE_IDLEDELAY_PLUGIN, GsdIdledelayPlugin))
+#define GSD_IDLEDELAY_PLUGIN_CLASS(k)            (G_TYPE_CHECK_CLASS_CAST((k), GSD_TYPE_IDLEDELAY_PLUGIN, GsdIdledelayPluginClass))
+#define GSD_IS_IDLEDELAY_PLUGIN(o)               (G_TYPE_CHECK_INSTANCE_TYPE ((o), GSD_TYPE_IDLEDELAY_PLUGIN))
+#define GSD_IS_IDLEDELAY_PLUGIN_CLASS(k)         (G_TYPE_CHECK_CLASS_TYPE ((k), GSD_TYPE_IDLEDELAY_PLUGIN))
+#define GSD_IDLEDELAY_PLUGIN_GET_CLASS(o)        (G_TYPE_INSTANCE_GET_CLASS ((o), GSD_TYPE_IDLEDELAY_PLUGIN, GsdIdledelayPluginClass))
 
-typedef struct GsdDummyPluginPrivate GsdDummyPluginPrivate;
+typedef struct GsdIdledelayPluginPrivate GsdIdledelayPluginPrivate;
 
 typedef struct
 {
         GnomeSettingsPlugin    parent;
-        GsdDummyPluginPrivate *priv;
-} GsdDummyPlugin;
+        GsdIdledelayPluginPrivate *priv;
+} GsdIdledelayPlugin;
 
 typedef struct
 {
         GnomeSettingsPluginClass parent_class;
-} GsdDummyPluginClass;
+} GsdIdledelayPluginClass;
 
-GType   gsd_dummy_plugin_get_type            (void) G_GNUC_CONST;
+GType   gsd_idledelay_plugin_get_type            (void) G_GNUC_CONST;
 
 /* All the plugins must implement this function */
 G_MODULE_EXPORT GType register_gnome_settings_plugin (GTypeModule *module);
 
 G_END_DECLS
 
-#endif /* __GSD_DUMMY_PLUGIN_H__ */
+#endif /* __GSD_IDLEDELAY_PLUGIN_H__ */

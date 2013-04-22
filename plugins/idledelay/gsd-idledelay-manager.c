@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2007 William Jon McCann <mccann@jhu.edu>
+ * Copyright (C) Linux Deepin Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,11 +37,11 @@
 #include <gtk/gtk.h>
 
 #include "gnome-settings-profile.h"
-#include "gsd-dummy-manager.h"
+#include "gsd-idledelay-manager.h"
 
-#define GSD_DUMMY_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_DUMMY_MANAGER, GsdDummyManagerPrivate))
+#define GSD_IDLEDELAY_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_IDLEDELAY_MANAGER, GsdIdledelayManagerPrivate))
 
-struct GsdDummyManagerPrivate
+struct GsdIdledelayManagerPrivate
 {
         gboolean padding;
 };
@@ -50,32 +50,32 @@ enum {
         PROP_0,
 };
 
-static void     gsd_dummy_manager_class_init  (GsdDummyManagerClass *klass);
-static void     gsd_dummy_manager_init        (GsdDummyManager      *dummy_manager);
-static void     gsd_dummy_manager_finalize    (GObject             *object);
+static void     gsd_idledelay_manager_class_init  (GsdIdledelayManagerClass *klass);
+static void     gsd_idledelay_manager_init        (GsdIdledelayManager      *idledelay_manager);
+static void     gsd_idledelay_manager_finalize    (GObject             *object);
 
-G_DEFINE_TYPE (GsdDummyManager, gsd_dummy_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (GsdIdledelayManager, gsd_idledelay_manager, G_TYPE_OBJECT)
 
 static gpointer manager_object = NULL;
 
 gboolean
-gsd_dummy_manager_start (GsdDummyManager *manager,
+gsd_idledelay_manager_start (GsdIdledelayManager *manager,
                                GError               **error)
 {
-        g_debug ("Starting dummy manager");
+        g_debug ("Starting idledelay manager");
         gnome_settings_profile_start (NULL);
         gnome_settings_profile_end (NULL);
         return TRUE;
 }
 
 void
-gsd_dummy_manager_stop (GsdDummyManager *manager)
+gsd_idledelay_manager_stop (GsdIdledelayManager *manager)
 {
-        g_debug ("Stopping dummy manager");
+        g_debug ("Stopping idledelay manager");
 }
 
 static void
-gsd_dummy_manager_set_property (GObject        *object,
+gsd_idledelay_manager_set_property (GObject        *object,
                                guint           prop_id,
                                const GValue   *value,
                                GParamSpec     *pspec)
@@ -88,7 +88,7 @@ gsd_dummy_manager_set_property (GObject        *object,
 }
 
 static void
-gsd_dummy_manager_get_property (GObject        *object,
+gsd_idledelay_manager_get_property (GObject        *object,
                                guint           prop_id,
                                GValue         *value,
                                GParamSpec     *pspec)
@@ -101,71 +101,71 @@ gsd_dummy_manager_get_property (GObject        *object,
 }
 
 static GObject *
-gsd_dummy_manager_constructor (GType                  type,
+gsd_idledelay_manager_constructor (GType                  type,
                               guint                  n_construct_properties,
                               GObjectConstructParam *construct_properties)
 {
-        GsdDummyManager      *dummy_manager;
+        GsdIdledelayManager      *idledelay_manager;
 
-        dummy_manager = GSD_DUMMY_MANAGER (G_OBJECT_CLASS (gsd_dummy_manager_parent_class)->constructor (type,
+        idledelay_manager = GSD_IDLEDELAY_MANAGER (G_OBJECT_CLASS (gsd_idledelay_manager_parent_class)->constructor (type,
                                                                                                       n_construct_properties,
                                                                                                       construct_properties));
 
-        return G_OBJECT (dummy_manager);
+        return G_OBJECT (idledelay_manager);
 }
 
 static void
-gsd_dummy_manager_dispose (GObject *object)
+gsd_idledelay_manager_dispose (GObject *object)
 {
-        G_OBJECT_CLASS (gsd_dummy_manager_parent_class)->dispose (object);
+        G_OBJECT_CLASS (gsd_idledelay_manager_parent_class)->dispose (object);
 }
 
 static void
-gsd_dummy_manager_class_init (GsdDummyManagerClass *klass)
+gsd_idledelay_manager_class_init (GsdIdledelayManagerClass *klass)
 {
         GObjectClass   *object_class = G_OBJECT_CLASS (klass);
 
-        object_class->get_property = gsd_dummy_manager_get_property;
-        object_class->set_property = gsd_dummy_manager_set_property;
-        object_class->constructor = gsd_dummy_manager_constructor;
-        object_class->dispose = gsd_dummy_manager_dispose;
-        object_class->finalize = gsd_dummy_manager_finalize;
+        object_class->get_property = gsd_idledelay_manager_get_property;
+        object_class->set_property = gsd_idledelay_manager_set_property;
+        object_class->constructor = gsd_idledelay_manager_constructor;
+        object_class->dispose = gsd_idledelay_manager_dispose;
+        object_class->finalize = gsd_idledelay_manager_finalize;
 
-        g_type_class_add_private (klass, sizeof (GsdDummyManagerPrivate));
+        g_type_class_add_private (klass, sizeof (GsdIdledelayManagerPrivate));
 }
 
 static void
-gsd_dummy_manager_init (GsdDummyManager *manager)
+gsd_idledelay_manager_init (GsdIdledelayManager *manager)
 {
-        manager->priv = GSD_DUMMY_MANAGER_GET_PRIVATE (manager);
+        manager->priv = GSD_IDLEDELAY_MANAGER_GET_PRIVATE (manager);
 
 }
 
 static void
-gsd_dummy_manager_finalize (GObject *object)
+gsd_idledelay_manager_finalize (GObject *object)
 {
-        GsdDummyManager *dummy_manager;
+        GsdIdledelayManager *idledelay_manager;
 
         g_return_if_fail (object != NULL);
-        g_return_if_fail (GSD_IS_DUMMY_MANAGER (object));
+        g_return_if_fail (GSD_IS_IDLEDELAY_MANAGER (object));
 
-        dummy_manager = GSD_DUMMY_MANAGER (object);
+        idledelay_manager = GSD_IDLEDELAY_MANAGER (object);
 
-        g_return_if_fail (dummy_manager->priv != NULL);
+        g_return_if_fail (idledelay_manager->priv != NULL);
 
-        G_OBJECT_CLASS (gsd_dummy_manager_parent_class)->finalize (object);
+        G_OBJECT_CLASS (gsd_idledelay_manager_parent_class)->finalize (object);
 }
 
-GsdDummyManager *
-gsd_dummy_manager_new (void)
+GsdIdledelayManager *
+gsd_idledelay_manager_new (void)
 {
         if (manager_object != NULL) {
                 g_object_ref (manager_object);
         } else {
-                manager_object = g_object_new (GSD_TYPE_DUMMY_MANAGER, NULL);
+                manager_object = g_object_new (GSD_TYPE_IDLEDELAY_MANAGER, NULL);
                 g_object_add_weak_pointer (manager_object,
                                            (gpointer *) &manager_object);
         }
 
-        return GSD_DUMMY_MANAGER (manager_object);
+        return GSD_IDLEDELAY_MANAGER (manager_object);
 }

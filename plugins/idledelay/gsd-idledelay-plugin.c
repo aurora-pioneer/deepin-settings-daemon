@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2007 William Jon McCann <mccann@jhu.edu>
+ * Copyright (C) 2013 Linux Deepin Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,38 +24,38 @@
 #include <gmodule.h>
 
 #include "gnome-settings-plugin.h"
-#include "gsd-dummy-plugin.h"
-#include "gsd-dummy-manager.h"
+#include "gsd-idledelay-plugin.h"
+#include "gsd-idledelay-manager.h"
 
-struct GsdDummyPluginPrivate {
-        GsdDummyManager *manager;
+struct GsdIdledelayPluginPrivate {
+        GsdIdledelayManager *manager;
 };
 
-#define GSD_DUMMY_PLUGIN_GET_PRIVATE(object) (G_TYPE_INSTANCE_GET_PRIVATE ((object), GSD_TYPE_DUMMY_PLUGIN, GsdDummyPluginPrivate))
+#define GSD_IDLEDELAY_PLUGIN_GET_PRIVATE(object) (G_TYPE_INSTANCE_GET_PRIVATE ((object), GSD_TYPE_IDLEDELAY_PLUGIN, GsdIdledelayPluginPrivate))
 
-GNOME_SETTINGS_PLUGIN_REGISTER (GsdDummyPlugin, gsd_dummy_plugin)
+GNOME_SETTINGS_PLUGIN_REGISTER (GsdIdledelayPlugin, gsd_idledelay_plugin)
 
 static void
-gsd_dummy_plugin_init (GsdDummyPlugin *plugin)
+gsd_idledelay_plugin_init (GsdIdledelayPlugin *plugin)
 {
-        plugin->priv = GSD_DUMMY_PLUGIN_GET_PRIVATE (plugin);
+        plugin->priv = GSD_IDLEDELAY_PLUGIN_GET_PRIVATE (plugin);
 
-        g_debug ("GsdDummyPlugin initializing");
+        g_debug ("GsdIdledelayPlugin initializing");
 
-        plugin->priv->manager = gsd_dummy_manager_new ();
+        plugin->priv->manager = gsd_idledelay_manager_new ();
 }
 
 static void
-gsd_dummy_plugin_finalize (GObject *object)
+gsd_idledelay_plugin_finalize (GObject *object)
 {
-        GsdDummyPlugin *plugin;
+        GsdIdledelayPlugin *plugin;
 
         g_return_if_fail (object != NULL);
-        g_return_if_fail (GSD_IS_DUMMY_PLUGIN (object));
+        g_return_if_fail (GSD_IS_IDLEDELAY_PLUGIN (object));
 
-        g_debug ("GsdDummyPlugin finalizing");
+        g_debug ("GsdIdledelayPlugin finalizing");
 
-        plugin = GSD_DUMMY_PLUGIN (object);
+        plugin = GSD_IDLEDELAY_PLUGIN (object);
 
         g_return_if_fail (plugin->priv != NULL);
 
@@ -63,7 +63,7 @@ gsd_dummy_plugin_finalize (GObject *object)
                 g_object_unref (plugin->priv->manager);
         }
 
-        G_OBJECT_CLASS (gsd_dummy_plugin_parent_class)->finalize (object);
+        G_OBJECT_CLASS (gsd_idledelay_plugin_parent_class)->finalize (object);
 }
 
 static void
@@ -72,12 +72,12 @@ impl_activate (GnomeSettingsPlugin *plugin)
         gboolean res;
         GError  *error;
 
-        g_debug ("Activating dummy plugin");
+        g_debug ("Activating idledelay plugin");
 
         error = NULL;
-        res = gsd_dummy_manager_start (GSD_DUMMY_PLUGIN (plugin)->priv->manager, &error);
+        res = gsd_idledelay_manager_start (GSD_IDLEDELAY_PLUGIN (plugin)->priv->manager, &error);
         if (! res) {
-                g_warning ("Unable to start dummy manager: %s", error->message);
+                g_warning ("Unable to start idledelay manager: %s", error->message);
                 g_error_free (error);
         }
 }
@@ -85,26 +85,26 @@ impl_activate (GnomeSettingsPlugin *plugin)
 static void
 impl_deactivate (GnomeSettingsPlugin *plugin)
 {
-        g_debug ("Deactivating dummy plugin");
-        gsd_dummy_manager_stop (GSD_DUMMY_PLUGIN (plugin)->priv->manager);
+        g_debug ("Deactivating idledelay plugin");
+        gsd_idledelay_manager_stop (GSD_IDLEDELAY_PLUGIN (plugin)->priv->manager);
 }
 
 static void
-gsd_dummy_plugin_class_init (GsdDummyPluginClass *klass)
+gsd_idledelay_plugin_class_init (GsdIdledelayPluginClass *klass)
 {
         GObjectClass           *object_class = G_OBJECT_CLASS (klass);
         GnomeSettingsPluginClass *plugin_class = GNOME_SETTINGS_PLUGIN_CLASS (klass);
 
-        object_class->finalize = gsd_dummy_plugin_finalize;
+        object_class->finalize = gsd_idledelay_plugin_finalize;
 
         plugin_class->activate = impl_activate;
         plugin_class->deactivate = impl_deactivate;
 
-        g_type_class_add_private (klass, sizeof (GsdDummyPluginPrivate));
+        g_type_class_add_private (klass, sizeof (GsdIdledelayPluginPrivate));
 }
 
 static void
-gsd_dummy_plugin_class_finalize (GsdDummyPluginClass *klass)
+gsd_idledelay_plugin_class_finalize (GsdIdledelayPluginClass *klass)
 {
 }
 
