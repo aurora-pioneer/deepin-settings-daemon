@@ -12,6 +12,7 @@ enabled_plugins =	\
 	keyboard	\
 	power		\
 	housekeeping    \
+	idledelay	\
 	media-keys	\
 	mouse		\
 	sound		\
