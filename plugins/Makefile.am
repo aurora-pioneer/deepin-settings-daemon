@@ -8,6 +8,7 @@ enabled_plugins =	\
 	clipboard	\
 	cursor		\
 	datetime	\
+	color		\
 	dummy		\
 	keyboard	\
 	power		\
@@ -23,7 +24,6 @@ enabled_plugins =	\
     $(NULL)
 
 disabled_plugins = \
-    color	\
 	$(NULL)
 
 if BUILD_GCONF_BRIDGE

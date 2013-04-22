@@ -10,6 +10,8 @@ libpower_la_SOURCES = 					\
 	gpm-phone.h					\
 	gpm-idletime.c					\
 	gpm-idletime.h					\
+	deepin_power.c					\
+	deepin_power.h					\
 	gsd-power-manager.c				\
 	gsd-power-manager.h				\
 	gsd-power-plugin.c				\
@@ -31,6 +33,7 @@ libpower_la_CFLAGS = \
 	$(UPOWER_CFLAGS)				\
 	$(GNOME_DESKTOP_CFLAGS)				\
 	$(SETTINGS_PLUGIN_CFLAGS)			\
+	$(LIBXML2_CFLAGS)   				\
 	$(AM_CFLAGS)
 
 libpower_la_LDFLAGS = 					\
@@ -42,7 +45,8 @@ libpower_la_LIBADD  = 					\
 	$(UPOWER_LIBS)					\
 	$(GNOME_DESKTOP_LIBS)				\
 	$(KEYRING_LIBS)					\
-	$(SETTINGS_PLUGIN_LIBS)
+	$(SETTINGS_PLUGIN_LIBS)			\
+	$(LIBXML2_LIBS)
 
 plugin_in_files = 					\
 	power.gnome-settings-plugin.in

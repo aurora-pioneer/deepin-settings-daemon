@@ -15,6 +15,11 @@
       <_summary>Primary or first device percentage</_summary>
       <_description>Primary or first device percentage</_description>
     </key>
+    <key name="current-plan" type="s">
+      <default>'default'</default>
+      <_summary>Current Power Plan</_summary>
+      <_description>Current Power Plan</_description>
+    </key>
     <key name="show-tray" type="b">
       <default>true</default>
       <_summary>Show in the tray</_summary>
