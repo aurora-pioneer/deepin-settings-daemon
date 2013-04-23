@@ -580,6 +580,7 @@ plugins/wacom/Makefile
 plugins/xrandr/Makefile
 plugins/xsettings/Makefile
 plugins/key-bindings/Makefile
+plugins/idle-delay/Makefile
 data/Makefile
 data/gnome-settings-daemon.pc
 data/gnome-settings-daemon-uninstalled.pc
@@ -587,6 +588,7 @@ data/org.gnome.settings-daemon.plugins.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.xsettings.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.keyboard.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.key-bindings.gschema.xml.in
+data/org.gnome.settings-daemon.plugins.idle-delay.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.power.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.color.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.media-keys.gschema.xml.in

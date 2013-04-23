@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef __GSD_IDLEDELAY_PLUGIN_H__
-#define __GSD_IDLEDELAY_PLUGIN_H__
+#ifndef _GSD_IDLE_DELAY_PLUGIN_H_
+#define _GSD_IDLE_DELAY_PLUGIN_H_
 
 #include <glib.h>
 #include <glib-object.h>
@@ -29,31 +29,31 @@
 
 G_BEGIN_DECLS
 
-#define GSD_TYPE_IDLEDELAY_PLUGIN                (gsd_idledelay_plugin_get_type ())
-#define GSD_IDLEDELAY_PLUGIN(o)                  (G_TYPE_CHECK_INSTANCE_CAST ((o), GSD_TYPE_IDLEDELAY_PLUGIN, GsdIdledelayPlugin))
-#define GSD_IDLEDELAY_PLUGIN_CLASS(k)            (G_TYPE_CHECK_CLASS_CAST((k), GSD_TYPE_IDLEDELAY_PLUGIN, GsdIdledelayPluginClass))
-#define GSD_IS_IDLEDELAY_PLUGIN(o)               (G_TYPE_CHECK_INSTANCE_TYPE ((o), GSD_TYPE_IDLEDELAY_PLUGIN))
-#define GSD_IS_IDLEDELAY_PLUGIN_CLASS(k)         (G_TYPE_CHECK_CLASS_TYPE ((k), GSD_TYPE_IDLEDELAY_PLUGIN))
-#define GSD_IDLEDELAY_PLUGIN_GET_CLASS(o)        (G_TYPE_INSTANCE_GET_CLASS ((o), GSD_TYPE_IDLEDELAY_PLUGIN, GsdIdledelayPluginClass))
+#define GSD_TYPE_IDLE_DELAY_PLUGIN                (gsd_idle_delay_plugin_get_type ())
+#define GSD_IDLE_DELAY_PLUGIN(o)                  (G_TYPE_CHECK_INSTANCE_CAST ((o), GSD_TYPE_IDLE_DELAY_PLUGIN, GsdIdleDelayPlugin))
+#define GSD_IDLE_DELAY_PLUGIN_CLASS(k)            (G_TYPE_CHECK_CLASS_CAST((k), GSD_TYPE_IDLE_DELAY_PLUGIN, GsdIdleDelayPluginClass))
+#define GSD_IS_IDLE_DELAY_PLUGIN(o)               (G_TYPE_CHECK_INSTANCE_TYPE ((o), GSD_TYPE_IDLE_DELAY_PLUGIN))
+#define GSD_IS_IDLE_DELAY_PLUGIN_CLASS(k)         (G_TYPE_CHECK_CLASS_TYPE ((k), GSD_TYPE_IDLE_DELAY_PLUGIN))
+#define GSD_IDLE_DELAY_PLUGIN_GET_CLASS(o)        (G_TYPE_INSTANCE_GET_CLASS ((o), GSD_TYPE_IDLE_DELAY_PLUGIN, GsdIdleDelayPluginClass))
 
-typedef struct GsdIdledelayPluginPrivate GsdIdledelayPluginPrivate;
+typedef struct GsdIdleDelayPluginPrivate GsdIdleDelayPluginPrivate;
 
 typedef struct
 {
         GnomeSettingsPlugin    parent;
-        GsdIdledelayPluginPrivate *priv;
-} GsdIdledelayPlugin;
+        GsdIdleDelayPluginPrivate *priv;
+} GsdIdleDelayPlugin;
 
 typedef struct
 {
         GnomeSettingsPluginClass parent_class;
-} GsdIdledelayPluginClass;
+} GsdIdleDelayPluginClass;
 
-GType   gsd_idledelay_plugin_get_type            (void) G_GNUC_CONST;
+GType   gsd_idle_delay_plugin_get_type            (void) G_GNUC_CONST;
 
 /* All the plugins must implement this function */
 G_MODULE_EXPORT GType register_gnome_settings_plugin (GTypeModule *module);
 
 G_END_DECLS
 
-#endif /* __GSD_IDLEDELAY_PLUGIN_H__ */
+#endif /* _GSD_IDLE_DELAY_PLUGIN_H_ */

@@ -13,7 +13,6 @@ enabled_plugins =	\
 	keyboard	\
 	power		\
 	housekeeping    \
-	idledelay	\
 	media-keys	\
 	mouse		\
 	sound		\
@@ -21,7 +20,8 @@ enabled_plugins =	\
 	xrandr		\
 	xsettings	\
 	key-bindings	\
-    $(NULL)
+	idle-delay	\
+	$(NULL)
 
 disabled_plugins = \
 	$(NULL)

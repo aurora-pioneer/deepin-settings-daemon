@@ -1,0 +1,19 @@
+<schemalist>
+  <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.idle-delay" path="/org/gnome/settings-daemon/plugins/idle-delay/">
+    <key name="active" type="b">
+      <default>true</default>
+      <_summary>Activation of this plugin</_summary>
+      <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
+    </key>
+    <key name="priority" type="i">
+      <default>20</default>
+      <_summary>Priority to use for this plugin</_summary>
+      <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
+    </key>
+    <key type="u" name="idle-delay">
+      <default>600</default>
+      <summary>Time before session is considered idle</summary>
+      <description>The number of seconds of inactivity before the session is considered idle.</description>
+    </key>
+  </schema>
+</schemalist>

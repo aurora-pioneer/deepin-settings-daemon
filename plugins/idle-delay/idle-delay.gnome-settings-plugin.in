@@ -1,8 +1,8 @@
 [GNOME Settings Plugin]
-Module=idledelay
+Module=idle-delay
 IAge=0
-_Name=Idledelay
-_Description=Idledelay plugin
+_Name=IdleDelay
+_Description=Idle Delay plugin
 Authors=AUTHOR
 Copyright=Copyright © 2013 LinuxDeepin Inc.
 Website=

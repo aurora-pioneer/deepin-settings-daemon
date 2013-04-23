@@ -24,38 +24,38 @@
 #include <gmodule.h>
 
 #include "gnome-settings-plugin.h"
-#include "gsd-idledelay-plugin.h"
-#include "gsd-idledelay-manager.h"
+#include "gsd-idle-delay-plugin.h"
+#include "gsd-idle-delay-manager.h"
 
-struct GsdIdledelayPluginPrivate {
-        GsdIdledelayManager *manager;
+struct GsdIdleDelayPluginPrivate {
+        GsdIdleDelayManager *manager;
 };
 
-#define GSD_IDLEDELAY_PLUGIN_GET_PRIVATE(object) (G_TYPE_INSTANCE_GET_PRIVATE ((object), GSD_TYPE_IDLEDELAY_PLUGIN, GsdIdledelayPluginPrivate))
+#define GSD_IDLE_DELAY_PLUGIN_GET_PRIVATE(object) (G_TYPE_INSTANCE_GET_PRIVATE ((object), GSD_TYPE_IDLE_DELAY_PLUGIN, GsdIdleDelayPluginPrivate))
 
-GNOME_SETTINGS_PLUGIN_REGISTER (GsdIdledelayPlugin, gsd_idledelay_plugin)
+GNOME_SETTINGS_PLUGIN_REGISTER (GsdIdleDelayPlugin, gsd_idle_delay_plugin)
 
 static void
-gsd_idledelay_plugin_init (GsdIdledelayPlugin *plugin)
+gsd_idle_delay_plugin_init (GsdIdleDelayPlugin *plugin)
 {
-        plugin->priv = GSD_IDLEDELAY_PLUGIN_GET_PRIVATE (plugin);
+        plugin->priv = GSD_IDLE_DELAY_PLUGIN_GET_PRIVATE (plugin);
 
-        g_debug ("GsdIdledelayPlugin initializing");
+        g_debug ("GsdIdleDelayPlugin initializing");
 
-        plugin->priv->manager = gsd_idledelay_manager_new ();
+        plugin->priv->manager = gsd_idle_delay_manager_new ();
 }
 
 static void
-gsd_idledelay_plugin_finalize (GObject *object)
+gsd_idle_delay_plugin_finalize (GObject *object)
 {
-        GsdIdledelayPlugin *plugin;
+        GsdIdleDelayPlugin *plugin;
 
         g_return_if_fail (object != NULL);
-        g_return_if_fail (GSD_IS_IDLEDELAY_PLUGIN (object));
+        g_return_if_fail (GSD_IS_IDLE_DELAY_PLUGIN (object));
 
-        g_debug ("GsdIdledelayPlugin finalizing");
+        g_debug ("GsdIdleDelayPlugin finalizing");
 
-        plugin = GSD_IDLEDELAY_PLUGIN (object);
+        plugin = GSD_IDLE_DELAY_PLUGIN (object);
 
         g_return_if_fail (plugin->priv != NULL);
 
@@ -63,7 +63,7 @@ gsd_idledelay_plugin_finalize (GObject *object)
                 g_object_unref (plugin->priv->manager);
         }
 
-        G_OBJECT_CLASS (gsd_idledelay_plugin_parent_class)->finalize (object);
+        G_OBJECT_CLASS (gsd_idle_delay_plugin_parent_class)->finalize (object);
 }
 
 static void
@@ -72,12 +72,12 @@ impl_activate (GnomeSettingsPlugin *plugin)
         gboolean res;
         GError  *error;
 
-        g_debug ("Activating idledelay plugin");
+        g_debug ("Activating idle_delay plugin");
 
         error = NULL;
-        res = gsd_idledelay_manager_start (GSD_IDLEDELAY_PLUGIN (plugin)->priv->manager, &error);
+        res = gsd_idle_delay_manager_start (GSD_IDLE_DELAY_PLUGIN (plugin)->priv->manager, &error);
         if (! res) {
-                g_warning ("Unable to start idledelay manager: %s", error->message);
+                g_warning ("Unable to start idle delay manager: %s", error->message);
                 g_error_free (error);
         }
 }
@@ -85,26 +85,26 @@ impl_activate (GnomeSettingsPlugin *plugin)
 static void
 impl_deactivate (GnomeSettingsPlugin *plugin)
 {
-        g_debug ("Deactivating idledelay plugin");
-        gsd_idledelay_manager_stop (GSD_IDLEDELAY_PLUGIN (plugin)->priv->manager);
+        g_debug ("Deactivating idle delay plugin");
+        gsd_idle_delay_manager_stop (GSD_IDLE_DELAY_PLUGIN (plugin)->priv->manager);
 }
 
 static void
-gsd_idledelay_plugin_class_init (GsdIdledelayPluginClass *klass)
+gsd_idle_delay_plugin_class_init (GsdIdleDelayPluginClass *klass)
 {
         GObjectClass           *object_class = G_OBJECT_CLASS (klass);
         GnomeSettingsPluginClass *plugin_class = GNOME_SETTINGS_PLUGIN_CLASS (klass);
 
-        object_class->finalize = gsd_idledelay_plugin_finalize;
+        object_class->finalize = gsd_idle_delay_plugin_finalize;
 
         plugin_class->activate = impl_activate;
         plugin_class->deactivate = impl_deactivate;
 
-        g_type_class_add_private (klass, sizeof (GsdIdledelayPluginPrivate));
+        g_type_class_add_private (klass, sizeof (GsdIdleDelayPluginPrivate));
 }
 
 static void
-gsd_idledelay_plugin_class_finalize (GsdIdledelayPluginClass *klass)
+gsd_idle_delay_plugin_class_finalize (GsdIdleDelayPluginClass *klass)
 {
 }
 
