@@ -38,12 +38,13 @@
 
 #include "gnome-settings-profile.h"
 #include "gsd-idle-delay-manager.h"
+#include "gsd-idle-delay-watcher.h"
 
 #define GSD_IDLE_DELAY_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_IDLE_DELAY_MANAGER, GsdIdleDelayManagerPrivate))
 
 struct GsdIdleDelayManagerPrivate
 {
-        gboolean padding;
+	GsdIdleDelayWatcher	*watcher;
 };
 
 enum {
@@ -134,11 +135,90 @@ gsd_idle_delay_manager_class_init (GsdIdleDelayManagerClass *klass)
         g_type_class_add_private (klass, sizeof (GsdIdleDelayManagerPrivate));
 }
 
+static gboolean
+watcher_idle_cb (GsdIdleDelayWatcher *watcher, gboolean is_idle, 
+		 GsdIdleDelayManager *manager)
+{
+        gboolean res;
+
+        g_debug ("Idle signal detected: %d", is_idle);
+
+        //res = gs_listener_set_session_idle (monitor->priv->listener, is_idle);
+
+        return TRUE;
+}
+
+static gboolean
+watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
+                        GsdIdleDelayManager *manager)
+{
+        gboolean activation_enabled;
+        gboolean handled;
+
+        g_debug ("Idle notice signal detected: %d", in_effect);
+#if 0
+        /* only fade if screensaver can activate */
+        activation_enabled = gs_listener_get_activation_enabled (monitor->priv->listener);
+
+        handled = FALSE;
+        if (in_effect) {
+                if (activation_enabled) {
+                        /* start slow fade */
+                        if (gs_grab_grab_offscreen (monitor->priv->grab, FALSE)) {
+                                gs_fade_async (monitor->priv->fade, FADE_TIMEOUT, NULL, NULL);
+                        } else {
+                                gs_debug ("Could not grab the keyboard so not performing idle warning fade-out");
+                        }
+
+                        handled = TRUE;
+                }
+        } else {
+                gboolean manager_active;
+
+                manager_active = gs_manager_get_active (monitor->priv->manager);
+                /* cancel the fade unless manager was activated */
+                if (! manager_active) {
+                        gs_debug ("manager not active, performing fade cancellation");
+                        gs_fade_reset (monitor->priv->fade);
+
+                        /* don't release the grab immediately to prevent typing passwords into windows */
+                        if (monitor->priv->release_grab_id != 0) {
+                                g_source_remove (monitor->priv->release_grab_id);
+                        }
+                        monitor->priv->release_grab_id = g_timeout_add (1000, (GSourceFunc)release_grab_timeout, monitor);
+                } else {
+                        gs_debug ("manager active, skipping fade cancellation");
+                }
+
+                handled = TRUE;
+        }
+#endif
+
+        return TRUE;
+}
+static void
+connect_watcher_signals (GsdIdleDelayManager *manager)
+{
+        g_signal_connect (manager->priv->watcher, "idle-changed",
+                          G_CALLBACK (watcher_idle_cb), manager);
+        g_signal_connect (manager->priv->watcher, "idle-notice-changed",
+                          G_CALLBACK (watcher_idle_notice_cb), manager);
+}
+
+static void
+disconnect_watcher_signals (GsdIdleDelayManager *manager)
+{
+        g_signal_handlers_disconnect_by_func (manager->priv->watcher, watcher_idle_cb, manager);
+        g_signal_handlers_disconnect_by_func (manager->priv->watcher, watcher_idle_notice_cb, manager);
+}
+
 static void
 gsd_idle_delay_manager_init (GsdIdleDelayManager *manager)
 {
         manager->priv = GSD_IDLE_DELAY_MANAGER_GET_PRIVATE (manager);
 
+	manager->priv->watcher = gsd_idle_delay_watcher_new ();
+	connect_watcher_signals (manager);
 }
 
 static void
@@ -152,6 +232,9 @@ gsd_idle_delay_manager_finalize (GObject *object)
         idle_delay_manager = GSD_IDLE_DELAY_MANAGER (object);
 
         g_return_if_fail (idle_delay_manager->priv != NULL);
+
+        disconnect_watcher_signals (idle_delay_manager);
+        g_object_unref (idle_delay_manager->priv->watcher);
 
         G_OBJECT_CLASS (gsd_idle_delay_manager_parent_class)->finalize (object);
 }

@@ -18,6 +18,11 @@ gsd-idle-delay-marshal.h: gsd-idle-delay-marshal.list
 
 test_idle_delay_SOURCES= \
 	test-idle-delay.c\
+	gsd-idle-delay-dbus.h\
+	gsd-idle-delay-marshal.h\
+	gsd-idle-delay-marshal.c\
+	gsd-idle-delay-watcher.h\
+	gsd-idle-delay-watcher.c\
 	gsd-idle-delay-manager.c\
 	gsd-idle-delay-manager.h\
 	$(NULL)
