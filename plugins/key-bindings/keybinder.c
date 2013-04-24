@@ -356,6 +356,15 @@ filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 			keyval = XLookupKeysym(&xevent->xkey, 0);
 		}
 
+		//copied from gnome-settings-daemon/plugins/common:gsd-keygrab.c
+		/* HACK: we don't want to use SysRq as a keybinding, so we avoid
+		 * its translation from Alt+Print. */
+		if (keyval == GDK_KEY_Sys_Req &&
+		    (modifiers & GDK_MOD1_MASK) != 0) {
+			consumed = 0;
+			keyval = GDK_KEY_Print;
+		}
+
 		/* Map non-virtual to virtual modifiers */
 		modifiers &= ~consumed;
 		gdk_keymap_add_virtual_modifiers(keymap, &modifiers);
@@ -552,8 +561,10 @@ keybinder_bind_full (const char *keystring,
 	success = do_grab_key (binding);
 
 	if (success) {
+		g_debug ("keybinder_bind_full: do_grab_key success");
 		bindings = g_slist_prepend (bindings, binding);
 	} else {
+		g_debug ("keybinder_bind_full: do_grab_key failed");
 		g_free (binding->keystring);
 		g_free (binding);
 	}
