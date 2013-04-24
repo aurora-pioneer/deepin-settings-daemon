@@ -9,6 +9,13 @@ noinst_PROGRAMS = \
 	test-idle-delay\
 	$(NULL)
 
+gsd-idle-delay-marshal.c: gsd-idle-delay-marshal.list gsd-idle-delay-marshal.h
+	echo "#include \"gsd-idle-delay-marshal.h\"" > $@ && \
+	@GLIB_GENMARSHAL@ $< --prefix=gsd_idle_delay_marshal --body >> $@
+
+gsd-idle-delay-marshal.h: gsd-idle-delay-marshal.list
+	@GLIB_GENMARSHAL@ $< --prefix=gsd_idle_delay_marshal --header > $@
+
 test_idle_delay_SOURCES= \
 	test-idle-delay.c\
 	gsd-idle-delay-manager.c\
@@ -36,10 +43,15 @@ test_idle_delay_LDADD =		\
 
 
 libidle_delay_la_SOURCES = \
-	gsd-idle-delay-manager.c	\
+	gsd-idle-delay-dbus.h\
+	gsd-idle-delay-marshal.h\
+	gsd-idle-delay-marshal.c\
+	gsd-idle-delay-watcher.h\
+	gsd-idle-delay-watcher.c\
 	gsd-idle-delay-manager.h	\
-	gsd-idle-delay-plugin.c\
+	gsd-idle-delay-manager.c	\
 	gsd-idle-delay-plugin.h\
+	gsd-idle-delay-plugin.c\
 	$(NULL)
 
 libidle_delay_la_CPPFLAGS = \
