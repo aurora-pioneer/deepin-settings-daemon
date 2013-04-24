@@ -278,7 +278,7 @@ static void
 set_status (GsdIdleDelayWatcher *watcher,
             guint      status)
 {
-	g_debug (" set status");
+	g_debug ("set status: %d", status);
         gboolean is_idle;
 
         if (! watcher->priv->active) 
@@ -327,7 +327,9 @@ on_presence_status_changed (GDBusProxy		*presence_proxy,
 {
 	g_debug ("on presence status changed");
 
-	guint status = g_variant_get_uint32 (parameters);
+	guint status;
+	g_variant_get (parameters, "(u)", &status);
+
         set_status (watcher, status);
 }
 
@@ -392,9 +394,12 @@ connect_presence_watcher (GsdIdleDelayWatcher *watcher)
                 return;
 	}
 
-        guint status;
-	status = g_variant_get_uint32 (_result);
+	GVariant* _tmp;
+	g_variant_get (_result, "(v)", &_tmp);
 
+        guint status = g_variant_get_uint32 (_tmp);
+	g_variant_unref (_tmp);
+	g_variant_unref (_result);
         set_status (watcher, status);
 }
 
