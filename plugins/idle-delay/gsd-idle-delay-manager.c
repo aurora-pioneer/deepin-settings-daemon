@@ -48,6 +48,9 @@ struct GsdIdleDelayManagerPrivate
 {
 	GsdIdleDelayWatcher	*watcher;
 	GSettings		*settings;	 //idle-delay gsettings
+	double			settings_brigthness;
+	guint			settings_timeout;
+	guint			timeout_id;
 	GSettings		*xrandr_settings;//xrandr gsettings.
 };
 
@@ -143,29 +146,49 @@ static gboolean
 watcher_idle_cb (GsdIdleDelayWatcher *watcher, gboolean is_idle, 
 		 GsdIdleDelayManager *manager)
 {
-        gboolean res;
-
         g_debug ("Idle signal detected: %d", is_idle);
 
         return TRUE;
 }
 
 static gboolean
+on_timeout_cb (gpointer user_data)
+{
+	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
+	//turn off the screen
+	g_settings_set_double (manager->priv->xrandr_settings,
+			       "brightness", 0.0);
+
+	//never call it again.
+	manager->priv->timeout_id = 0;
+	return FALSE;
+}
+
+static gboolean
 watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
                         GsdIdleDelayManager *manager)
 {
-        gboolean activation_enabled;
-        gboolean handled;
-
         g_debug ("Idle notice signal detected: %d", in_effect);
-        handled = FALSE;
+
         if (in_effect) 
 	{
 		g_settings_set_double (manager->priv->xrandr_settings,
-				       "brightness", 0.5);
+				       "brightness", manager->priv->settings_brigthness);
+		//begin timer
+		if (manager->priv->timeout_id > 0)
+			return TRUE;
+//		manager->priv->timeout_id = g_timeout_add (manager->priv->settings_timeout,
+//							   on_timeout_cb,
+//							   manager);
         }
 	else 
 	{
+		if (manager->priv->timeout_id > 0)
+		{
+			g_source_remove (manager->priv->timeout_id);
+			manager->priv->timeout_id = 0;
+		}
+
 		g_settings_set_double (manager->priv->xrandr_settings,
 				       "brightness", 1.0);
         }
@@ -176,11 +199,25 @@ watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
 static void
 brightness_changed_cb (GSettings* settings, gchar* key, gpointer user_data)
 {
+	if (g_strcmp0 (key, IDLE_DELAY_KEY_BRIGHTNESS))
+		return;
+
+	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
+	manager->priv->settings_brigthness = g_settings_get_double (manager->priv->settings,
+								    IDLE_DELAY_KEY_BRIGHTNESS);
+	g_debug ("brightness changed: %lf", manager->priv->settings_brigthness);
 }
 
 static void
-time_changed_cb (GSettings* settings, gchar* key, gpointer user_data)
+timeout_changed_cb (GSettings* settings, gchar* key, gpointer user_data)
 {
+	if (g_strcmp0 (key, IDLE_DELAY_KEY_TIMEOUT))
+		return;
+
+	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
+	manager->priv->settings_timeout = g_settings_get_uint (manager->priv->settings,
+							       IDLE_DELAY_KEY_TIMEOUT);
+	g_debug ("timeout changed   : %u", manager->priv->settings_timeout);
 }
 
 static void
@@ -188,15 +225,15 @@ connect_gsettings_signals (GsdIdleDelayManager *manager)
 {
 	g_signal_connect (manager->priv->settings, "changed::"IDLE_DELAY_KEY_BRIGHTNESS,
 			  G_CALLBACK(brightness_changed_cb), manager);
-	g_signal_connect (manager->priv->settings, "changed::"IDLE_DELAY_KEY_TIME,
-			  G_CALLBACK(time_changed_cb), manager);
+	g_signal_connect (manager->priv->settings, "changed::"IDLE_DELAY_KEY_TIMEOUT,
+			  G_CALLBACK(timeout_changed_cb), manager);
 }
 
 static void
 disconnect_gsettings_signals (GsdIdleDelayManager *manager)
 {
         g_signal_handlers_disconnect_by_func (manager->priv->settings, brightness_changed_cb, manager);
-        g_signal_handlers_disconnect_by_func (manager->priv->settings, time_changed_cb, manager);
+        g_signal_handlers_disconnect_by_func (manager->priv->settings, timeout_changed_cb, manager);
 }
 
 static void
@@ -217,6 +254,18 @@ disconnect_watcher_signals (GsdIdleDelayManager *manager)
 }
 
 static void
+init_manager_gsettings_value (GsdIdleDelayManager *manager)
+{
+	manager->priv->settings_brigthness = g_settings_get_double (manager->priv->settings,
+								    IDLE_DELAY_KEY_BRIGHTNESS);
+	manager->priv->settings_timeout = g_settings_get_uint (manager->priv->settings,
+							       IDLE_DELAY_KEY_TIMEOUT);
+	manager->priv->timeout_id = 0;
+	g_debug ("initial brightness: %lf", manager->priv->settings_brigthness);
+	g_debug ("initial timeout   : %u", manager->priv->settings_timeout);
+}
+
+static void
 gsd_idle_delay_manager_init (GsdIdleDelayManager *manager)
 {
         manager->priv = GSD_IDLE_DELAY_MANAGER_GET_PRIVATE (manager);
@@ -225,6 +274,7 @@ gsd_idle_delay_manager_init (GsdIdleDelayManager *manager)
 	manager->priv->settings = g_settings_new (IDLE_DELAY_SCHEMA);
 	manager->priv->watcher = gsd_idle_delay_watcher_new ();
 
+	init_manager_gsettings_value (manager);
 	connect_gsettings_signals (manager);
 	connect_watcher_signals (manager);
 
@@ -250,6 +300,9 @@ gsd_idle_delay_manager_finalize (GObject *object)
 
         disconnect_watcher_signals (idle_delay_manager);
         g_object_unref (idle_delay_manager->priv->watcher);
+	
+	if (idle_delay_manager->priv->timeout_id != 0)
+		g_source_remove (idle_delay_manager->priv->timeout_id);
 
         G_OBJECT_CLASS (gsd_idle_delay_manager_parent_class)->finalize (object);
 }

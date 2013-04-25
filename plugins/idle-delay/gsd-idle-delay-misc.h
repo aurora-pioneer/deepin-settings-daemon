@@ -25,7 +25,7 @@
 /* GSettings */
 #define IDLE_DELAY_SCHEMA		"org.gnome.settings-daemon.plugins.idle-delay"
 #define IDLE_DELAY_KEY_BRIGHTNESS	"brightness"
-#define IDLE_DELAY_KEY_TIME		"time"
+#define IDLE_DELAY_KEY_TIMEOUT		"timeout"
 
 #define XRANDR_SCHEMA			"org.gnome.settings-daemon.plugins.xrandr"
 
