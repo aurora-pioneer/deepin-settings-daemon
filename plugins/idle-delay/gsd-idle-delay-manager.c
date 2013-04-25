@@ -37,6 +37,8 @@
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 
+#include <X11/extensions/dpms.h>  //used for poweroff display
+
 #include "gnome-settings-profile.h"
 #include "gsd-idle-delay-manager.h"
 #include "gsd-idle-delay-watcher.h"
@@ -52,6 +54,9 @@ struct GsdIdleDelayManagerPrivate
 	guint			settings_timeout;
 	guint			timeout_id;
 	GSettings		*xrandr_settings;//xrandr gsettings.
+	//X stuff for DPMS
+	Display*		x11_display;
+	gboolean		dpms_supported;
 };
 
 enum {
@@ -157,9 +162,15 @@ on_timeout_cb (gpointer user_data)
 	g_debug ("on_timeout_cb called");
 	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
 	//turn off the screen
-	g_settings_set_double (manager->priv->xrandr_settings,
+	if (manager->priv->dpms_supported)
+	{
+		DPMSForceLevel (manager->priv->x11_display, DPMSModeOff);
+	}
+	else
+	{
+		g_settings_set_double (manager->priv->xrandr_settings,
 			       "brightness", 0.1);
-
+	}
 	//never call it again.
 	manager->priv->timeout_id = 0;
 	return FALSE;
@@ -187,6 +198,10 @@ watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
         }
 	else 
 	{
+		if (manager->priv->dpms_supported)
+		{
+			DPMSForceLevel (manager->priv->x11_display, DPMSModeOn);
+		}
 		g_settings_set_double (manager->priv->xrandr_settings,
 				       "brightness", 1.0);
         }
@@ -277,6 +292,29 @@ gsd_idle_delay_manager_init (GsdIdleDelayManager *manager)
 	connect_watcher_signals (manager);
 
 	gsd_idle_delay_watcher_set_active (manager->priv->watcher, TRUE);
+	
+	//initialize DPMS
+	Display* _display;
+	_display = gdk_x11_display_get_xdisplay (gdk_display_get_default());
+	int tmp1, tmp2;
+	gboolean has_dmps;
+	if (DPMSQueryExtension (_display, &tmp1, &tmp2) == TRUE)
+	{
+		has_dmps = TRUE;
+
+		DPMSGetVersion (_display, &tmp1, &tmp2);
+		g_debug ("DPMS extension detected: major=%d, minor=%d", tmp1, tmp2);
+		DPMSEnable (_display);
+	}
+	else
+	{
+		g_warning ("Your X server doesn't support DPMS extension, which "
+			   "is required for power off your screen");
+		has_dmps = FALSE;
+	}
+	
+	manager->priv->x11_display = _display;
+	manager->priv->dpms_supported = has_dmps;
 }
 
 static void
@@ -301,6 +339,7 @@ gsd_idle_delay_manager_finalize (GObject *object)
 	
 	if (idle_delay_manager->priv->timeout_id != 0)
 		g_source_remove (idle_delay_manager->priv->timeout_id);
+
 
         G_OBJECT_CLASS (gsd_idle_delay_manager_parent_class)->finalize (object);
 }
