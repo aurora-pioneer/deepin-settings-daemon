@@ -10,10 +10,15 @@
       <_summary>Priority to use for this plugin</_summary>
       <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
     </key>
-    <key type="u" name="idle-delay">
-      <default>600</default>
-      <summary>Time before session is considered idle</summary>
-      <description>The number of seconds of inactivity before the session is considered idle.</description>
+    <key name="brightness" type="d">
+      <default>0.5</default>
+      <_summary>Brightness</_summary>
+      <_description>After 'idle-delay' time passes, the screen's brightness is changed to this value</_description>
+    </key>
+    <key type="u" name="timeout">
+      <default>20</default>
+      <summary>Time before screen turns off</summary>
+      <description>After 'idle-delay' time passes, The number of seconds of inactivity before the screen completely turns off.</description>
     </key>
   </schema>
 </schemalist>

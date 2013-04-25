@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) Linux Deepin Inc.
+ * Copyright (C) 2013 Linux Deepin Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,19 +32,31 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
+#include <gio/gio.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 
+#include <X11/extensions/dpms.h>  //used for poweroff display
+
 #include "gnome-settings-profile.h"
 #include "gsd-idle-delay-manager.h"
 #include "gsd-idle-delay-watcher.h"
+#include "gsd-idle-delay-misc.h"
 
 #define GSD_IDLE_DELAY_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_IDLE_DELAY_MANAGER, GsdIdleDelayManagerPrivate))
 
 struct GsdIdleDelayManagerPrivate
 {
 	GsdIdleDelayWatcher	*watcher;
+	GSettings		*settings;	 //idle-delay gsettings
+	double			settings_brigthness;
+	guint			settings_timeout;
+	guint			timeout_id;
+	GSettings		*xrandr_settings;//xrandr gsettings.
+	//X stuff for DPMS
+	Display*		x11_display;
+	gboolean		dpms_supported;
 };
 
 enum {
@@ -139,66 +151,108 @@ static gboolean
 watcher_idle_cb (GsdIdleDelayWatcher *watcher, gboolean is_idle, 
 		 GsdIdleDelayManager *manager)
 {
-        gboolean res;
-
         g_debug ("Idle signal detected: %d", is_idle);
 
-        //res = gs_listener_set_session_idle (monitor->priv->listener, is_idle);
-
         return TRUE;
+}
+
+static gboolean
+on_timeout_cb (gpointer user_data)
+{
+	g_debug ("on_timeout_cb called");
+	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
+	//turn off the screen
+	if (manager->priv->dpms_supported)
+	{
+		DPMSForceLevel (manager->priv->x11_display, DPMSModeOff);
+	}
+	else
+	{
+		g_settings_set_double (manager->priv->xrandr_settings,
+			       "brightness", 0.1);
+	}
+	//never call it again.
+	manager->priv->timeout_id = 0;
+	return FALSE;
 }
 
 static gboolean
 watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
                         GsdIdleDelayManager *manager)
 {
-        gboolean activation_enabled;
-        gboolean handled;
-
         g_debug ("Idle notice signal detected: %d", in_effect);
-#if 0
-        /* only fade if screensaver can activate */
-        activation_enabled = gs_listener_get_activation_enabled (monitor->priv->listener);
 
-        handled = FALSE;
-        if (in_effect) {
-                if (activation_enabled) {
-                        /* start slow fade */
-                        if (gs_grab_grab_offscreen (monitor->priv->grab, FALSE)) {
-                                gs_fade_async (monitor->priv->fade, FADE_TIMEOUT, NULL, NULL);
-                        } else {
-                                gs_debug ("Could not grab the keyboard so not performing idle warning fade-out");
-                        }
+	if (manager->priv->timeout_id > 0)
+	{
+		g_source_remove (manager->priv->timeout_id);
+		manager->priv->timeout_id = 0;
+	}
 
-                        handled = TRUE;
-                }
-        } else {
-                gboolean manager_active;
-
-                manager_active = gs_manager_get_active (monitor->priv->manager);
-                /* cancel the fade unless manager was activated */
-                if (! manager_active) {
-                        gs_debug ("manager not active, performing fade cancellation");
-                        gs_fade_reset (monitor->priv->fade);
-
-                        /* don't release the grab immediately to prevent typing passwords into windows */
-                        if (monitor->priv->release_grab_id != 0) {
-                                g_source_remove (monitor->priv->release_grab_id);
-                        }
-                        monitor->priv->release_grab_id = g_timeout_add (1000, (GSourceFunc)release_grab_timeout, monitor);
-                } else {
-                        gs_debug ("manager active, skipping fade cancellation");
-                }
-
-                handled = TRUE;
+        if (in_effect) 
+	{
+		g_settings_set_double (manager->priv->xrandr_settings,
+				       "brightness", manager->priv->settings_brigthness);
+		manager->priv->timeout_id = g_timeout_add (manager->priv->settings_timeout*MSEC_PER_SEC,
+							   on_timeout_cb,
+							   manager);
         }
-#endif
+	else 
+	{
+		if (manager->priv->dpms_supported)
+		{
+			DPMSForceLevel (manager->priv->x11_display, DPMSModeOn);
+		}
+		g_settings_set_double (manager->priv->xrandr_settings,
+				       "brightness", 1.0);
+        }
 
         return TRUE;
 }
+
+static void
+brightness_changed_cb (GSettings* settings, gchar* key, gpointer user_data)
+{
+	if (g_strcmp0 (key, IDLE_DELAY_KEY_BRIGHTNESS))
+		return;
+
+	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
+	manager->priv->settings_brigthness = g_settings_get_double (manager->priv->settings,
+								    IDLE_DELAY_KEY_BRIGHTNESS);
+	g_debug ("brightness changed: %lf", manager->priv->settings_brigthness);
+}
+
+static void
+timeout_changed_cb (GSettings* settings, gchar* key, gpointer user_data)
+{
+	if (g_strcmp0 (key, IDLE_DELAY_KEY_TIMEOUT))
+		return;
+
+	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
+	manager->priv->settings_timeout = g_settings_get_uint (manager->priv->settings,
+							       IDLE_DELAY_KEY_TIMEOUT);
+	g_debug ("timeout changed   : %u", manager->priv->settings_timeout);
+}
+
+static void
+connect_gsettings_signals (GsdIdleDelayManager *manager)
+{
+	g_signal_connect (manager->priv->settings, "changed::"IDLE_DELAY_KEY_BRIGHTNESS,
+			  G_CALLBACK(brightness_changed_cb), manager);
+	g_signal_connect (manager->priv->settings, "changed::"IDLE_DELAY_KEY_TIMEOUT,
+			  G_CALLBACK(timeout_changed_cb), manager);
+}
+
+static void
+disconnect_gsettings_signals (GsdIdleDelayManager *manager)
+{
+        g_signal_handlers_disconnect_by_func (manager->priv->settings, brightness_changed_cb, manager);
+        g_signal_handlers_disconnect_by_func (manager->priv->settings, timeout_changed_cb, manager);
+}
+
 static void
 connect_watcher_signals (GsdIdleDelayManager *manager)
 {
+	g_debug ("connect_watcher_signals");
         g_signal_connect (manager->priv->watcher, "idle-changed",
                           G_CALLBACK (watcher_idle_cb), manager);
         g_signal_connect (manager->priv->watcher, "idle-notice-changed",
@@ -213,12 +267,54 @@ disconnect_watcher_signals (GsdIdleDelayManager *manager)
 }
 
 static void
+init_manager_gsettings_value (GsdIdleDelayManager *manager)
+{
+	manager->priv->settings_brigthness = g_settings_get_double (manager->priv->settings,
+								    IDLE_DELAY_KEY_BRIGHTNESS);
+	manager->priv->settings_timeout = g_settings_get_uint (manager->priv->settings,
+							       IDLE_DELAY_KEY_TIMEOUT);
+	manager->priv->timeout_id = 0;
+	g_debug ("initial brightness: %lf", manager->priv->settings_brigthness);
+	g_debug ("initial timeout   : %u", manager->priv->settings_timeout);
+}
+
+static void
 gsd_idle_delay_manager_init (GsdIdleDelayManager *manager)
 {
         manager->priv = GSD_IDLE_DELAY_MANAGER_GET_PRIVATE (manager);
-
+	
+	manager->priv->xrandr_settings = g_settings_new (XRANDR_SCHEMA);
+	manager->priv->settings = g_settings_new (IDLE_DELAY_SCHEMA);
 	manager->priv->watcher = gsd_idle_delay_watcher_new ();
+
+	init_manager_gsettings_value (manager);
+	connect_gsettings_signals (manager);
 	connect_watcher_signals (manager);
+
+	gsd_idle_delay_watcher_set_active (manager->priv->watcher, TRUE);
+	
+	//initialize DPMS
+	Display* _display;
+	_display = gdk_x11_display_get_xdisplay (gdk_display_get_default());
+	int tmp1, tmp2;
+	gboolean has_dmps;
+	if (DPMSQueryExtension (_display, &tmp1, &tmp2) == TRUE)
+	{
+		has_dmps = TRUE;
+
+		DPMSGetVersion (_display, &tmp1, &tmp2);
+		g_debug ("DPMS extension detected: major=%d, minor=%d", tmp1, tmp2);
+		DPMSEnable (_display);
+	}
+	else
+	{
+		g_warning ("Your X server doesn't support DPMS extension, which "
+			   "is required for power off your screen");
+		has_dmps = FALSE;
+	}
+	
+	manager->priv->x11_display = _display;
+	manager->priv->dpms_supported = has_dmps;
 }
 
 static void
@@ -232,9 +328,18 @@ gsd_idle_delay_manager_finalize (GObject *object)
         idle_delay_manager = GSD_IDLE_DELAY_MANAGER (object);
 
         g_return_if_fail (idle_delay_manager->priv != NULL);
+	
+	g_object_unref (idle_delay_manager->priv->xrandr_settings);
+
+	disconnect_gsettings_signals (idle_delay_manager);
+	g_object_unref (idle_delay_manager->priv->settings);
 
         disconnect_watcher_signals (idle_delay_manager);
         g_object_unref (idle_delay_manager->priv->watcher);
+	
+	if (idle_delay_manager->priv->timeout_id != 0)
+		g_source_remove (idle_delay_manager->priv->timeout_id);
+
 
         G_OBJECT_CLASS (gsd_idle_delay_manager_parent_class)->finalize (object);
 }

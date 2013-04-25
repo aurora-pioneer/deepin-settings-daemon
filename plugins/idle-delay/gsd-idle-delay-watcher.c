@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2012 Linux Deepin Inc.
+ * Copyright (C) 2013 Linux Deepin Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 
-#include "gsd-idle-delay-dbus.h"
+#include "gsd-idle-delay-misc.h"
 #include "gsd-idle-delay-marshal.h"
 #include "gsd-idle-delay-watcher.h"
 
@@ -45,14 +45,11 @@ struct GsdIdleDelayWatcherPrivate
 {
         /* settingsd_idle_delay */
         guint           enabled : 1;  //enable or disable Idle detection
-        guint           delta_notice_timeout;
 
         /* state */
         guint           active : 1;
         guint           idle : 1;
         guint           idle_notice : 1;
-
-        guint           idle_id;
 
         GDBusProxy	*presence_proxy; //gnome session presence dbus
 };
@@ -260,25 +257,11 @@ gsd_idle_delay_watcher_get_enabled (GsdIdleDelayWatcher *watcher)
         return watcher->priv->enabled;
 }
 
-static gboolean
-on_idle_timeout (GsdIdleDelayWatcher *watcher)
-{
-	g_debug ("on idle timeout");
-        gboolean res;
-
-        res = _gsd_idle_delay_watcher_set_session_idle (watcher, TRUE);
-
-        _gsd_idle_delay_watcher_set_session_idle_notice (watcher, FALSE);
-
-        /* try again if we failed i guess */
-        return !res;
-}
-
 static void
 set_status (GsdIdleDelayWatcher *watcher,
             guint      status)
 {
-	g_debug (" set status");
+	g_debug ("set status: %d", status);
         gboolean is_idle;
 
         if (! watcher->priv->active) 
@@ -298,21 +281,9 @@ set_status (GsdIdleDelayWatcher *watcher,
         if (is_idle) 
 	{
                 _gsd_idle_delay_watcher_set_session_idle_notice (watcher, is_idle);
-                /* queue an activation */
-                if (watcher->priv->idle_id > 0) {
-                        g_source_remove (watcher->priv->idle_id);
-                }
-                watcher->priv->idle_id = g_timeout_add (watcher->priv->delta_notice_timeout,
-                                                        (GSourceFunc)on_idle_timeout,
-                                                        watcher);
         }
 	else 
 	{
-                /* cancel notice too */
-                if (watcher->priv->idle_id > 0) 
-		{
-                        g_source_remove (watcher->priv->idle_id);
-                }
                 _gsd_idle_delay_watcher_set_session_idle (watcher, FALSE);
                 _gsd_idle_delay_watcher_set_session_idle_notice (watcher, FALSE);
         }
@@ -327,7 +298,9 @@ on_presence_status_changed (GDBusProxy		*presence_proxy,
 {
 	g_debug ("on presence status changed");
 
-	guint status = g_variant_get_uint32 (parameters);
+	guint status;
+	g_variant_get (parameters, "(u)", &status);
+
         set_status (watcher, status);
 }
 
@@ -367,7 +340,7 @@ connect_presence_watcher (GsdIdleDelayWatcher *watcher)
 						NULL,
 						GSM_SERVICE,
 						GSM_PRESENCE_PATH,
-						"org.freedesktop.DBus.Properties",
+						DBUS_PROP_INTERFACE,
 						NULL,
                                                 &error);
 	if (error != NULL) 
@@ -392,9 +365,12 @@ connect_presence_watcher (GsdIdleDelayWatcher *watcher)
                 return;
 	}
 
-        guint status;
-	status = g_variant_get_uint32 (_result);
+	GVariant* _tmp;
+	g_variant_get (_result, "(v)", &_tmp);
 
+        guint status = g_variant_get_uint32 (_tmp);
+	g_variant_unref (_tmp);
+	g_variant_unref (_result);
         set_status (watcher, status);
 }
 
@@ -407,9 +383,6 @@ gsd_idle_delay_watcher_init (GsdIdleDelayWatcher *watcher)
         watcher->priv->active = FALSE;
 
         connect_presence_watcher (watcher);
-
-        /* time before idle signal to send notice signal */
-        watcher->priv->delta_notice_timeout = 10000;
 }
 
 static void
@@ -421,9 +394,6 @@ gsd_idle_delay_watcher_finalize (GObject *object)
         GsdIdleDelayWatcher *watcher = GSD_IDLE_DELAY_WATCHER (object);
 
         g_return_if_fail (watcher->priv != NULL);
-
-        if (watcher->priv->idle_id > 0) 
-                g_source_remove (watcher->priv->idle_id);
 
         watcher->priv->active = FALSE;
 
