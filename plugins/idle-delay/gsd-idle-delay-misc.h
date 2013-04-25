@@ -1,6 +1,6 @@
 /* vim: set noet ts=8 sts=8 sw=8 :
  *
- * Copyright © 2010 Saleem Abdulrasool <compnerd@compnerd.org>
+ * Copyright © 2013 Linux Deepin Inc. 
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,24 +19,21 @@
  *
  */
 
-#ifndef _GSD_IDLE_DELAY_DBUS_H_
-#define _GSD_IDLE_DELAY_DBUS_H_
+#ifndef _GSD_IDLE_DELAY_MISC_H_
+#define _GSD_IDLE_DELAY_MISC_H_
 
-/* ConsoleKit */
-#define CK_SERVICE                      "org.freedesktop.ConsoleKit"
-#define CK_PATH                         "/org/freedesktop/ConsoleKit"
-#define CK_INTERFACE                    "org.freedesktop.ConsoleKit"
+/* GSettings */
+#define IDLE_DELAY_SCHEMA		"org.gnome.settings-daemon.plugins.idle-delay"
+#define IDLE_DELAY_KEY_BRIGHTNESS	"brightness"
+#define IDLE_DELAY_KEY_TIME		"time"
 
-#define CK_MANAGER_PATH                 CK_PATH "/Manager"
-#define CK_MANAGER_INTERFACE            CK_INTERFACE ".Manager"
-
-#define CK_SESSION_PATH                 CK_PATH "/Session"
-#define CK_SESSION_INTERFACE            CK_INTERFACE ".Session"
+#define XRANDR_SCHEMA			"org.gnome.settings-daemon.plugins.xrandr"
 
 /* DBus */
 #define DBUS_SERVICE                    "org.freedesktop.DBus"
 #define DBUS_PATH                       "/org/freedesktop/DBus"
 #define DBUS_INTERFACE                  "org.freedesktop.DBus"
+#define DBUS_PROP_INTERFACE		"org.freedesktop.DBus.Properties"
 
 /* Gnome Screensaver */
 #define GS_SERVICE                      "org.gnome.ScreenSaver"
@@ -51,4 +48,4 @@
 #define GSM_PRESENCE_PATH               GSM_PATH "/Presence"
 #define GSM_PRESENCE_INTERFACE          GSM_INTERFACE ".Presence"
 
-#endif
+#endif/*_GSD_IDLE_DELAY_MISC_H_*/

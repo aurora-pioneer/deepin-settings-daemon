@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2012 Linux Deepin Inc.
+ * Copyright (C) 2013 Linux Deepin Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 
-#include "gsd-idle-delay-dbus.h"
+#include "gsd-idle-delay-misc.h"
 #include "gsd-idle-delay-marshal.h"
 #include "gsd-idle-delay-watcher.h"
 
@@ -369,7 +369,7 @@ connect_presence_watcher (GsdIdleDelayWatcher *watcher)
 						NULL,
 						GSM_SERVICE,
 						GSM_PRESENCE_PATH,
-						"org.freedesktop.DBus.Properties",
+						DBUS_PROP_INTERFACE,
 						NULL,
                                                 &error);
 	if (error != NULL) 
