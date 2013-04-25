@@ -154,10 +154,11 @@ watcher_idle_cb (GsdIdleDelayWatcher *watcher, gboolean is_idle,
 static gboolean
 on_timeout_cb (gpointer user_data)
 {
+	g_debug ("on_timeout_cb called");
 	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
 	//turn off the screen
 	g_settings_set_double (manager->priv->xrandr_settings,
-			       "brightness", 0.0);
+			       "brightness", 0.1);
 
 	//never call it again.
 	manager->priv->timeout_id = 0;
@@ -170,25 +171,22 @@ watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
 {
         g_debug ("Idle notice signal detected: %d", in_effect);
 
+	if (manager->priv->timeout_id > 0)
+	{
+		g_source_remove (manager->priv->timeout_id);
+		manager->priv->timeout_id = 0;
+	}
+
         if (in_effect) 
 	{
 		g_settings_set_double (manager->priv->xrandr_settings,
 				       "brightness", manager->priv->settings_brigthness);
-		//begin timer
-		if (manager->priv->timeout_id > 0)
-			return TRUE;
-//		manager->priv->timeout_id = g_timeout_add (manager->priv->settings_timeout,
-//							   on_timeout_cb,
-//							   manager);
+		manager->priv->timeout_id = g_timeout_add (manager->priv->settings_timeout*MSEC_PER_SEC,
+							   on_timeout_cb,
+							   manager);
         }
 	else 
 	{
-		if (manager->priv->timeout_id > 0)
-		{
-			g_source_remove (manager->priv->timeout_id);
-			manager->priv->timeout_id = 0;
-		}
-
 		g_settings_set_double (manager->priv->xrandr_settings,
 				       "brightness", 1.0);
         }

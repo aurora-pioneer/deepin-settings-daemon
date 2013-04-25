@@ -22,6 +22,7 @@
 #ifndef _GSD_IDLE_DELAY_MISC_H_
 #define _GSD_IDLE_DELAY_MISC_H_
 
+#define MSEC_PER_SEC			1000
 /* GSettings */
 #define IDLE_DELAY_SCHEMA		"org.gnome.settings-daemon.plugins.idle-delay"
 #define IDLE_DELAY_KEY_BRIGHTNESS	"brightness"

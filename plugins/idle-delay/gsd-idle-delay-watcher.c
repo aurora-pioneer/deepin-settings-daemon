@@ -45,14 +45,11 @@ struct GsdIdleDelayWatcherPrivate
 {
         /* settingsd_idle_delay */
         guint           enabled : 1;  //enable or disable Idle detection
-        guint           delta_notice_timeout;
 
         /* state */
         guint           active : 1;
         guint           idle : 1;
         guint           idle_notice : 1;
-
-        guint           idle_id;
 
         GDBusProxy	*presence_proxy; //gnome session presence dbus
 };
@@ -260,20 +257,6 @@ gsd_idle_delay_watcher_get_enabled (GsdIdleDelayWatcher *watcher)
         return watcher->priv->enabled;
 }
 
-static gboolean
-on_idle_timeout (GsdIdleDelayWatcher *watcher)
-{
-	g_debug ("on idle timeout");
-        gboolean res;
-
-        res = _gsd_idle_delay_watcher_set_session_idle (watcher, TRUE);
-
-        _gsd_idle_delay_watcher_set_session_idle_notice (watcher, FALSE);
-
-        /* try again if we failed i guess */
-        return !res;
-}
-
 static void
 set_status (GsdIdleDelayWatcher *watcher,
             guint      status)
@@ -298,21 +281,9 @@ set_status (GsdIdleDelayWatcher *watcher,
         if (is_idle) 
 	{
                 _gsd_idle_delay_watcher_set_session_idle_notice (watcher, is_idle);
-                /* queue an activation */
-                if (watcher->priv->idle_id > 0) {
-                        g_source_remove (watcher->priv->idle_id);
-                }
-                watcher->priv->idle_id = g_timeout_add (watcher->priv->delta_notice_timeout,
-                                                        (GSourceFunc)on_idle_timeout,
-                                                        watcher);
         }
 	else 
 	{
-                /* cancel notice too */
-                if (watcher->priv->idle_id > 0) 
-		{
-                        g_source_remove (watcher->priv->idle_id);
-                }
                 _gsd_idle_delay_watcher_set_session_idle (watcher, FALSE);
                 _gsd_idle_delay_watcher_set_session_idle_notice (watcher, FALSE);
         }
@@ -412,9 +383,6 @@ gsd_idle_delay_watcher_init (GsdIdleDelayWatcher *watcher)
         watcher->priv->active = FALSE;
 
         connect_presence_watcher (watcher);
-
-        /* time before idle signal to send notice signal */
-        watcher->priv->delta_notice_timeout = 10000;
 }
 
 static void
@@ -426,9 +394,6 @@ gsd_idle_delay_watcher_finalize (GObject *object)
         GsdIdleDelayWatcher *watcher = GSD_IDLE_DELAY_WATCHER (object);
 
         g_return_if_fail (watcher->priv != NULL);
-
-        if (watcher->priv->idle_id > 0) 
-                g_source_remove (watcher->priv->idle_id);
 
         watcher->priv->active = FALSE;
 
