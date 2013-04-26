@@ -46,7 +46,7 @@ static const char m_powers_plan_xml[] =
 "  </configuration>\n"
 "</powers>\n";
 
-static GSettings *m_session_settings = NULL;
+static GSettings *m_idle_delay_settings = NULL;
 static char *m_backup_filename = NULL;
 
 static void m_parse_plan(xmlDocPtr doc, xmlNodePtr cur, GSettings *settings);
@@ -81,7 +81,7 @@ static void m_parse_plan(xmlDocPtr doc, xmlNodePtr cur, GSettings *settings)
     g_settings_set_int(settings, "sleep-display-battery", close_monitor_value);
     g_settings_set_int(settings, "sleep-inactive-ac-timeout", suspend_value);
     g_settings_set_int(settings, "sleep-inactive-battery-timeout", suspend_value);
-    g_settings_set_uint(m_session_settings, "idle-delay", close_monitor_value);
+    g_settings_set_uint(m_idle_delay_settings, "timeout", close_monitor_value);
     g_settings_sync();
 }
 
@@ -140,7 +140,7 @@ int deepin_power_init(GSettings *settings)
     struct passwd *pw = NULL;
     FILE *fptr = NULL;
 
-    m_session_settings = g_settings_new("org.gnome.desktop.session");
+    m_idle_delay_settings = g_settings_new("org.gnome.settings-daemon.plugins.idle-delay");
 
     pw = getpwuid(getuid());
     if (!pw) 
@@ -170,9 +170,9 @@ int deepin_power_init(GSettings *settings)
 
 void deepin_power_cleanup() 
 {
-    if (m_session_settings) {
-        g_object_unref(m_session_settings);
-        m_session_settings = NULL;
+    if (m_idle_delay_settings) {
+        g_object_unref(m_idle_delay_settings);
+        m_idle_delay_settings = NULL;
     }
     if (m_backup_filename) {
         free(m_backup_filename);
