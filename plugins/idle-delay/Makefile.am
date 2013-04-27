@@ -2,19 +2,10 @@ NULL=
 
 plugin_name = idle-delay
 
-plugin_LTLIBRARIES = \
-	libidle-delay.la
-
+if BUILD_TEST_PROGRAMS
 noinst_PROGRAMS = \
 	test-idle-delay\
 	$(NULL)
-
-gsd-idle-delay-marshal.c: gsd-idle-delay-marshal.list gsd-idle-delay-marshal.h
-	echo "#include \"gsd-idle-delay-marshal.h\"" > $@ && \
-	@GLIB_GENMARSHAL@ $< --prefix=gsd_idle_delay_marshal --body >> $@
-
-gsd-idle-delay-marshal.h: gsd-idle-delay-marshal.list
-	@GLIB_GENMARSHAL@ $< --prefix=gsd_idle_delay_marshal --header > $@
 
 test_idle_delay_SOURCES= \
 	test-idle-delay.c\
@@ -45,7 +36,11 @@ test_idle_delay_LDADD =		\
 	$(SETTINGS_PLUGIN_LIBS)	\
 	$(IDLE_DELAY_LIBS)	\
 	$(NULL)
+endif
 
+
+plugin_LTLIBRARIES = \
+	libidle-delay.la
 
 libidle_delay_la_SOURCES = \
 	gsd-idle-delay-dbus.h\
@@ -74,6 +69,13 @@ libidle_delay_la_LDFLAGS = 		\
 
 libidle_delay_la_LIBADD  = 		\
 	$(SETTINGS_PLUGIN_LIBS)
+
+gsd-idle-delay-marshal.c: gsd-idle-delay-marshal.list gsd-idle-delay-marshal.h
+	echo "#include \"gsd-idle-delay-marshal.h\"" > $@ && \
+	@GLIB_GENMARSHAL@ $< --prefix=gsd_idle_delay_marshal --body >> $@
+
+gsd-idle-delay-marshal.h: gsd-idle-delay-marshal.list
+	@GLIB_GENMARSHAL@ $< --prefix=gsd_idle_delay_marshal --header > $@
 
 plugin_in_files = 		\
 	idle-delay.gnome-settings-plugin.in

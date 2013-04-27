@@ -3,9 +3,6 @@ plugin_name = dummy
 plugin_LTLIBRARIES = \
 	libdummy.la
 
-noinst_PROGRAMS =\
-	test-dummy
-
 libdummy_la_SOURCES = 		\
 	gsd-dummy-manager.c	\
 	gsd-dummy-manager.h	\
@@ -28,6 +25,10 @@ libdummy_la_LDFLAGS = 		\
 libdummy_la_LIBADD  = 		\
 	$(SETTINGS_PLUGIN_LIBS)
 
+if BUILD_TEST_PROGRAMS
+noinst_PROGRAMS =\
+	test-dummy
+
 #NOTE: test programs should not list **-plugin.c/h file in
 #      the source list.
 test_dummy_SOURCES =\
@@ -49,6 +50,7 @@ test_dummy_LDADD =		\
 	$(SETTINGS_PLUGIN_LIBS)	\
 	$(top_builddir)/gnome-settings-daemon/libgsd.la	\
 	$(DUMMY_LIBS)
+endif
 
 plugin_in_files = 		\
 	dummy.gnome-settings-plugin.in

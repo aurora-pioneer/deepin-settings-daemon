@@ -2,6 +2,7 @@ NULL =
 
 plugin_name = background
 
+if BUILD_TEST_PROGRAMS
 noinst_PROGRAMS = 			\
 	test-background			\
 	$(NULL)
@@ -33,6 +34,7 @@ test_background_LDADD =		\
 	$(SETTINGS_PLUGIN_LIBS)	\
 	$(BACKGROUND_LIBS)	\
 	$(NULL)
+endif
 
 plugin_LTLIBRARIES = \
 	libbackground.la		\

@@ -260,6 +260,16 @@ dnl ---------------------------------------------------------------------------
 PKG_CHECK_MODULES(WACOM, [libwacom >= $LIBWACOM_REQUIRED_VERSION x11 xi xtst $GUDEV_PKG gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION xorg-wacom])
 
 dnl ---------------------------------------------------------------------------
+dnl - Build test programs
+dnl ---------------------------------------------------------------------------
+
+AC_ARG_ENABLE(enable_build_tests,
+              AS_HELP_STRING([--enable-build-tests],
+                             [Enable build of test programs (default: no)]),,
+              [enable_modular_tests=no])
+AM_CONDITIONAL(BUILD_TEST_PROGRAMS, test x$enable_build_tests= xyes)
+
+dnl ---------------------------------------------------------------------------
 dnl - GConf<->GSettings bridge
 dnl ---------------------------------------------------------------------------
 

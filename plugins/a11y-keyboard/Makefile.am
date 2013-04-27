@@ -7,6 +7,7 @@ gtkbuilder_DATA = 			\
 	gsd-a11y-preferences-dialog.ui	\
 	$(NULL)
 
+if BUILD_TEST_PROGRAMS
 noinst_PROGRAMS =				\
 	test-a11y-preferences-dialog		\
 	$(NULL)
@@ -33,6 +34,7 @@ test_a11y_preferences_dialog_LDADD = \
 	$(SETTINGS_DAEMON_LIBS)			\
 	$(SETTINGS_PLUGIN_LIBS)			\
 	$(NULL)
+endif
 
 plugin_LTLIBRARIES = \
 	liba11y-keyboard.la		\
