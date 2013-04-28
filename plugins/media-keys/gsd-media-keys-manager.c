@@ -2115,7 +2115,7 @@ do_action (GsdMediaKeysManager *manager,
 		do_toggle_contrast_action (manager);
 		break;
         case POWER_KEY:
-                execute (manager, "python /usr/share/deepin-system-settings/modules/power/src/tray_shutdown_plugin.py shutdown", FALSE);
+                execute (manager, "python /usr/share/deepin-system-settings/modules/power/src/tray_shutdown_plugin.py powerkey", FALSE);
                 //do_config_power_action (manager, "button-power");
                 break;
         case SLEEP_KEY:
