@@ -2383,6 +2383,12 @@ do_lid_closed_action (GsdPowerManager *manager)
         }
 
         /* check we won't melt when the lid is closed */
+
+        /* directly return when action type equals nothing*/
+        if (action_type == GSD_POWER_ACTION_NOTHING) {
+            return ;
+        }
+
         if (action_type != GSD_POWER_ACTION_SUSPEND &&
             action_type != GSD_POWER_ACTION_HIBERNATE) {
                 if (up_client_get_lid_force_sleep (manager->priv->up_client)) {
@@ -2391,7 +2397,8 @@ do_lid_closed_action (GsdPowerManager *manager)
                         return;
                 } else {
                         /* maybe lock the screen if the lid is closed */
-                        lock_screensaver (manager);
+                        g_warning("cancel lock screensaver");
+                        /* lock_screensaver (manager);*/
                 }
         }
 
@@ -2420,8 +2427,9 @@ do_lid_closed_action (GsdPowerManager *manager)
         if (non_laptop_outputs_are_all_off (manager->priv->x11_screen)) {
                 g_debug ("lid is closed; suspending or hibernating");
                 do_power_action_type (manager, action_type);
-        } else
+        } else{
                 g_debug ("lid is closed; not suspending nor hibernating since some external monitor outputs are still active");
+        }
 }
 
 
