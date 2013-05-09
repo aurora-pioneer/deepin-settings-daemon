@@ -125,7 +125,7 @@ supports_xinput2_devices (int *opcode)
         gdk_error_trap_push ();
 
         major = 2;
-        minor = 0;
+        minor = 3;
 
         if (XIQueryVersion (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), &major, &minor) != Success) {
                 gdk_error_trap_pop_ignored ();
