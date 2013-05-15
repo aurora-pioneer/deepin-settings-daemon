@@ -11,3 +11,8 @@
    cursor	: DONE
    datetime	: build ok, but removed from 3.8
    dummy	: DONE
+   gconf	: removed from 3.8
+   housekeepin	: DONE
+   idle-delay	: disable
+   key-bindings	: disable
+   keyboard	: DONE

@@ -1,18 +1,15 @@
 NULL =
-#disabled plugins:
-#	automount
-#	background	
+
 enabled_plugins =	\
 	a11y-keyboard	\
 	a11y-settings	\
 	clipboard	\
 	color		\
 	cursor		\
-	datetime	\
 	dummy		\
+	housekeeping    \
 	keyboard	\
 	power		\
-	housekeeping    \
 	media-keys	\
 	mouse		\
 	sound		\
