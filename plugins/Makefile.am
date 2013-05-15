@@ -13,7 +13,6 @@ enabled_plugins =	\
 	orientation	\
 	print-notifications\
 	sound		\
-	wacom		\
 	xrandr		\
 	xsettings	\
 	key-bindings	\

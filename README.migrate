@@ -25,3 +25,5 @@
    screensaver-proxy: NEW
    smartcard	: needs fixing
    sound	: DONE
+   updates	: depends on packagekit, do we need it?
+   wacom	: needs fixing

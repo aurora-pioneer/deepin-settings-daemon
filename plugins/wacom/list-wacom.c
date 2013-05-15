@@ -79,8 +79,10 @@ button_type_to_string (GsdWacomTabletButtonType type)
 	switch (type) {
 	case WACOM_TABLET_BUTTON_TYPE_NORMAL:
 		return "normal";
-	case WACOM_TABLET_BUTTON_TYPE_ELEVATOR:
-		return "elevator";
+	case WACOM_TABLET_BUTTON_TYPE_STRIP:
+		return "touch-strip";
+	case WACOM_TABLET_BUTTON_TYPE_RING:
+		return "touch-ring";
 	case WACOM_TABLET_BUTTON_TYPE_HARDCODED:
 		return "hard-coded";
 	default:
@@ -195,6 +197,8 @@ list_devices (GList *devices)
 			 gsd_wacom_device_type_to_string (gsd_wacom_device_get_device_type (device)));
 		g_print ("\tReversible: %s\n", BOOL_AS_STR (gsd_wacom_device_reversible (device)));
 		g_print ("\tScreen Tablet: %s\n", BOOL_AS_STR (gsd_wacom_device_is_screen_tablet (device)));
+		g_print ("\tIntegrated Device: %s\n", BOOL_AS_STR (gsd_wacom_device_is_isd (device)));
+		g_print ("\tUnknown (fallback) device: %s\n", BOOL_AS_STR(gsd_wacom_device_is_fallback (device)));
 
 		loc = get_loc (gsd_wacom_device_get_settings (device));
 		g_print ("\tGeneric settings: %s\n", loc);
