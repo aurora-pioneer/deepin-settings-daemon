@@ -45,7 +45,7 @@ static GdkModifierType gsd_used_mods = 0;
 #define XF86KEYS_RANGE_MAX 0x1008FFFF
 
 #define FKEYS_RANGE_MIN GDK_KEY_F1
-#define FKEYS_RANGE_MAX GDK_KEY_F35
+#define FKEYS_RANGE_MAX GDK_KEY_R15
 
 #define IN_RANGE(x, min, max) (x >= min && x <= max)
 
@@ -76,6 +76,7 @@ static void
 grab_key_real (guint      keycode,
                GdkWindow *root,
                gboolean   grab,
+               gboolean   synchronous,
                XIGrabModifiers *mods,
                int        num_mods)
 {
@@ -96,7 +97,7 @@ grab_key_real (guint      keycode,
                                keycode,
                                GDK_WINDOW_XID (root),
                                GrabModeAsync,
-                               GrabModeAsync,
+                               synchronous ? GrabModeSync : GrabModeAsync,
                                False,
                                &evmask,
                                num_mods,
@@ -132,10 +133,11 @@ grab_key_real (guint      keycode,
  * operations with one flush only.
  */
 #define N_BITS 32
-void
-grab_key_unsafe (Key                 *key,
-                 gboolean             grab,
-                 GSList              *screens)
+static void
+grab_key_internal (Key             *key,
+                   gboolean         grab,
+                   GsdKeygrabFlags  flags,
+                   GSList          *screens)
 {
         int     indexes[N_BITS]; /* indexes of bits we need to flip */
         int     i;
@@ -161,11 +163,16 @@ grab_key_unsafe (Key                 *key,
          * The exception is the XFree86 keys and the Function keys
          * (which are useful to grab without a modifier).
          */
-        if ((modifiers & gsd_used_mods) == 0 &&
+        if (!(flags & GSD_KEYGRAB_ALLOW_UNMODIFIED) &&
+            (modifiers & gsd_used_mods) == 0 &&
             !IN_RANGE(key->keysym, XF86KEYS_RANGE_MIN, XF86KEYS_RANGE_MAX) &&
             !IN_RANGE(key->keysym, FKEYS_RANGE_MIN, FKEYS_RANGE_MAX) &&
              key->keysym != GDK_KEY_Pause &&
-             key->keysym != GDK_KEY_Print) {
+             key->keysym != GDK_KEY_Print &&
+             key->keysym != GDK_KEY_Scroll_Lock &&
+             key->keysym != GDK_KEY_Pause &&
+             key->keysym != GDK_KEY_Break &&
+             key->keysym != GDK_KEY_Menu) {
                 GString *keycodes;
 
                 keycodes = g_string_new ("");
@@ -224,11 +231,20 @@ grab_key_unsafe (Key                 *key,
                         grab_key_real (*code,
                                        gdk_screen_get_root_window (screen),
                                        grab,
+                                       flags & GSD_KEYGRAB_SYNCHRONOUS,
                                        (XIGrabModifiers *) all_mods->data,
                                        all_mods->len);
                 }
         }
         g_array_free (all_mods, TRUE);
+}
+
+void
+grab_key_unsafe (Key             *key,
+                 GsdKeygrabFlags  flags,
+                 GSList          *screens)
+{
+        grab_key_internal (key, TRUE, flags, screens);
 }
 
 static gboolean
@@ -343,38 +359,6 @@ match_xi2_key (Key *key, XIDeviceEvent *event)
         return (key != NULL
                 && key->state == (state & gsd_used_mods)
                 && key_uses_keycode (key, keycode));
-}
-
-Key *
-parse_key (const char *str)
-{
-	Key *key;
-
-	if (str == NULL ||
-	    *str == '\0' ||
-	    g_str_equal (str, "disabled")) {
-		return NULL;
-	}
-
-	key = g_new0 (Key, 1);
-	gtk_accelerator_parse_with_keycode (str, &key->keysym, &key->keycodes, &key->state);
-	if (key->keysym == 0 &&
-	    key->keycodes == NULL &&
-	    key->state == 0) {
-		g_free (key);
-                return NULL;
-	}
-
-	return key;
-}
-
-void
-free_key (Key *key)
-{
-	if (key == NULL)
-		return;
-	g_free (key->keycodes);
-	g_free (key);
 }
 
 static void

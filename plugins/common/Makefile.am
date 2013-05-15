@@ -24,19 +24,19 @@ libcommon_la_LIBADD  = \
 	$(SETTINGS_PLUGIN_LIBS)		\
 	$(COMMON_LIBS)
 
-if BUILD_TEST_PROGRAMS
-noinst_PROGRAMS = test-input-helper test-egg-key-parsing
+libexec_PROGRAMS = gsd-test-input-helper
 
-test_input_helper_SOURCES = test-input-helper.c
-test_input_helper_LDADD = libcommon.la
-test_input_helper_CFLAGS = $(libcommon_la_CFLAGS)
+gsd_test_input_helper_SOURCES = test-input-helper.c
+gsd_test_input_helper_LDADD = libcommon.la
+gsd_test_input_helper_CFLAGS = $(libcommon_la_CFLAGS)
+
+noinst_PROGRAMS = test-egg-key-parsing
 
 test_egg_key_parsing_SOURCES = test-egg-key-parsing.c
 test_egg_key_parsing_LDADD = libcommon.la $(COMMON_LIBS)
 test_egg_key_parsing_CFLAGS = $(libcommon_la_CFLAGS)
-endif
 
 scriptsdir = $(datadir)/gnome-settings-daemon-@GSD_API_VERSION@
 scripts_DATA = input-device-example.sh
 
-EXTRA_DIST = $(scripts_DATA)
+EXTRA_DIST = $(scripts_DATA) test-plugin.h

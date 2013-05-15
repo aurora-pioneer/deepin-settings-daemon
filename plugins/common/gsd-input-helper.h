@@ -53,6 +53,7 @@ typedef struct {
 
 gboolean  supports_xinput_devices  (void);
 gboolean  supports_xinput2_devices (int *opcode);
+gboolean  supports_xtest           (void);
 
 gboolean set_device_enabled       (int device_id,
                                    gboolean enabled);
@@ -61,9 +62,14 @@ gboolean  device_is_touchpad       (XDevice                *xdevice);
 
 gboolean  device_info_is_touchpad    (XDeviceInfo         *device_info);
 gboolean  device_info_is_touchscreen (XDeviceInfo         *device_info);
+gboolean  device_info_is_tablet (XDeviceInfo         *device_info);
+gboolean  device_info_is_mouse       (XDeviceInfo         *device_info);
+gboolean  device_info_is_trackball   (XDeviceInfo         *device_info);
 
 gboolean  touchpad_is_present     (void);
 gboolean  touchscreen_is_present  (void);
+gboolean  mouse_is_present        (void);
+gboolean  trackball_is_present    (void);
 
 gboolean  device_set_property     (XDevice                *xdevice,
                                    const char             *device_name,
