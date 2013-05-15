@@ -10,30 +10,16 @@ gsettings_SCHEMAS =							\
 	org.gnome.settings-daemon.peripherals.gschema.xml		\
 	org.gnome.settings-daemon.plugins.gschema.xml			\
 	org.gnome.settings-daemon.plugins.keyboard.gschema.xml		\
-	org.gnome.settings-daemon.plugins.key-bindings.gschema.xml	\
-	org.gnome.settings-daemon.plugins.idle-delay.gschema.xml	\
 	org.gnome.settings-daemon.plugins.power.gschema.xml		\
 	org.gnome.settings-daemon.plugins.color.gschema.xml		\
 	org.gnome.settings-daemon.plugins.media-keys.gschema.xml	\
 	org.gnome.settings-daemon.plugins.xsettings.gschema.xml		\
 	org.gnome.settings-daemon.plugins.housekeeping.gschema.xml	\
 	org.gnome.settings-daemon.plugins.print-notifications.gschema.xml	\
-	org.gnome.settings-daemon.peripherals.wacom.gschema.xml		\
-	org.gnome.settings-daemon.plugins.xrandr.gschema.xml
-
-all_schemas = $(gsettings_SCHEMAS)
-
-if HAVE_PACKAGEKIT
-gsettings_SCHEMAS += org.gnome.settings-daemon.plugins.updates.gschema.xml
-else
-all_schemas += org.gnome.settings-daemon.plugins.updates.gschema.xml
-endif
-
-if HAVE_GUDEV
-gsettings_SCHEMAS += org.gnome.settings-daemon.plugins.orientation.gschema.xml
-else
-all_schemas += org.gnome.settings-daemon.plugins.orientation.gschema.xml
-endif
+	org.gnome.settings-daemon.plugins.xrandr.gschema.xml		\
+	org.gnome.settings-daemon.plugins.updates.gschema.xml		\
+	org.gnome.settings-daemon.plugins.orientation.gschema.xml	\
+	org.gnome.settings-daemon.peripherals.wacom.gschema.xml
 
 @INTLTOOL_XML_NOMERGE_RULE@
 
@@ -50,13 +36,6 @@ desktop_DATA = $(desktop_in_files:.desktop.in.in=.desktop)
 gnome-settings-daemon.desktop.in: gnome-settings-daemon.desktop.in.in
 	$(AM_V_GEN) sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@.tmp && mv $@.tmp $@
 
-servicedir = $(datadir)/dbus-1/services
-service_in_files = org.gnome.SettingsDaemon.service.in
-service_DATA = $(service_in_files:.service.in=.service)
-
-org.gnome.SettingsDaemon.service: org.gnome.SettingsDaemon.service.in Makefile
-	$(AM_V_GEN) sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
-
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = gnome-settings-daemon.pc
 
@@ -64,20 +43,21 @@ pkgconfig_DATA = gnome-settings-daemon.pc
 
 man_MANS = gnome-settings-daemon.1
 
+dbusservice_in_files = org.freedesktop.IBus.service.in
+
 EXTRA_DIST = 					\
 	$(man_MANS)				\
 	$(convert_DATA)				\
-	$(all_schemas:.xml=.xml.in.in)		\
-	$(service_in_files)			\
+	$(gsettings_SCHEMAS:.xml=.xml.in.in)	\
 	$(desktop_in_files)			\
 	$(gsettings_ENUM_FILES)			\
 	gnome-settings-daemon.pc.in		\
 	$(api_DATA)				\
+	$(dbusservice_in_files)			\
 	$(NULL)
 
 DISTCLEANFILES = 			\
-	$(all_schemas)			\
-	$(service_DATA)			\
+	$(gsettings_SCHEMAS)		\
 	$(desktop_DATA)			\
 	gnome-settings-daemon.desktop.in \
 	$(NULL)
@@ -85,4 +65,14 @@ DISTCLEANFILES = 			\
 MAINTAINERCLEANFILES =			\
 	*~				\
 	Makefile.in			\
-	$(all_schemas:.xml=.valid)
+	$(gsettings_SCHEMAS:.xml=.valid)
+
+if HAVE_IBUS
+dbusservicedir=${datadir}/dbus-1/services
+dbusservice_DATA = $(dbusservice_in_files:.service.in=.service)
+
+org.freedesktop.IBus.service: org.freedesktop.IBus.service.in
+	$(AM_V_GEN) sed -e "s|\@bindir\@|$(bindir)|" $< > $@.tmp && mv $@.tmp $@
+
+CLEANFILES = $(dbusservice_DATA)
+endif
