@@ -9,3 +9,5 @@
    clipboard	: DONE
    color	: DONE
    cursor	: DONE
+   datetime	: build ok, but removed from 3.8
+   dummy	: DONE
