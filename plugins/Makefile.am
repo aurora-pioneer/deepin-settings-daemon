@@ -9,6 +9,7 @@ enabled_plugins =	\
 	cursor		\
 	dummy		\
 	housekeeping    \
+	idle-delay	\
 	media-keys	\
 	mouse		\
 	orientation	\

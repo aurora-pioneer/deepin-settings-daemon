@@ -521,6 +521,7 @@ plugins/cursor/Makefile
 plugins/dummy/Makefile
 plugins/power/Makefile
 plugins/housekeeping/Makefile
+plugins/idle-delay/Makefile
 plugins/keyboard/Makefile
 plugins/media-keys/Makefile
 plugins/media-keys/gvc/Makefile
@@ -534,7 +535,6 @@ plugins/wacom/Makefile
 plugins/xrandr/Makefile
 plugins/xsettings/Makefile
 plugins/key-bindings/Makefile
-plugins/idle-delay/Makefile
 data/Makefile
 data/gnome-settings-daemon.pc
 data/gnome-settings-daemon-uninstalled.pc

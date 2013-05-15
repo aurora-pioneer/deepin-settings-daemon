@@ -50,13 +50,13 @@ libidle_delay_la_SOURCES = \
 	gsd-idle-delay-watcher.c\
 	gsd-idle-delay-manager.h	\
 	gsd-idle-delay-manager.c	\
-	gsd-idle-delay-plugin.h\
 	gsd-idle-delay-plugin.c\
 	$(NULL)
 
 libidle_delay_la_CPPFLAGS = \
 	-I$(top_srcdir)/gnome-settings-daemon		\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
+	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	$(AM_CPPFLAGS)
 
 libidle_delay_la_CFLAGS = \

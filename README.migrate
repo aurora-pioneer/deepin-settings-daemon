@@ -10,10 +10,10 @@
    color	: DONE
    cursor	: DONE
    datetime	: removed from 3.8, do we need it?
-   dummy	: DONE, needs test demo
+   dummy	: DONE
    gconf	: removed from 3.8, do we need it?
    housekeepin	: DONE
-   idle-delay	: NEEDS MIGRATION
+   idle-delay	: DONE
    key-bindings	: NEEDS MIGRATION
    keyboard	: needs fixing
    media-keys	: NEEDS FIXING
@@ -42,3 +42,4 @@ How to migrate
    in latest glib, the function is called when libglib is loaded by ld.so.
 5. xxx.gnome-settings-plugin.in
    the key names have changed.
+6. data/org.gnome.settings-daemon.plugin.gschema.xml.in.in may be changed as well
