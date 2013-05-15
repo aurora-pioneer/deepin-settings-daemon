@@ -21,3 +21,5 @@
    orientation	: DONE
    power	: disable
    print-notifications: DONE
+   remote-display: NEW
+   screensaver-proxy: NEW
