@@ -95,5 +95,8 @@ plugins/xrandr/gsd-test-xrandr
 plugins/xrandr/gsd-xrandr-manager-glue.h
 plugins/xsettings/gsd-test-xsettings
 plugins/xsettings/test-gtk-modules
+plugins/idle-delay/gsd-idle-delay-marshal.c
+plugins/idle-delay/gsd-idle-delay-marshal.h
+plugins/datetime/test-system-timezone
 tests/shiftkey
 test-driver
