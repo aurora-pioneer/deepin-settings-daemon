@@ -30,42 +30,70 @@ uninstall-local:
 	rm -f $(DESTDIR)$(icondir)/32x32/$(context)/gsd-xrandr.png
 	rm -f $(DESTDIR)$(icondir)/scalable/$(context)/gsd-xrandr.svg
 
+libexec_PROGRAMS = gsd-test-xrandr
+
+gsd_test_xrandr_SOURCES =		\
+	test-xrandr.c			\
+	gsd-xrandr-manager.c		\
+	gsd-xrandr-manager.h
+
+gsd_test_xrandr_CPPFLAGS =					\
+	-I$(top_srcdir)/data/					\
+	-I$(top_srcdir)/gnome-settings-daemon			\
+	-I$(top_srcdir)/plugins/common				\
+	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
+	-DLIBEXECDIR=\""$(libexecdir)"\"			\
+	$(AM_CPPFLAGS)
+
+gsd_test_xrandr_CFLAGS =			\
+	$(PLUGIN_CFLAGS)		\
+	$(SETTINGS_PLUGIN_CFLAGS)	\
+	$(XRANDR_CFLAGS)		\
+	$(AM_CFLAGS)
+
+gsd_test_xrandr_LDADD =						\
+	$(top_builddir)/gnome-settings-daemon/libgsd.la		\
+	$(top_builddir)/plugins/common/libcommon.la		\
+	$(SETTINGS_DAEMON_LIBS)			\
+	$(SETTINGS_PLUGIN_LIBS)			\
+	$(XRANDR_LIBS)
+
 plugin_LTLIBRARIES = \
 	libxrandr.la
 
 libxrandr_la_SOURCES = 		\
-	gsd-xrandr-plugin.h	\
 	gsd-xrandr-plugin.c	\
 	gsd-xrandr-manager.h	\
-	gsd-xrandr-manager.c    \
-    deepin_xrandr.h \
-    deepin_xrandr.c
+	gsd-xrandr-manager.c	\
+	deepin_xrandr.h		\
+	deepin_xrandr.c		\
+	$(NULL)
 
 libxrandr_la_CPPFLAGS =						\
 	-I$(top_srcdir)/gnome-settings-daemon			\
 	-I$(top_srcdir)/data/					\
 	-I$(top_srcdir)/plugins/common/				\
-    -DBINDIR=\"$(bindir)\"					\
+	-DBINDIR=\"$(bindir)\"					\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
 	$(AM_CPPFLAGS)
 
 libxrandr_la_CFLAGS =			\
 	$(PLUGIN_CFLAGS)		\
-	$(UPOWER_CFLAGS)		\
+	$(XRANDR_CFLAGS)		\
 	$(SETTINGS_PLUGIN_CFLAGS)	\
-	$(GNOME_DESKTOP_CFLAGS)		\
-	$(LIBXML2_CFLAGS)   \
-    $(AM_CFLAGS)
+	$(WACOM_CFLAGS)			\
+	$(LIBXML2_CFLAGS)	\
+	$(AM_CFLAGS)
 
 libxrandr_la_LDFLAGS = 			\
 	$(GSD_PLUGIN_LDFLAGS)
 
 libxrandr_la_LIBADD  =					\
 	$(top_builddir)/plugins/common/libcommon.la	\
-	$(UPOWER_LIBS)					\
-	$(SETTINGS_PLUGIN_LIBS)				\
-	$(GNOME_DESKTOP_LIBS)   \
-    $(LIBXML2_LIBS)
+	$(XRANDR_LIBS)					\
+	$(WACOM_LIBS)					\
+	$(SETTINGS_PLUGIN_LIBS)		\
+	$(LIBXML2_LIBS)
 
 plugin_in_files =			\
 	xrandr.gnome-settings-plugin.in

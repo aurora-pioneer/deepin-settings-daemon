@@ -1,5 +1,0 @@
-env = Environment(CCFLAGS='-g')
-
-env.Program('hello_xevent', ['hello_xevent.c'], LIBS=['libX11', 'libXrandr'])
-
-env.Program('hello_netlink', ['hello_netlink.c'])
