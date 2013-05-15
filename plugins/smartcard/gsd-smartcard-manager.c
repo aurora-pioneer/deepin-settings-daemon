@@ -392,6 +392,12 @@ gsd_smartcard_manager_error_quark (void)
 }
 
 GsdSmartcardManager *
+gsd_smartcard_manager_new_default (void)
+{
+  return gsd_smartcard_manager_new (NULL);
+}
+
+GsdSmartcardManager *
 gsd_smartcard_manager_new (const char *module_path)
 {
         GsdSmartcardManager *instance;
@@ -731,8 +737,8 @@ load_driver (GsdSmartcardManager  *manager,
                 g_free (module_spec);
                 module_spec = NULL;
 
-                if (!SECMOD_HasRemovableSlots (module) ||
-                    !module->loaded) {
+                if (SECMOD_HasRemovableSlots (module) &&
+                    module->loaded) {
                         modules = g_list_prepend (modules, module);
                 } else {
                         g_debug ("fallback module found but not %s",
@@ -767,8 +773,8 @@ load_driver (GsdSmartcardManager  *manager,
                         g_free (module_spec);
                         module_spec = NULL;
 
-                        if (!SECMOD_HasRemovableSlots (module) ||
-                            !module->loaded) {
+                        if (SECMOD_HasRemovableSlots (module) &&
+                            module->loaded) {
                                 modules = g_list_prepend (modules, module);
                         } else {
                                 g_debug ("fallback module found but not loaded");
@@ -1477,8 +1483,6 @@ main (int   argc,
 
         g_log_set_always_fatal (G_LOG_LEVEL_ERROR
                                 | G_LOG_LEVEL_CRITICAL | G_LOG_LEVEL_WARNING);
-
-        g_type_init ();
 
         g_message ("creating instance of 'smartcard manager' object...");
         manager = gsd_smartcard_manager_new (NULL);

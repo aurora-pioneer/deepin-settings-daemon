@@ -1,5 +1,31 @@
 plugin_name = smartcard
 
+libexec_PROGRAMS = gsd-test-smartcard
+
+gsd_test_smartcard_SOURCES =	\
+	gsd-smartcard-manager.h	\
+	gsd-smartcard-manager.c	\
+	gsd-smartcard.h         \
+	gsd-smartcard.c         \
+	test-smartcard.c
+
+gsd_test_smartcard_CFLAGS =					\
+	-I$(top_srcdir)/gnome-settings-daemon			\
+	-I$(top_srcdir)/plugins/common				\
+	-DSYSCONFDIR=\""$(sysconfdir)"\" \
+	-DLIBDIR=\""$(libdir)"\" \
+	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
+	$(NSS_CFLAGS)						\
+	$(PLUGIN_CFLAGS)					\
+	$(SETTINGS_PLUGIN_CFLAGS)				\
+	$(AM_CFLAGS)
+
+gsd_test_smartcard_LDADD =					\
+	$(top_builddir)/gnome-settings-daemon/libgsd.la		\
+	$(top_builddir)/plugins/common/libcommon.la		\
+	$(NSS_LIBS)						\
+	$(SETTINGS_PLUGIN_LIBS)
+
 plugin_LTLIBRARIES = \
 	libsmartcard.la
 
@@ -22,7 +48,6 @@ libsmartcard_la_CPPFLAGS = \
 libsmartcard_la_CFLAGS = \
 	$(PLUGIN_CFLAGS)	\
 	$(SETTINGS_PLUGIN_CFLAGS) \
-	$(GNOME_CFLAGS)	\
 	$(NSS_CFLAGS)	\
 	$(AM_CFLAGS)
 
