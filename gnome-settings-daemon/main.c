@@ -31,19 +31,17 @@
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 #include <gtk/gtk.h>
-#include <gio/gio.h>
 #include <libnotify/notify.h>
 
 #include "gnome-settings-manager.h"
+#include "gnome-settings-plugin.h"
 #include "gnome-settings-profile.h"
-
-#define GSD_DBUS_NAME         "org.gnome.SettingsDaemon"
+#include "gnome-settings-session.h"
 
 #define GNOME_SESSION_DBUS_NAME      "org.gnome.SessionManager"
-#define GNOME_SESSION_DBUS_OBJECT    "/org/gnome/SessionManager"
-#define GNOME_SESSION_DBUS_INTERFACE "org.gnome.SessionManager"
 #define GNOME_SESSION_CLIENT_PRIVATE_DBUS_INTERFACE "org.gnome.SessionManager.ClientPrivate"
 
+static gboolean   replace      = FALSE;
 static gboolean   debug        = FALSE;
 static gboolean   do_timed_exit = FALSE;
 static int        term_signal_pipe_fds[2];
@@ -52,6 +50,7 @@ static GnomeSettingsManager *manager = NULL;
 
 static GOptionEntry entries[] = {
         {"debug", 0, 0, G_OPTION_ARG_NONE, &debug, N_("Enable debugging code"), NULL },
+        { "replace", 'r', 0, G_OPTION_ARG_NONE, &replace, N_("Replace existing daemon"), NULL },
         { "timed-exit", 0, 0, G_OPTION_ARG_NONE, &do_timed_exit, N_("Exit after a time (for debugging)"), NULL },
         {NULL}
 };
@@ -135,6 +134,29 @@ got_client_proxy (GObject *object,
 }
 
 static void
+start_settings_manager (void)
+{
+        gboolean res;
+        GError *error;
+
+        gnome_settings_profile_start ("gnome_settings_manager_new");
+        manager = gnome_settings_manager_new ();
+        gnome_settings_profile_end ("gnome_settings_manager_new");
+        if (manager == NULL) {
+                g_warning ("Unable to register object");
+                gtk_main_quit ();
+        }
+
+        error = NULL;
+        res = gnome_settings_manager_start (manager, &error);
+        if (! res) {
+                g_warning ("Unable to start: %s", error->message);
+                g_error_free (error);
+                gtk_main_quit ();
+        }
+}
+
+static void
 on_client_registered (GObject             *source_object,
                       GAsyncResult        *res,
                       gpointer             user_data)
@@ -213,10 +235,97 @@ set_locale (GDBusProxy *proxy)
                 set_session_env (proxy, "LC_NUMERIC", region);
                 set_session_env (proxy, "LC_MONETARY", region);
                 set_session_env (proxy, "LC_MEASUREMENT", region);
+                set_session_env (proxy, "LC_PAPER", region);
         }
         g_free (region);
 
         g_object_unref (locale_settings);
+}
+
+#ifdef HAVE_IBUS
+static gboolean
+is_program_in_path (const char *binary)
+{
+	char *path;
+
+	path = g_find_program_in_path (binary);
+	if (path == NULL)
+		return FALSE;
+	g_free (path);
+	return TRUE;
+}
+
+static gboolean
+keyboard_plugin_is_enabled (void)
+{
+        GSettings *settings;
+        gboolean enabled;
+
+        settings = g_settings_new ("org.gnome.settings-daemon.plugins.keyboard");
+        enabled = g_settings_get_boolean (settings, "active");
+        g_object_unref (settings);
+
+        return enabled;
+}
+
+static void
+set_legacy_ibus_env_vars (GDBusProxy *proxy)
+{
+        if (is_program_in_path ("ibus-daemon") &&
+            keyboard_plugin_is_enabled ()) {
+                set_session_env (proxy, "QT_IM_MODULE", "ibus");
+                set_session_env (proxy, "XMODIFIERS", "@im=ibus");
+        }
+}
+#endif
+
+/* Keep synchronised with set_locale() and
+ * set_legacy_ibus_env_vars() above */
+static void
+set_locale_env (void)
+{
+        GSettings *locale_settings;
+        gchar *region;
+
+        /* Set locale environment */
+        locale_settings = g_settings_new ("org.gnome.system.locale");
+        region = g_settings_get_string (locale_settings, "region");
+        if (region[0]) {
+                g_setenv ("LC_TIME", region, TRUE);
+                g_setenv ("LC_NUMERIC", region, TRUE);
+                g_setenv ("LC_MONETARY", region, TRUE);
+                g_setenv ("LC_MEASUREMENT", region, TRUE);
+                g_setenv ("LC_PAPER", region, TRUE);
+        }
+        g_free (region);
+        g_object_unref (locale_settings);
+
+#ifdef HAVE_IBUS
+        /* Set IBus legacy environment */
+        if (is_program_in_path ("ibus-daemon") &&
+            keyboard_plugin_is_enabled ()) {
+                g_setenv ("QT_IM_MODULE", "ibus", TRUE);
+                g_setenv ("XMODIFIERS", "@im=ibus", TRUE);
+        }
+#endif
+}
+
+static void
+register_with_gnome_session (GDBusProxy *proxy)
+{
+        const char *startup_id;
+
+        g_signal_connect (G_OBJECT (proxy), "g-signal",
+                          G_CALLBACK (on_session_over), NULL);
+        startup_id = g_getenv ("DESKTOP_AUTOSTART_ID");
+        g_dbus_proxy_call (proxy,
+                           "RegisterClient",
+                           g_variant_new ("(ss)", "gnome-settings-daemon", startup_id ? startup_id : ""),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           -1,
+                           NULL,
+                           (GAsyncReadyCallback) on_client_registered,
+                           manager);
 }
 
 static gboolean
@@ -264,19 +373,22 @@ watch_for_term_signal (GnomeSettingsManager *manager)
 }
 
 static void
-set_session_over_handler (GDBusConnection *bus)
-{
-        g_assert (bus != NULL);
-
-        watch_for_term_signal (manager);
-}
-
-static void
 name_acquired_handler (GDBusConnection *connection,
                        const gchar *name,
                        gpointer user_data)
 {
-        set_session_over_handler (connection);
+        GDBusProxy *proxy;
+
+        proxy = gnome_settings_session_get_session_proxy ();
+        /* Always call this first, as Setenv can only be called before
+           any client registers */
+        set_locale (proxy);
+#ifdef HAVE_IBUS
+        set_legacy_ibus_env_vars (proxy);
+#endif
+        start_settings_manager ();
+        register_with_gnome_session (proxy);
+        watch_for_term_signal (manager);
 }
 
 static void
@@ -287,65 +399,27 @@ name_lost_handler (GDBusConnection *connection,
         /* Name was already taken, or the bus went away */
 
         g_warning ("Name taken or bus went away - shutting down");
+
+        if (manager != NULL)
+                stop_manager (manager);
+
         gtk_main_quit ();
-}
 
-static gboolean
-do_register_client (gpointer user_data)
-{
-        GDBusProxy *proxy = (GDBusProxy *) user_data;
-        g_assert (proxy != NULL);
-
-        const char *startup_id = g_getenv ("DESKTOP_AUTOSTART_ID");
-        g_dbus_proxy_call (proxy,
-                           "RegisterClient",
-                           g_variant_new ("(ss)", "gnome-settings-daemon", startup_id ? startup_id : ""),
-                           G_DBUS_CALL_FLAGS_NONE,
-                           -1,
-                           NULL,
-                           (GAsyncReadyCallback) on_client_registered,
-                           manager);
-
-        return FALSE;
-}
-
-static void
-queue_register_client (void)
-{
-        GDBusConnection *bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
-        if (!bus)
-                return;
-
-        GError *error = NULL;
-        GDBusProxy *proxy = g_dbus_proxy_new_sync (bus,
-                                                   G_DBUS_PROXY_FLAGS_NONE,
-                                                   NULL,
-                                                   GNOME_SESSION_DBUS_NAME,
-                                                   GNOME_SESSION_DBUS_OBJECT,
-                                                   GNOME_SESSION_DBUS_INTERFACE,
-                                                   NULL,
-                                                   &error);
-        g_object_unref (bus);
-
-        if (proxy == NULL) {
-                g_debug ("Could not connect to the Session manager: %s", error->message);
-                g_error_free (error);
-                return;
-        }
-
-        /* Register the daemon with gnome-session */
-        g_signal_connect (G_OBJECT (proxy), "g-signal",
-                          G_CALLBACK (on_session_over), NULL);
-
-        g_idle_add_full (G_PRIORITY_DEFAULT, do_register_client, proxy, NULL);
 }
 
 static void
 bus_register (void)
 {
+        GBusNameOwnerFlags flags;
+
+        flags = G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT;
+
+        if (replace)
+                flags |= G_BUS_NAME_OWNER_FLAGS_REPLACE;
+
         name_id = g_bus_own_name (G_BUS_TYPE_SESSION,
                                   GSD_DBUS_NAME,
-                                  G_BUS_NAME_OWNER_FLAGS_NONE,
+                                  flags,
                                   NULL,
                                   (GBusNameAcquiredCallback) name_acquired_handler,
                                   (GBusNameLostCallback) name_lost_handler,
@@ -407,10 +481,6 @@ parse_args (int *argc, char ***argv)
 int
 main (int argc, char *argv[])
 {
-
-        gboolean              res;
-        GError               *error;
-
         gnome_settings_profile_start (NULL);
 
         bindtextdomain (GETTEXT_PACKAGE, GNOME_SETTINGS_LOCALEDIR);
@@ -419,8 +489,6 @@ main (int argc, char *argv[])
         setlocale (LC_ALL, "");
 
         parse_args (&argc, &argv);
-
-        g_type_init ();
 
         gnome_settings_profile_start ("opening gtk display");
         if (! gtk_init_check (NULL, NULL)) {
@@ -431,31 +499,11 @@ main (int argc, char *argv[])
 
         g_log_set_default_handler (gsd_log_default_handler, NULL);
 
+        set_locale_env ();
+
         notify_init ("gnome-settings-daemon");
 
-        queue_register_client ();
-
         bus_register ();
-
-        gnome_settings_profile_start ("gnome_settings_manager_new");
-        manager = gnome_settings_manager_new ();
-        gnome_settings_profile_end ("gnome_settings_manager_new");
-        if (manager == NULL) {
-                g_warning ("Unable to register object");
-                goto out;
-        }
-
-        /* If we aren't started by dbus then load the plugins
-           automatically.  Otherwise, wait for an Awake etc. */
-        if (g_getenv ("DBUS_STARTER_BUS_TYPE") == NULL) {
-                error = NULL;
-                res = gnome_settings_manager_start (manager, &error);
-                if (! res) {
-                        g_warning ("Unable to start: %s", error->message);
-                        g_error_free (error);
-                        goto out;
-                }
-        }
 
         if (do_timed_exit) {
                 g_timeout_add_seconds (30, (GSourceFunc) timed_exit_cb, NULL);
@@ -465,7 +513,6 @@ main (int argc, char *argv[])
 
         g_debug ("Shutting down");
 
-out:
         if (name_id > 0) {
                 g_bus_unown_name (name_id);
                 name_id = 0;

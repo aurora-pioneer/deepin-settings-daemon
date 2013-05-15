@@ -9,9 +9,7 @@ INCLUDES = \
 	$(DISABLE_DEPRECATED_CFLAGS)				\
 	$(SETTINGS_DAEMON_CFLAGS)				\
 	$(LIBNOTIFY_CFLAGS)					\
-	$(UPOWER_CFLAGS)					\
 	$(GNOME_DESKTOP_CFLAGS)					\
-	$(SYSTEMD_CFLAGS)					\
 	$(NULL)
 
 privlibdir = $(pkglibdir)-$(GSD_API_VERSION)
@@ -35,7 +33,7 @@ libgsd_la_CFLAGS =		\
 	$(NULL)
 
 libgsd_la_LIBADD =		\
-	$(SYSTEMD_LIBS)		\
+	$(SETTINGS_DAEMON_LIBS)		\
 	$(GIOUNIX_LIBS)		\
 	$(NULL)
 
@@ -79,7 +77,6 @@ gnome_settings_daemon_LDADD = 		\
 	libgsd.la		\
 	$(SETTINGS_DAEMON_LIBS)		\
 	$(LIBNOTIFY_LIBS)		\
-	$(UPOWER_LIBS)			\
 	$(GNOME_DESKTOP_LIBS)		\
 	$(NULL)
 

@@ -33,12 +33,10 @@
 #define GNOME_DESKTOP_USE_UNSTABLE_API
 #include <libgnome-desktop/gnome-pnp-ids.h>
 
+#include "gnome-settings-plugin.h"
 #include "gnome-settings-plugin-info.h"
 #include "gnome-settings-manager.h"
 #include "gnome-settings-profile.h"
-
-#define GSD_MANAGER_DBUS_PATH "/org/gnome/SettingsDaemon"
-#define GSD_MANAGER_DBUS_NAME "org.gnome.SettingsDaemon"
 
 #define DEFAULT_SETTINGS_PREFIX "org.gnome.settings-daemon"
 
@@ -50,8 +48,6 @@ static const gchar introspection_xml[] =
 "<node name='/org/gnome/SettingsDaemon'>"
 "  <interface name='org.gnome.SettingsDaemon'>"
 "    <annotation name='org.freedesktop.DBus.GLib.CSymbol' value='gnome_settings_manager'/>"
-"    <method name='Awake'/>"
-"    <method name='Start'/>"
 "    <signal name='PluginActivated'>"
 "      <arg name='name' type='s'/>"
 "    </signal>"
@@ -67,6 +63,7 @@ struct GnomeSettingsManagerPrivate
         GDBusNodeInfo              *introspection_data;
         GDBusConnection            *connection;
         GSettings                  *settings;
+        char                      **whitelist;
         GnomePnpIds                *pnp_ids;
         GSList                     *plugins;
 };
@@ -150,8 +147,8 @@ emit_signal (GnomeSettingsManager    *manager,
 
         if (g_dbus_connection_emit_signal (manager->priv->connection,
                                            NULL,
-                                           GSD_MANAGER_DBUS_PATH,
-                                           GSD_MANAGER_DBUS_NAME,
+                                           GSD_DBUS_PATH,
+                                           GSD_DBUS_NAME,
                                            "PluginActivated",
                                            g_variant_new ("(s)", name),
                                            &error) == FALSE) {
@@ -202,6 +199,17 @@ is_schema (const char *schema)
         return contained (g_settings_list_schemas (), schema);
 }
 
+static gboolean
+is_whitelisted (char       **whitelist,
+                const char  *plugin_name)
+{
+        if (whitelist == NULL ||
+            whitelist[0] == NULL ||
+            g_strcmp0 (whitelist[0], "all") == 0)
+                return TRUE;
+
+        return contained ((const char * const *) whitelist, plugin_name);
+}
 
 static void
 _load_file (GnomeSettingsManager *manager,
@@ -223,6 +231,13 @@ _load_file (GnomeSettingsManager *manager,
                                  info,
                                  (GCompareFunc) compare_location);
         if (l != NULL) {
+                goto out;
+        }
+
+        if (!is_whitelisted (manager->priv->whitelist,
+                             gnome_settings_plugin_info_get_location (info))) {
+                g_debug ("Plugin %s ignored as it's not whitelisted",
+                         gnome_settings_plugin_info_get_location (info));
                 goto out;
         }
 
@@ -324,56 +339,6 @@ _unload_all (GnomeSettingsManager *manager)
          manager->priv->plugins = NULL;
 }
 
-/*
-  Example:
-  dbus-send --session --dest=org.gnome.SettingsDaemon \
-  --type=method_call --print-reply --reply-timeout=2000 \
-  /org/gnome/SettingsDaemon \
-  org.gnome.SettingsDaemon.Awake
-*/
-gboolean
-gnome_settings_manager_awake (GnomeSettingsManager *manager,
-                              GError              **error)
-{
-        g_debug ("Awake called");
-        return gnome_settings_manager_start (manager, error);
-}
-
-static void
-handle_method_call (GDBusConnection       *connection,
-                    const gchar           *sender,
-                    const gchar           *object_path,
-                    const gchar           *interface_name,
-                    const gchar           *method_name,
-                    GVariant              *parameters,
-                    GDBusMethodInvocation *invocation,
-                    gpointer               user_data)
-{
-        GnomeSettingsManager *manager = (GnomeSettingsManager *) user_data;
-        GError *error = NULL;
-
-        g_debug ("Calling method '%s' for settings daemon", method_name);
-
-        if (g_strcmp0 (method_name, "Awake") == 0) {
-                if (gnome_settings_manager_awake (manager, &error) == FALSE)
-                        g_dbus_method_invocation_return_gerror (invocation, error);
-                else
-                        g_dbus_method_invocation_return_value (invocation, NULL);
-        } else if (g_strcmp0 (method_name, "Start") == 0) {
-                if (gnome_settings_manager_start (manager, &error) == FALSE)
-                        g_dbus_method_invocation_return_gerror (invocation, error);
-                else
-                        g_dbus_method_invocation_return_value (invocation, NULL);
-        }
-}
-
-static const GDBusInterfaceVTable interface_vtable =
-{
-        handle_method_call,
-        NULL, /* Get Property */
-        NULL, /* Set Property */
-};
-
 static void
 on_bus_gotten (GObject             *source_object,
                GAsyncResult        *res,
@@ -391,10 +356,10 @@ on_bus_gotten (GObject             *source_object,
         manager->priv->connection = connection;
 
         g_dbus_connection_register_object (connection,
-                                           GSD_MANAGER_DBUS_PATH,
+                                           GSD_DBUS_PATH,
                                            manager->priv->introspection_data->interfaces[0],
-                                           &interface_vtable,
-                                           manager,
+                                           NULL,
+                                           NULL,
                                            NULL,
                                            NULL);
 }
@@ -438,6 +403,7 @@ gnome_settings_manager_start (GnomeSettingsManager *manager,
 
         gnome_settings_profile_start ("initializing plugins");
         manager->priv->settings = g_settings_new (DEFAULT_SETTINGS_PREFIX ".plugins");
+        manager->priv->whitelist = g_settings_get_strv (manager->priv->settings, "whitelisted-plugins");
 
         _load_all (manager);
         gnome_settings_profile_end ("initializing plugins");
@@ -461,11 +427,9 @@ gnome_settings_manager_stop (GnomeSettingsManager *manager)
                 manager->priv->owner_id = 0;
         }
 
-        g_object_unref (manager->priv->settings);
-        manager->priv->settings = NULL;
-
-        g_object_unref (manager->priv->pnp_ids);
-        manager->priv->pnp_ids = NULL;
+        g_clear_pointer (&manager->priv->whitelist, g_strfreev);
+        g_clear_object (&manager->priv->settings);
+        g_clear_object (&manager->priv->pnp_ids);
 }
 
 static void
