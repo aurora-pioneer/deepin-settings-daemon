@@ -1,12 +1,12 @@
 AC_PREREQ([2.60])
 
 AC_INIT([gnome-settings-daemon],
-        [3.4.2],
+        [3.8.1],
         [http://bugzilla.gnome.org/enter_bug.cgi?product=gnome-settings-daemon])
 
 AC_CONFIG_SRCDIR([gnome-settings-daemon/gnome-settings-manager.c])
 
-AM_INIT_AUTOMAKE([1.9 tar-ustar dist-xz no-dist-gzip])
+AM_INIT_AUTOMAKE([1.9 tar-ustar dist-xz no-dist-gzip check-news])
 AM_MAINTAINER_MODE([enable])
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
@@ -44,38 +44,37 @@ dnl ---------------------------------------------------------------------------
 dnl - Dependencies
 dnl ---------------------------------------------------------------------------
 
-GLIB_REQUIRED_VERSION=2.31.0
-GTK_REQUIRED_VERSION=3.3.18
+GLIB_REQUIRED_VERSION=2.35.3
+GIO_REQUIRED_VERSION=${GLIB_REQUIRED_VERSION}
+GTK_REQUIRED_VERSION=3.7.8
 GCONF_REQUIRED_VERSION=2.6.1
-GIO_REQUIRED_VERSION=2.26.0
-GNOME_DESKTOP_REQUIRED_VERSION=3.3.92
 LIBXML2_REQUIRED_VERSION=2.7.8
+GNOME_DESKTOP_REQUIRED_VERSION=3.7.90
 LIBNOTIFY_REQUIRED_VERSION=0.7.3
 UPOWER_GLIB_REQUIRED_VERSION=0.9.1
-PA_REQUIRED_VERSION=0.9.16
-LIBWACOM_REQUIRED_VERSION=0.3
+PA_REQUIRED_VERSION=2.0
+LIBWACOM_REQUIRED_VERSION=0.7
+LIBRSVG_REQUIRED_VERSION=2.36.2
 UPOWER_REQUIRED_VERSION=0.9.11
 APPINDICATOR_REQUIRED_VERSION=0.3.0
+IBUS_REQUIRED_VERSION=1.4.99
+GSETTINGS_DESKTOP_SCHEMAS_REQUIRED_VERSION=3.3.0
 
 EXTRA_COMPILE_WARNINGS(yes)
 
-dnl FIXME we link against gconf-2.0 until all the plugins are ported
-dnl to GSettings, or we could get crashes on startup
 PKG_CHECK_MODULES(SETTINGS_DAEMON,
-        glib-2.0 >= $GLIB_REQUIRED_VERSION
         gtk+-3.0 >= $GTK_REQUIRED_VERSION
         gio-2.0 >= $GIO_REQUIRED_VERSION
-        gconf-2.0 >= $GCONF_REQUIRED_VERSION
         gmodule-2.0
         gthread-2.0
-	gsettings-desktop-schemas >= 3.3.0
+	gsettings-desktop-schemas >= $GSETTINGS_DESKTOP_SCHEMAS_REQUIRED_VERSION
 )
 
 PKG_CHECK_MODULES(SETTINGS_PLUGIN,
         gtk+-3.0 >= $GTK_REQUIRED_VERSION
-        gconf-2.0 >= $GCONF_REQUIRED_VERSION
         gio-2.0 >= $GIO_REQUIRED_VERSION
-        gsettings-desktop-schemas
+        libnotify >= $LIBNOTIFY_REQUIRED_VERSION
+	gsettings-desktop-schemas >= $GSETTINGS_DESKTOP_SCHEMAS_REQUIRED_VERSION
         x11
 )
 
@@ -88,6 +87,17 @@ esac
 AC_SUBST([GSD_PLUGIN_LDFLAGS])
 
 AC_PATH_PROG(GLIB_GENMARSHAL, glib-genmarshal)
+AC_PATH_PROG([GLIB_MKENUMS],[glib-mkenums])
+
+dnl---------------------------------------------------------------------------
+dnl - Build test programs dnl---------------------------------------------------------------------------
+ 
+AC_ARG_ENABLE(enable_build_tests,
+              AS_HELP_STRING([--enable-build-tests],
+                             [Enable build of test programs (default: no)]),,
+              [enable_modular_tests=no])
+AM_CONDITIONAL(BUILD_TEST_PROGRAMS, test x$enable_build_tests= xyes)
+
 
 dnl ================================================================
 dnl GSettings stuff
@@ -99,7 +109,6 @@ dnl ---------------------------------------------------------------------------
 dnl - Check for gnome-desktop
 dnl ---------------------------------------------------------------------------
 PKG_CHECK_MODULES(GNOME_DESKTOP, gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION)
-
 
 dnl ---------------------------------------------------------------------------
 dnl - Check for LIBXML2
@@ -129,31 +138,13 @@ AC_SUBST(LIBNOTIFY_CFLAGS)
 AC_SUBST(LIBNOTIFY_LIBS)
 
 dnl ---------------------------------------------------------------------------
-dnl - Check for D-Bus
-dnl ---------------------------------------------------------------------------
-
-dnl - Are we specifying a different dbus root ?
-AC_ARG_WITH(dbus-sys,
-        [AC_HELP_STRING([--with-dbus-sys=<dir>],
-        [where D-BUS system.d directory is])])
-AC_ARG_WITH(dbus-services,
-        [AC_HELP_STRING([--with-dbus-services=<dir>],
-        [where D-BUS services directory is])])
-if ! test -z "$with_dbus_sys" ; then
-        DBUS_SYS_DIR="$with_dbus_sys"
-else
-        DBUS_SYS_DIR='${sysconfdir}/dbus-1/system.d'
-fi
-AC_SUBST(DBUS_SYS_DIR)
-
-dnl ---------------------------------------------------------------------------
 dnl - GUdev integration (default enabled)
 dnl ---------------------------------------------------------------------------
 GUDEV_PKG=""
-AC_ARG_ENABLE(gudev, AS_HELP_STRING([--disable-gudev],[Disable GUdev support]), enable_gudev=$enableval)
+AC_ARG_ENABLE(gudev, AS_HELP_STRING([--disable-gudev],[Disable GUdev support (not optional on Linux platforms)]), enable_gudev=$enableval)
 if test x$enable_gudev != xno; then
-	PKG_CHECK_MODULES(GUDEV, gudev-1.0, HAVE_GUDEV="yes", HAVE_GUDEV="no")
-	if test "x$HAVE_GUDEV" = "xyes"; then
+	PKG_CHECK_MODULES(GUDEV, gudev-1.0, have_gudev="yes", have_gudev="no")
+	if test "x$have_gudev" = "xyes"; then
 		AC_DEFINE(HAVE_GUDEV, 1, [define if GUdev is available])
 		GUDEV_PKG="gudev-1.0"
 	else
@@ -162,9 +153,9 @@ if test x$enable_gudev != xno; then
 		fi
 	fi
 else
-	HAVE_GUDEV=no
+	have_gudev=no
 fi
-AM_CONDITIONAL(HAVE_GUDEV, test x$HAVE_GUDEV = xyes)
+AM_CONDITIONAL(HAVE_GUDEV, test x$have_gudev = xyes)
 
 dnl ---------------------------------------------------------------------------
 dnl - common
@@ -173,36 +164,12 @@ dnl ---------------------------------------------------------------------------
 PKG_CHECK_MODULES(COMMON, x11 kbproto xi)
 
 dnl ---------------------------------------------------------------------------
-dnl - automount
+dnl - XTest
 dnl ---------------------------------------------------------------------------
 
-PKG_CHECK_MODULES(AUTOMOUNT, x11 kbproto)
-
-dnl ---------------------------------
-dnl - Application indicator
-dnl ---------------------------------
-
-AC_ARG_ENABLE([appindicator],
-	AS_HELP_STRING([--enable-appindicator[=@<:@no/auto/yes@:>@]],[Build support for application indicators]),
-	[enable_appindicator=$enableval],
-	[enable_appindicator="auto"])
-
-
-if test x$enable_appindicator = xauto ; then
-	PKG_CHECK_EXISTS(appindicator3-0.1 >= $APPINDICATOR_REQUIRED_VERSION,
-		[enable_appindicator="yes"],
-		[enable_appindicator="no"])
-fi
-
-if test x$enable_appindicator = xyes ; then
-	PKG_CHECK_MODULES(APPINDICATOR,
-		[appindicator3-0.1 >= $APPINDICATOR_REQUIRED_VERSION],
-		[AC_DEFINE(HAVE_APPINDICATOR, 1, [Have AppIndicator])])
-fi
-
-AM_CONDITIONAL(HAVE_APPINDICATOR, test x$enable_appindicator = xyes)
-AC_SUBST(APPINDICATOR_CFLAGS)
-AC_SUBST(APPINDICATOR_LIBS)
+PKG_CHECK_MODULES(XTEST, x11 xtst)
+AC_SUBST(XTEST_CFLAGS)
+AC_SUBST(XTEST_LIBS)
 
 dnl ---------------------------------------------------------------------------
 dnl - background
@@ -220,20 +187,33 @@ dnl ---------------------------------------------------------------------------
 dnl - cursor
 dnl ---------------------------------------------------------------------------
 
-PKG_CHECK_MODULES(CURSOR, xfixes)
+PKG_CHECK_MODULES(CURSOR, xfixes gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION)
 
 dnl ---------------------------------------------------------------------------
-dnl - Fontconfig
+dnl - xsettings
 dnl ---------------------------------------------------------------------------
 
-PKG_CHECK_MODULES(FONTCONFIG, fontconfig)
+PKG_CHECK_MODULES(XSETTINGS, fontconfig)
 
 dnl ---------------------------------------------------------------------------
 dnl - Keyboard plugin stuff
 dnl ---------------------------------------------------------------------------
 
-LIBGNOMEKBD_REQUIRED=2.91.1
-PKG_CHECK_MODULES(KEYBOARD, [libgnomekbdui >= $LIBGNOMEKBD_REQUIRED libgnomekbd >= $LIBGNOMEKBD_REQUIRED libxklavier >= 5.0 kbproto])
+AC_ARG_ENABLE(ibus,
+        AS_HELP_STRING([--enable-ibus],
+                       [Enable IBus support]),
+        enable_ibus=$enableval,
+        enable_ibus=no)
+
+if test "x$enable_ibus" = "xyes" ; then
+        IBUS_MODULE="ibus-1.0 >= $IBUS_REQUIRED_VERSION"
+        AC_DEFINE(HAVE_IBUS, 1, [Defined if IBus support is enabled])
+else
+        IBUS_MODULE=
+fi
+AM_CONDITIONAL(HAVE_IBUS, test "x$enable_ibus" == "xyes")
+
+PKG_CHECK_MODULES(KEYBOARD, xkbfile $IBUS_MODULE gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION)
 
 dnl ---------------------------------------------------------------------------
 dnl - Housekeeping plugin stuff
@@ -245,7 +225,41 @@ dnl ---------------------------------------------------------------------------
 dnl - media-keys plugin stuff
 dnl ---------------------------------------------------------------------------
 
-PKG_CHECK_MODULES(MEDIA_KEYS, [gio-unix-2.0 libpulse >= $PA_REQUIRED_VERSION $GUDEV_PKG libpulse-mainloop-glib >= $PA_REQUIRED_VERSION libcanberra gconf-2.0 >= $GCONF_REQUIRED_VERSION libnotify])
+PKG_CHECK_MODULES(MEDIA_KEYS, [gio-unix-2.0 libpulse >= $PA_REQUIRED_VERSION $GUDEV_PKG libpulse-mainloop-glib >= $PA_REQUIRED_VERSION libcanberra-gtk3])
+PKG_CHECK_MODULES(GVC, [gobject-2.0 libpulse >= $PA_REQUIRED_VERSION libpulse-mainloop-glib >= $PA_REQUIRED_VERSION])
+AM_CONDITIONAL(HAVE_INTROSPECTION, false)
+
+dnl ---------------------------------------------------------------------------
+dnl - xrandr plugin stuff
+dnl ---------------------------------------------------------------------------
+
+PKG_CHECK_MODULES(XRANDR, [gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION upower-glib >= $UPOWER_REQUIRED_VERSION])
+
+dnl ---------------------------------------------------------------------------
+dnl - orientation plugin stuff
+dnl ---------------------------------------------------------------------------
+
+if test x$have_gudev != xno; then
+	PKG_CHECK_MODULES(ORIENTATION, [gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION gudev-1.0])
+fi
+
+dnl ---------------------------------------------------------------------------
+dnl - sound plugin stuff
+dnl ---------------------------------------------------------------------------
+
+PKG_CHECK_MODULES(SOUND, [libpulse >= $PA_REQUIRED_VERSION $GUDEV_PKG libpulse-mainloop-glib >= $PA_REQUIRED_VERSION])
+
+# ---------------------------------------------------------------------------
+# Power
+# ---------------------------------------------------------------------------
+PKG_CHECK_MODULES(POWER, upower-glib >= $UPOWER_REQUIRED_VERSION gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION $GUDEV_PKG libcanberra-gtk3 libnotify x11 xext xtst)
+
+if test x$have_gudev != xno; then
+	PKG_CHECK_MODULES(BACKLIGHT_HELPER,
+		glib-2.0 >= $GLIB_REQUIRED_VERSION
+		gudev-1.0
+	)
+fi
 
 dnl ---------------------------------------------------------------------------
 dnl - color
@@ -254,46 +268,27 @@ dnl ---------------------------------------------------------------------------
 PKG_CHECK_MODULES(COLOR, [colord >= 0.1.9 gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION libcanberra-gtk3])
 
 dnl ---------------------------------------------------------------------------
-dnl - wacom
+dnl - wacom (disabled for s390/s390x and non Linux platforms)
 dnl ---------------------------------------------------------------------------
 
-PKG_CHECK_MODULES(WACOM, [libwacom >= $LIBWACOM_REQUIRED_VERSION x11 xi xtst $GUDEV_PKG gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION xorg-wacom])
-
-dnl ---------------------------------------------------------------------------
-dnl - Build test programs
-dnl ---------------------------------------------------------------------------
-
-AC_ARG_ENABLE(enable_build_tests,
-              AS_HELP_STRING([--enable-build-tests],
-                             [Enable build of test programs (default: no)]),,
-              [enable_modular_tests=no])
-AM_CONDITIONAL(BUILD_TEST_PROGRAMS, test x$enable_build_tests= xyes)
-
-dnl ---------------------------------------------------------------------------
-dnl - GConf<->GSettings bridge
-dnl ---------------------------------------------------------------------------
-
-build_gconf_bridge=false
-AC_ARG_ENABLE(gconf-bridge,
-  AC_HELP_STRING([--disable-gconf-bridge],
-                 [turn off GConf bridge plugin]),
-      [case "${enableval}" in
-              yes) WANT_GCONF_BRIDGE=yes ;;
-	      no) WANT_GCONF_BRIDGE=no ;;
-	      *) AC_MSG_ERROR(bad value ${enableval} for --disable-gconf-bridge) ;;
-      esac],
-      [WANT_GCONF_BRIDGE=no]) dnl Default value
-
-if test x$WANT_GCONF_BRIDGE = xyes; then
-      PKG_CHECK_MODULES(GCONF, gconf-2.0 >= 2.6.1,
-            [build_gconf_bridge=true
-             AC_DEFINE(BUILD_GCONF_BRIDGE, 1, [Define if GConf bridge should be built])],
-	    [build_gconf_bridge=false])
-fi
-AM_CONDITIONAL(BUILD_GCONF_BRIDGE, test "x$build_gconf_bridge" = "xtrue")
-
-AC_SUBST(GCONF_CFLAGS)
-AC_SUBST(GCONF_LIBS)
+case $host_os in
+  linux*)
+    if test "$host_cpu" = s390 -o "$host_cpu" = s390x; then
+      have_wacom=no
+    else
+      if test x$enable_gudev != xno; then
+        PKG_CHECK_MODULES(WACOM, [libwacom >= $LIBWACOM_REQUIRED_VERSION x11 xi xtst gudev-1.0 gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION xorg-wacom librsvg-2.0 >= $LIBRSVG_REQUIRED_VERSION])
+      else
+        AC_MSG_ERROR([GUdev is necessary to compile Wacom support])
+      fi
+      have_wacom=yes
+    fi
+    ;;
+  *)
+    have_wacom=no
+    ;;
+esac
+AM_CONDITIONAL(HAVE_WACOM, test x$have_wacom = xyes)
 
 dnl ==============================================
 dnl PackageKit section
@@ -311,7 +306,7 @@ AC_ARG_ENABLE(packagekit,
        [WANT_PACKAGEKIT=yes]) dnl Default value
 
 if test x$WANT_PACKAGEKIT = xyes ; then
-       PK_REQUIRED_VERSION=0.6.12
+       PK_REQUIRED_VERSION=0.7.4
        PKG_CHECK_MODULES(PACKAGEKIT, glib-2.0 packagekit-glib2 >= $PK_REQUIRED_VERSION upower-glib >= $UPOWER_REQUIRED_VERSION gudev-1.0 libnotify >= $LIBNOTIFY_REQUIRED_VERSION,
              [have_packagekit=true
               AC_DEFINE(HAVE_PACKAGEKIT, 1, [Define if PackageKit should be used])],
@@ -334,9 +329,10 @@ AC_ARG_ENABLE(smartcard-support,
                no)  WANT_SMARTCARD_SUPPORT=no ;;
                *) AC_MSG_ERROR(bad value ${enableval} for --disable-smartcard-support) ;;
        esac],
-       [WANT_SMARTCARD_SUPPORT=yes])
+       [WANT_SMARTCARD_SUPPORT=no])
 
 if test x$WANT_SMARTCARD_SUPPORT = xyes ; then
+       AC_MSG_ERROR(Smartcard support is broken in this version)
        NSS_REQUIRED_VERSION=3.11.2
        PKG_CHECK_MODULES(NSS, nss >= $NSS_REQUIRED_VERSION,
              [have_smartcard_support=true
@@ -368,79 +364,6 @@ fi
 AC_SUBST(NSS_DATABASE)
 
 
-dnl ==============================================
-dnl power section
-dnl ==============================================
-
-# ---------------------------------------------------------------------------
-# UPower
-# ---------------------------------------------------------------------------
-PKG_CHECK_MODULES(UPOWER, upower-glib >= $UPOWER_REQUIRED_VERSION libcanberra-gtk3)
-if test x$enable_gudev != xno; then
-	PKG_CHECK_MODULES(BACKLIGHT_HELPER,
-		glib-2.0 >= $GLIB_REQUIRED_VERSION
-		gudev-1.0
-	)
-fi
-
-# ---------------------------------------------------------------------------
-# systemd
-# ---------------------------------------------------------------------------
-
-AC_ARG_ENABLE([systemd],
-              AS_HELP_STRING([--enable-systemd], [Use systemd for session tracking]),
-              [with_systemd=$enableval],
-              [with_systemd=no])
-if test "$with_systemd" = "yes" ; then
-  PKG_CHECK_MODULES(SYSTEMD, [libsystemd-login])
-  AC_DEFINE(HAVE_SYSTEMD, 1, [Define if systemd is used for session tracking])
-  SESSION_TRACKING=systemd
-else
-  SESSION_TRACKING=ConsoleKit
-fi
-
-AC_SUBST(SYSTEMD_CFLAGS)
-AC_SUBST(SYSTEMD_LIBS)
-
-AM_CONDITIONAL(WITH_SYSTEMD, [test "$with_systemd" = "yes"], [Using systemd])
-
-
-# ---------------------------------------------------------------------------
-# PolicyKit for the date & time mechanism
-# ---------------------------------------------------------------------------
-
-POLKIT_REQUIRED=0.97
-DBUS_REQUIRED=1.1.2
-
-# PolicyKit detection; defaults to 'auto' (use it if it's available)
-#
-POLKIT_CFLAGS=
-POLKIT_LIBS=
-AC_ARG_ENABLE(polkit,
-              AS_HELP_STRING([--enable-polkit],
-                             [Enable PolicyKit support (auto)]),
-              enable_polkit=$enableval,
-              enable_polkit=auto)
-
-if test "x$enable_polkit" = "xno" ; then
-  HAVE_POLKIT=no
-else
-  HAVE_POLKIT=no
-  PKG_CHECK_MODULES(POLKIT, polkit-gobject-1 >= $POLKIT_REQUIRED dbus-1 >= $DBUS_REQUIRED dbus-glib-1, HAVE_POLKIT=yes, HAVE_POLKIT=no)
-
-  if test "x$enable_polkit" = "xyes" -a "x$HAVE_POLKIT" = "xno" ; then
-    AC_MSG_ERROR(PolicyKit support explicity enabled but not available)
-  fi
-
-  if test "x$HAVE_POLKIT" = "xyes" ; then
-    AC_DEFINE(HAVE_POLKIT, 1, [Defined if PolicyKit support is enabled])
-  fi
-fi
-AM_CONDITIONAL(HAVE_POLKIT, test "x$HAVE_POLKIT" = "xyes")
-AC_SUBST(POLKIT_CFLAGS)
-AC_SUBST(POLKIT_LIBS)
-
-
 # ---------------------------------------------------------------------------
 # CUPS
 # ---------------------------------------------------------------------------
@@ -452,8 +375,11 @@ AC_ARG_ENABLE(cups,
 if test x"$enable_cups" != x"no" ; then
    AC_PROG_SED
 
-   AC_PATH_PROG(CUPS_CONFIG, cups-config,
-                AC_MSG_ERROR([cups-config not found but CUPS support requested]))
+   AC_PATH_PROG(CUPS_CONFIG, cups-config)
+
+   if test x$CUPS_CONFIG = x; then
+     AC_MSG_ERROR([cups-config not found but CUPS support requested])
+   fi
 
   CUPS_API_VERSION=`$CUPS_CONFIG --api-version`
   CUPS_API_MAJOR=`echo $ECHO_N $CUPS_API_VERSION | cut -d . -f 1`
@@ -467,8 +393,16 @@ if test x"$enable_cups" != x"no" ; then
       AC_MSG_ERROR([CUPS 1.4 or newer not found, but CUPS support requested])
    fi
 
+   # https://bugzilla.gnome.org/show_bug.cgi?id=696571
+   CUPS_CPPFLAGS=""
+   if test $CUPS_API_MAJOR -gt 1 -o \
+           $CUPS_API_MAJOR -eq 1 -a $CUPS_API_MINOR -ge 6 ; then
+      CUPS_CPPFLAGS=-D_PPD_DEPRECATED=""
+   fi
+
    CUPS_CFLAGS=`$CUPS_CONFIG --cflags | $SED -e 's/-O\w*//g' -e 's/-m\w*//g'`
    CUPS_LIBS=`$CUPS_CONFIG --libs`
+   AC_SUBST(CUPS_CPPFLAGS)
    AC_SUBST(CUPS_CFLAGS)
    AC_SUBST(CUPS_LIBS)
 fi
@@ -494,8 +428,20 @@ fi
 plugindir='$(libdir)/gnome-settings-daemon-gsd_api_version'
 AC_SUBST([plugindir])
 
-PLUGIN_CFLAGS="-DG_LOG_DOMAIN=\"\\\"\$(plugin_name)-plugin\\\"\""
+PLUGIN_CFLAGS="-DG_LOG_DOMAIN=\"\\\"\$(plugin_name)-plugin\\\"\" -DPLUGIN_NAME=\"\\\"\$(plugin_name)\\\"\" "
 AC_SUBST(PLUGIN_CFLAGS)
+
+AC_ARG_ENABLE(man,
+              [AS_HELP_STRING([--enable-man],
+                              [generate man pages [default=yes]])],,
+              enable_man=yes)
+if test "$enable_man" != no; then
+  AC_PATH_PROG([XSLTPROC], [xsltproc])
+  if test -z "$XSLTPROC"; then
+    AC_MSG_ERROR([xsltproc is required for --enable-man])
+  fi
+fi
+AM_CONDITIONAL(ENABLE_MAN, test "$enable_man" != no)
 
 dnl ---------------------------------------------------------------------------
 dnl - Finish
@@ -567,20 +513,16 @@ gnome-settings-daemon/Makefile
 plugins/Makefile
 plugins/a11y-keyboard/Makefile
 plugins/a11y-settings/Makefile
-plugins/automount/Makefile
 plugins/background/Makefile
 plugins/clipboard/Makefile
 plugins/color/Makefile
 plugins/common/Makefile
 plugins/cursor/Makefile
-plugins/datetime/Makefile
 plugins/dummy/Makefile
 plugins/power/Makefile
-plugins/gconf/Makefile
 plugins/housekeeping/Makefile
 plugins/keyboard/Makefile
 plugins/media-keys/Makefile
-plugins/media-keys/cut-n-paste/Makefile
 plugins/mouse/Makefile
 plugins/orientation/Makefile
 plugins/print-notifications/Makefile
@@ -611,6 +553,8 @@ data/org.gnome.settings-daemon.plugins.xrandr.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.wacom.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.print-notifications.gschema.xml.in
 po/Makefile.in
+man/Makefile
+tests/Makefile
 ])
 
 dnl ---------------------------------------------------------------------------
@@ -636,17 +580,14 @@ echo "
         cflags:                   ${CFLAGS}
         Maintainer mode:          ${USE_MAINTAINER_MODE}
 
-        dbus-1 system.d dir:      ${DBUS_SYS_DIR}
-        PolicyKit support:        ${HAVE_POLKIT}
         Session tracking:         ${SESSION_TRACKING}
         LCMS DICT support:        ${have_new_lcms}
-
+        IBus support:             ${enable_ibus}
         Libnotify support:        ${have_libnotify}
-	App indicator support:    ${enable_appindicator}
         PackageKit support:       ${have_packagekit}
         Smartcard support:        ${have_smartcard_support}
-        GConf bridge support:     ${build_gconf_bridge}
-        Cups support:             ${have_cups}
+        Cups support:             ${enable_cups}
+        Wacom support:            ${have_wacom}
 ${NSS_DATABASE:+\
         System nssdb:             ${NSS_DATABASE}
 }\

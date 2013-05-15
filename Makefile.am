@@ -1,5 +1,3 @@
-# For gdb load source code file to set breakpoint
-AM_CFLAGS = -g
 NULL =
 
 SUBDIRS = 			\
@@ -7,7 +5,12 @@ SUBDIRS = 			\
 	plugins			\
 	data			\
 	po 			\
+	tests 			\
 	$(NULL)
+
+if ENABLE_MAN
+SUBDIRS += man
+endif
 
 # Honor aclocal flags
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}
