@@ -33,6 +33,7 @@
 #include <libgnome-desktop/gnome-rr.h>
 
 #include "gsd-input-helper.h"
+#include "gnome-settings-plugin.h"
 #include "gnome-settings-profile.h"
 #include "gsd-orientation-manager.h"
 
@@ -49,6 +50,7 @@ typedef enum {
 struct GsdOrientationManagerPrivate
 {
         guint start_idle_id;
+        guint name_id;
 
         /* Accelerometer */
         char *sysfs_path;
@@ -69,7 +71,7 @@ struct GsdOrientationManagerPrivate
 #define CONF_SCHEMA "org.gnome.settings-daemon.peripherals.touchscreen"
 #define ORIENTATION_LOCK_KEY "orientation-lock"
 
-#define GSD_DBUS_PATH "/org/gnome/SettingsDaemon"
+#define GSD_ORIENTATION_DBUS_NAME GSD_DBUS_NAME ".Orientation"
 #define GSD_ORIENTATION_DBUS_PATH GSD_DBUS_PATH "/Orientation"
 
 static const gchar introspection_xml[] =
@@ -361,12 +363,20 @@ on_bus_gotten (GObject               *source_object,
         g_dbus_proxy_new (manager->priv->connection,
                           G_DBUS_PROXY_FLAGS_NONE,
                           NULL,
-                          "org.gnome.SettingsDaemon",
-                          "/org/gnome/SettingsDaemon/XRANDR",
-                          "org.gnome.SettingsDaemon.XRANDR_2",
+                          GSD_DBUS_NAME ".XRANDR",
+                          GSD_DBUS_PATH "/XRANDR",
+                          GSD_DBUS_BASE_INTERFACE ".XRANDR_2",
                           NULL,
                           (GAsyncReadyCallback) xrandr_ready_cb,
                           manager);
+
+        manager->priv->name_id = g_bus_own_name_on_connection (connection,
+                                                               GSD_ORIENTATION_DBUS_NAME,
+                                                               G_BUS_NAME_OWNER_FLAGS_NONE,
+                                                               NULL,
+                                                               NULL,
+                                                               NULL,
+                                                               NULL);
 }
 
 static GUdevDevice *
@@ -506,6 +516,9 @@ gsd_orientation_manager_finalize (GObject *object)
 
         if (orientation_manager->priv->start_idle_id != 0)
                 g_source_remove (orientation_manager->priv->start_idle_id);
+
+        if (orientation_manager->priv->name_id != 0)
+                g_bus_unown_name (orientation_manager->priv->name_id);
 
         G_OBJECT_CLASS (gsd_orientation_manager_parent_class)->finalize (object);
 }
