@@ -1563,8 +1563,10 @@ if test "x$config" = "x" -o ! -f "$config" ; then
     $ECHO "misconfiguration."
 else
     $ECHO "The $PROJECT build system is now prepared.  To build here, run:"
-    $ECHO "  $config"
-    $ECHO "  make"
+    $ECHO ""
+    $ECHO "$config --prefix=/usr --libexecdir=/usr/lib/gnome-settings-daemon"
+    $ECHO "make"
+    $ECHO ""
 fi
 
 
