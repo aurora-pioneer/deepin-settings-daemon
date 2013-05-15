@@ -19,7 +19,7 @@
    media-keys	: NEEDS FIXING
    mouse	: DONE, needs fixing build warnings
    orientation	: DONE
-   power	: NEEDS MIGRATION
+   power	: NEEDS MIGRATION and update
    print-notifications: DONE
    remote-display: NEW, do we need it?
    screensaver-proxy: NEW, do we need it?
@@ -27,7 +27,7 @@
    sound	: DONE
    updates	: depends on packagekit, do we need it?
    wacom	: NEEDS FIXING
-   xrandr	: NEEDS MIGRATION
+   xrandr	: NEEDS MIGRATION and update
    xsettings	: DONE
 
 
