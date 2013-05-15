@@ -23,3 +23,5 @@
    print-notifications: DONE
    remote-display: NEW
    screensaver-proxy: NEW
+   smartcard	: needs fixing
+   sound	: DONE
