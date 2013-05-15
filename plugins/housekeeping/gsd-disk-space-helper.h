@@ -2,8 +2,10 @@
  * vim: set et sw=8 ts=8:
  *
  * Copyright (c) 2008, Novell, Inc.
+ * Copyright (c) 2012, Red Hat, Inc.
  *
  * Authors: Vincent Untz <vuntz@gnome.org>
+ * Bastien Nocera <hadess@hadess.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,21 +23,17 @@
  *
  */
 
-#ifndef __GSD_DISK_SPACE_H
-#define __GSD_DISK_SPACE_H
+#ifndef __GSD_DISK_SPACE_HELPER_H
+#define __GSD_DISK_SPACE_HELPER_H
 
 #include <glib.h>
+#include <gio/gunixmounts.h>
 
 G_BEGIN_DECLS
 
-void gsd_ldsm_setup (gboolean check_now);
-void gsd_ldsm_clean (void);
-
-/* for the test */
-void gsd_ldsm_show_empty_trash (void);
-void gsd_ldsm_purge_trash      (GDateTime *old);
-void gsd_ldsm_purge_temp_files (GDateTime *old);
+gboolean gsd_should_ignore_unix_mount (GUnixMountEntry *mount);
+gboolean gsd_is_removable_mount       (GUnixMountEntry *mount);
 
 G_END_DECLS
 
-#endif /* __GSD_DISK_SPACE_H */
+#endif /* __GSD_DISK_SPACE_HELPER_H */
