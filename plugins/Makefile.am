@@ -10,6 +10,7 @@ enabled_plugins =	\
 	dummy		\
 	housekeeping    \
 	idle-delay	\
+	key-bindings	\
 	media-keys	\
 	mouse		\
 	orientation	\

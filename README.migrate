@@ -14,7 +14,7 @@
    gconf	: removed from 3.8, do we need it?
    housekeepin	: DONE
    idle-delay	: DONE
-   key-bindings	: NEEDS MIGRATION
+   key-bindings	: DONE
    keyboard	: needs fixing
    media-keys	: NEEDS FIXING
    mouse	: DONE, needs fixing build warnings

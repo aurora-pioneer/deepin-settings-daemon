@@ -2,6 +2,7 @@ NULL =
 
 plugin_name = key-bindings
 
+if BUILD_TEST_PROGRAMS
 noinst_PROGRAMS =			\
 	test-key-bindings		\
 	test-keybinder			\
@@ -60,6 +61,7 @@ test_key_bindings_LDADD =		\
 	$(SETTINGS_PLUGIN_LIBS)	\
 	$(KEY_BINDINGS_LIBS)	\
 	$(NULL)
+endif
 
 plugin_LTLIBRARIES = \
 	libkey-bindings.la
@@ -70,7 +72,6 @@ libkey_bindings_la_SOURCES = 		\
 	gsd-key-bindings-manager.c	\
 	gsd-key-bindings-manager.h	\
 	gsd-key-bindings-plugin.c	\
-	gsd-key-bindings-plugin.h	\
 	gsd-key-bindings-settings.h	\
 	gsd-key-bindings-util.c		\
 	gsd-key-bindings-util.h		\
