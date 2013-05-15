@@ -1,5 +1,28 @@
 plugin_name = dummy
 
+noinst_PROGRAMS = \
+	test-dummy
+test_dummy_SOURCES = \
+	gsd-dummy-manager.c	\
+	gsd-dummy-manager.h	\
+	test-dummy.c
+	
+test_dummy_CFLAGS =					\
+	-I$(top_srcdir)/gnome-settings-daemon			\
+	-I$(top_srcdir)/plugins/common				\
+	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
+	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"			\
+	$(PLUGIN_CFLAGS)					\
+	$(LIBNOTIFY_CFLAGS)					\
+	$(SETTINGS_PLUGIN_CFLAGS)				\
+	$(AM_CFLAGS)
+
+test_dummy_LDADD =					\
+	$(top_builddir)/gnome-settings-daemon/libgsd.la		\
+	$(top_builddir)/plugins/common/libcommon.la		\
+	$(LIBNOTIFY_LIBS)					\
+	$(SETTINGS_PLUGIN_LIBS)
+
 plugin_LTLIBRARIES = \
 	libdummy.la
 

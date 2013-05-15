@@ -98,5 +98,6 @@ plugins/xsettings/test-gtk-modules
 plugins/idle-delay/gsd-idle-delay-marshal.c
 plugins/idle-delay/gsd-idle-delay-marshal.h
 plugins/datetime/test-system-timezone
+plugins/dummy/test-dummy
 tests/shiftkey
 test-driver
