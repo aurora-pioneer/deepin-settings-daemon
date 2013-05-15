@@ -99,5 +99,6 @@ plugins/idle-delay/gsd-idle-delay-marshal.c
 plugins/idle-delay/gsd-idle-delay-marshal.h
 plugins/datetime/test-system-timezone
 plugins/dummy/test-dummy
+plugins/background/gsd-background-helper
 tests/shiftkey
 test-driver

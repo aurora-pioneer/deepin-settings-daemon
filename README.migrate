@@ -5,7 +5,7 @@
    a11y-keyboard: DONE
    a11y-settings: DONE
    automount	: removed from 3.8, do we need it?
-   background	: NEED MIGRATION
+   background	: DONE
    clipboard	: DONE
    color	: DONE
    cursor	: DONE
@@ -29,3 +29,16 @@
    wacom	: NEEDS FIXING
    xrandr	: NEEDS MIGRATION
    xsettings	: DONE
+
+
+How to migrate
+1. gsd-xxxx-plugin.h
+   remove this file
+2. gsd-xxxx-plugin.c
+   see gsd-dummy-manager.c, just replace all 'dummy' strings
+3. Makefile.am
+   change *CPPFLAGS, CFLAGS, LDADD etc. (see Makefile.am for dummy plugin)
+4. remove all g_type_init();
+   in latest glib, the function is called when libglib is loaded by ld.so.
+5. xxx.gnome-settings-plugin.in
+   the key names have changed.

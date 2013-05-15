@@ -115,7 +115,7 @@ bg_blur_pict_is_valid (GdkPixbuf* pixbuf,
     blur_uri_bs64 = gdk_pixbuf_get_option (pixbuf, BG_EXT_URI);
     if (!blur_uri_bs64)
 	return FALSE;
-    char* src_uri_bs64 = g_base64_encode (src_uri, strlen (src_uri)+1);
+    char* src_uri_bs64 = g_base64_encode ((const guchar*)src_uri, strlen (src_uri)+1);
     gboolean is_equal =(strcmp (src_uri_bs64, blur_uri_bs64) == 0);
     g_free (src_uri_bs64);
     if (!is_equal)
@@ -216,7 +216,7 @@ bg_blur_pict_generate (const char* src_uri,
     error = NULL;
 
     g_snprintf (mtime_str, 21, "%ld",  src_mtime);
-    src_uri_bs64 = g_base64_encode (src_uri, strlen (src_uri)+1);
+    src_uri_bs64 = g_base64_encode ((const guchar*) src_uri, strlen (src_uri)+1);
     saved_ok = gdk_pixbuf_save (pixbuf,
 				tmp_path,
 				"png", &error,
@@ -279,7 +279,6 @@ main (int argc, char** argv)
 	return 1;
     }
 
-    g_type_init ();
     g_setenv ("G_MESSAGES_DEBUG", "all", FALSE);
     
     double sigma = 0;

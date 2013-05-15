@@ -16,24 +16,21 @@ test_background_SOURCES = 		\
 	background_util.h		\
 	$(NULL)
 
-test_background_CPPFLAGS = \
-	-I$(top_srcdir)/gnome-settings-daemon		\
-	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
-	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"		\
-	-DLIBEXECDIR=\""$(libexecdir)"\"			\
-	$(AM_CPPFLAGS)
-
 test_background_CFLAGS = \
-	$(PLUGIN_CFLAGS)		\
-	$(SETTINGS_PLUGIN_CFLAGS)	\
-	$(BACKGROUND_CFLAGS)		\
-	$(AM_CFLAGS) -g
+	-I$(top_srcdir)/gnome-settings-daemon			\
+	-I$(top_srcdir)/plugins/common				\
+	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
+	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"			\
+	$(PLUGIN_CFLAGS)					\
+	$(LIBNOTIFY_CFLAGS)					\
+	$(SETTINGS_PLUGIN_CFLAGS)				\
+	$(AM_CFLAGS)
 
 test_background_LDADD =		\
-	$(top_builddir)/gnome-settings-daemon/libgsd.la	\
-	$(SETTINGS_PLUGIN_LIBS)	\
-	$(BACKGROUND_LIBS)	\
-	$(NULL)
+	$(top_builddir)/gnome-settings-daemon/libgsd.la		\
+	$(top_builddir)/plugins/common/libcommon.la		\
+	$(LIBNOTIFY_LIBS)					\
+	$(SETTINGS_PLUGIN_LIBS)
 endif
 
 plugin_LTLIBRARIES = \
@@ -41,7 +38,6 @@ plugin_LTLIBRARIES = \
 	$(NULL)
 
 libbackground_la_SOURCES =		\
-	gsd-background-plugin.h		\
 	gsd-background-plugin.c		\
 	gsd-background-manager.h	\
 	gsd-background-manager-private.h \
@@ -52,13 +48,12 @@ libbackground_la_SOURCES =		\
 
 libbackground_la_CPPFLAGS = \
 	-I$(top_srcdir)/gnome-settings-daemon		\
-	-I$(top_srcdir)/plugins/background/libbackground   \
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
-	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"		\
 	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	$(AM_CPPFLAGS)
 
 libbackground_la_CFLAGS = \
+	$(PLUGIN_CFLAGS)		\
 	$(SETTINGS_PLUGIN_CFLAGS)	\
 	$(BACKGROUND_CFLAGS)		\
 	$(AM_CFLAGS)
@@ -90,7 +85,6 @@ gsd_background_helper_CFLAGS =		\
 gsd_background_helper_LDFLAGS=		\
 		`pkg-config --libs gtk+-3.0` \
 		-lm
-
 
 EXTRA_DIST = 			\
 	$(plugin_in_files)	\
