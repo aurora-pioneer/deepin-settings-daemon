@@ -4,3 +4,6 @@
    common	: DONE
    a11y-keyboard: DONE
    a11y-settings: DONE
+   automount	: removed from 3.8
+   background	: disable
+   clipboard	: DONE
