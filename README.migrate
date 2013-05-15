@@ -15,4 +15,5 @@
    housekeepin	: DONE
    idle-delay	: disable
    key-bindings	: disable
-   keyboard	: DONE
+   keyboard	: needs fixing
+   media-keys	: DONE

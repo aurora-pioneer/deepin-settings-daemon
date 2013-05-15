@@ -8,9 +8,8 @@ enabled_plugins =	\
 	cursor		\
 	dummy		\
 	housekeeping    \
-	keyboard	\
-	power		\
 	media-keys	\
+	power		\
 	mouse		\
 	sound		\
 	wacom		\
