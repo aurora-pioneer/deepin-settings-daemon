@@ -17,3 +17,4 @@
    key-bindings	: disable
    keyboard	: needs fixing
    media-keys	: DONE
+   mouse	: DONE, needs fixing build warnings

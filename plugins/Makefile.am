@@ -9,8 +9,9 @@ enabled_plugins =	\
 	dummy		\
 	housekeeping    \
 	media-keys	\
-	power		\
 	mouse		\
+	orientation	\
+	power		\
 	sound		\
 	wacom		\
 	xrandr		\
