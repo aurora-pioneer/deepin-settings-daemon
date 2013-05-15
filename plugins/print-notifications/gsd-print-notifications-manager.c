@@ -47,14 +47,24 @@
 #define CUPS_DBUS_PATH      "/org/cups/cupsd/Notifier"
 #define CUPS_DBUS_INTERFACE "org.cups.cupsd.Notifier"
 
-#define RENEW_INTERVAL        3500
-#define SUBSCRIPTION_DURATION 3600
-#define CONNECTING_TIMEOUT    60
-#define REASON_TIMEOUT        15000
+#define RENEW_INTERVAL                   3500
+#define SUBSCRIPTION_DURATION            3600
+#define CONNECTING_TIMEOUT               60
+#define REASON_TIMEOUT                   15000
+#define CUPS_CONNECTION_TEST_INTERVAL    300
+
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 5)
+#define HAVE_CUPS_1_6 1
+#endif
+
+#ifndef HAVE_CUPS_1_6
+#define ippGetStatusCode(ipp) ipp->request.status.status_code
+#define ippGetInteger(attr, element) attr->values[element].integer
+#define ippGetString(attr, element, language) attr->values[element].string.text
+#endif
 
 struct GsdPrintNotificationsManagerPrivate
 {
-        GDBusProxy                   *cups_proxy;
         GDBusConnection              *cups_bus_connection;
         gint                          subscription_id;
         cups_dest_t                  *dests;
@@ -64,6 +74,7 @@ struct GsdPrintNotificationsManagerPrivate
         GList                        *timeouts;
         GHashTable                   *printing_printers;
         GList                        *active_notifications;
+        guint                         cups_connection_timeout_id;
 };
 
 enum {
@@ -73,6 +84,7 @@ enum {
 static void     gsd_print_notifications_manager_class_init  (GsdPrintNotificationsManagerClass *klass);
 static void     gsd_print_notifications_manager_init        (GsdPrintNotificationsManager      *print_notifications_manager);
 static void     gsd_print_notifications_manager_finalize    (GObject                           *object);
+static gboolean cups_connection_test                        (gpointer                           user_data);
 
 G_DEFINE_TYPE (GsdPrintNotificationsManager, gsd_print_notifications_manager, G_TYPE_OBJECT)
 
@@ -250,6 +262,20 @@ show_notification (gpointer user_data)
         return FALSE;
 }
 
+static gboolean
+reason_is_blacklisted (const gchar *reason) {
+        if (g_str_equal (reason, "none"))
+                return TRUE;
+        if (g_str_equal (reason, "other"))
+                return TRUE;
+        if (g_str_equal (reason, "com.apple.print.recoverable"))
+                return TRUE;
+        /* https://bugzilla.redhat.com/show_bug.cgi?id=883401 */
+        if (g_str_has_prefix (reason, "cups-remote-"))
+                return TRUE;
+        return FALSE;
+}
+
 static void
 on_cups_notification (GDBusConnection *connection,
                       const char      *sender_name,
@@ -281,7 +307,7 @@ on_cups_notification (GDBusConnection *connection,
         static const char * const reasons[] = {
                 "toner-low",
                 "toner-empty",
-                /*"connecting-to-device",*/
+                "connecting-to-device",
                 "cover-open",
                 "cups-missing-filter",
                 "door-open",
@@ -298,7 +324,7 @@ on_cups_notification (GDBusConnection *connection,
                 /* Translators: The printer has no toner left (same as in system-config-printer) */
                 N_("Toner empty"),
                 /* Translators: The printer is in the process of connecting to a shared network output device (same as in system-config-printer) */
-                /*N_("Not connected?"),*/
+                N_("Not connected?"),
                 /* Translators: One or more covers on the printer are open (same as in system-config-printer) */
                 N_("Cover open"),
                 /* Translators: A filter or backend is not installed (same as in system-config-printer) */
@@ -324,7 +350,7 @@ on_cups_notification (GDBusConnection *connection,
                 /* Translators: The printer has no toner left (same as in system-config-printer) */
                 N_("Printer '%s' has no toner left."),
                 /* Translators: The printer is in the process of connecting to a shared network output device (same as in system-config-printer) */
-                /*N_("Printer '%s' may not be connected."),*/
+                N_("Printer '%s' may not be connected."),
                 /* Translators: One or more covers on the printer are open (same as in system-config-printer) */
                 N_("The cover is open on printer '%s'."),
                 /* Translators: A filter or backend is not installed (same as in system-config-printer) */
@@ -396,10 +422,10 @@ on_cups_notification (GDBusConnection *connection,
                         response = cupsDoRequest (http, request, "/");
 
                         if (response) {
-                                if (response->request.status.status_code <= IPP_OK_CONFLICT &&
+                                if (ippGetStatusCode (response) <= IPP_OK_CONFLICT &&
                                     (attr = ippFindAttribute(response, "job-originating-user-name",
                                                              IPP_TAG_NAME))) {
-                                        if (g_strcmp0 (attr->values[0].string.text, cupsUser ()) == 0)
+                                        if (g_strcmp0 (ippGetString (attr, 0, NULL), cupsUser ()) == 0)
                                                 my_job = TRUE;
                                 }
                                 ippDelete(response);
@@ -671,7 +697,8 @@ on_cups_notification (GDBusConnection *connection,
                                         }
                                 }
 
-                                if (!known_reason && !g_str_equal (data, "none")) {
+                                if (!known_reason &&
+                                    !reason_is_blacklisted (data)) {
                                         NotifyNotification *notification;
                                         ReasonData         *reason_data;
                                         gchar              *first_row;
@@ -889,12 +916,12 @@ renew_subscription (gpointer data)
                                        "notify-lease-duration", SUBSCRIPTION_DURATION);
                         response = cupsDoRequest (http, request, "/");
 
-                        if (response != NULL && response->request.status.status_code <= IPP_OK_CONFLICT) {
+                        if (response != NULL && ippGetStatusCode (response) <= IPP_OK_CONFLICT) {
                                 if ((attr = ippFindAttribute (response, "notify-subscription-id",
                                                               IPP_TAG_INTEGER)) == NULL)
                                         g_debug ("No notify-subscription-id in response!\n");
                                 else
-                                        manager->priv->subscription_id = attr->values[0].integer;
+                                        manager->priv->subscription_id = ippGetInteger (attr, 0);
                         }
 
                         if (response)
@@ -905,45 +932,152 @@ renew_subscription (gpointer data)
         return TRUE;
 }
 
-gboolean
-gsd_print_notifications_manager_start (GsdPrintNotificationsManager *manager,
-                                       GError                      **error)
+static void
+renew_subscription_with_connection_test_cb (GObject      *source_object,
+                                            GAsyncResult *res,
+                                            gpointer      user_data)
 {
-        GError     *lerror;
+        GSocketConnection *connection;
+        GError            *error = NULL;
 
-        g_debug ("Starting print-notifications manager");
+        connection = g_socket_client_connect_to_host_finish (G_SOCKET_CLIENT (source_object),
+                                                             res,
+                                                             &error);
+
+        if (connection) {
+                g_debug ("Test connection to CUPS server \'%s:%d\' succeeded.", cupsServer (), ippPort ());
+
+                g_io_stream_close (G_IO_STREAM (connection), NULL, NULL);
+                g_object_unref (connection);
+
+                renew_subscription (user_data);
+        }
+        else {
+                g_debug ("Test connection to CUPS server \'%s:%d\' failed.", cupsServer (), ippPort ());
+        }
+}
+
+static gboolean
+renew_subscription_with_connection_test (gpointer user_data)
+{
+        GSocketClient *client;
+        gchar         *address;
+
+        address = g_strdup_printf ("%s:%d", cupsServer (), ippPort ());
+
+        if (address && address[0] != '/') {
+                client = g_socket_client_new ();
+
+                g_debug ("Initiating test connection to CUPS server \'%s:%d\'.", cupsServer (), ippPort ());
+
+                g_socket_client_connect_to_host_async (client,
+                                                       address,
+                                                       631,
+                                                       NULL,
+                                                       renew_subscription_with_connection_test_cb,
+                                                       user_data);
+
+                g_object_unref (client);
+        }
+        else {
+                renew_subscription (user_data);
+        }
+
+        g_free (address);
+
+        return TRUE;
+}
+
+static void
+cups_connection_test_cb (GObject      *source_object,
+                         GAsyncResult *res,
+                         gpointer      user_data)
+{
+        GsdPrintNotificationsManager *manager = (GsdPrintNotificationsManager *) user_data;
+        GSocketConnection            *connection;
+        GError                       *error = NULL;
+
+        connection = g_socket_client_connect_to_host_finish (G_SOCKET_CLIENT (source_object),
+                                                             res,
+                                                             &error);
+
+        if (connection) {
+                g_debug ("Test connection to CUPS server \'%s:%d\' succeeded.", cupsServer (), ippPort ());
+
+                g_io_stream_close (G_IO_STREAM (connection), NULL, NULL);
+                g_object_unref (connection);
+
+                manager->priv->num_dests = cupsGetDests (&manager->priv->dests);
+                gnome_settings_profile_msg ("got dests");
+
+                renew_subscription (user_data);
+                g_timeout_add_seconds (RENEW_INTERVAL, renew_subscription_with_connection_test, manager);
+        }
+        else {
+                g_debug ("Test connection to CUPS server \'%s:%d\' failed.", cupsServer (), ippPort ());
+                if (manager->priv->cups_connection_timeout_id == 0)
+                        manager->priv->cups_connection_timeout_id =
+                                g_timeout_add_seconds (CUPS_CONNECTION_TEST_INTERVAL, cups_connection_test, manager);
+        }
+}
+
+static gboolean
+cups_connection_test (gpointer user_data)
+{
+        GsdPrintNotificationsManager *manager = (GsdPrintNotificationsManager *) user_data;
+        GSocketClient                *client;
+        gchar                        *address;
+
+        if (!manager->priv->dests) {
+                address = g_strdup_printf ("%s:%d", cupsServer (), ippPort ());
+
+                if (address && address[0] != '/') {
+                        client = g_socket_client_new ();
+
+                        g_debug ("Initiating test connection to CUPS server \'%s:%d\'.", cupsServer (), ippPort ());
+
+                        g_socket_client_connect_to_host_async (client,
+                                                               address,
+                                                               631,
+                                                               NULL,
+                                                               cups_connection_test_cb,
+                                                               manager);
+
+                        g_object_unref (client);
+                }
+                else {
+                        manager->priv->num_dests = cupsGetDests (&manager->priv->dests);
+                        gnome_settings_profile_msg ("got dests");
+
+                        renew_subscription (user_data);
+                        g_timeout_add_seconds (RENEW_INTERVAL, renew_subscription_with_connection_test, manager);
+                }
+
+                g_free (address);
+        }
+
+        if (manager->priv->dests) {
+                manager->priv->cups_connection_timeout_id = 0;
+
+                return FALSE;
+        }
+        else {
+                return TRUE;
+        }
+}
+
+static gboolean
+gsd_print_notifications_manager_start_idle (gpointer data)
+{
+        GsdPrintNotificationsManager *manager = data;
 
         gnome_settings_profile_start (NULL);
 
-        manager->priv->subscription_id = -1;
-        manager->priv->dests = NULL;
-        manager->priv->num_dests = 0;
-        manager->priv->scp_handler_spawned = FALSE;
-        manager->priv->timeouts = NULL;
         manager->priv->printing_printers = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
-        manager->priv->active_notifications = NULL;
 
-        renew_subscription (manager);
-        g_timeout_add_seconds (RENEW_INTERVAL, renew_subscription, manager);
+        cups_connection_test (manager);
 
-        manager->priv->num_dests = cupsGetDests (&manager->priv->dests);
-
-        lerror = NULL;
-        manager->priv->cups_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-                                                                   0,
-                                                                   NULL,
-                                                                   CUPS_DBUS_NAME,
-                                                                   CUPS_DBUS_PATH,
-                                                                   CUPS_DBUS_INTERFACE,
-                                                                   NULL,
-                                                                   &lerror);
-
-        if (lerror != NULL) {
-                g_propagate_error (error, lerror);
-                return FALSE;
-        }
-
-        manager->priv->cups_bus_connection = g_dbus_proxy_get_connection (manager->priv->cups_proxy);
+        manager->priv->cups_bus_connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, NULL);
 
         g_dbus_connection_signal_subscribe (manager->priv->cups_bus_connection,
                                             NULL,
@@ -957,6 +1091,31 @@ gsd_print_notifications_manager_start (GsdPrintNotificationsManager *manager,
                                             NULL);
 
         scp_handler (manager, TRUE);
+
+        gnome_settings_profile_end (NULL);
+
+        return G_SOURCE_REMOVE;
+}
+
+gboolean
+gsd_print_notifications_manager_start (GsdPrintNotificationsManager *manager,
+                                       GError                      **error)
+{
+        g_debug ("Starting print-notifications manager");
+
+        gnome_settings_profile_start (NULL);
+
+        manager->priv->subscription_id = -1;
+        manager->priv->dests = NULL;
+        manager->priv->num_dests = 0;
+        manager->priv->scp_handler_spawned = FALSE;
+        manager->priv->timeouts = NULL;
+        manager->priv->printing_printers = NULL;
+        manager->priv->active_notifications = NULL;
+        manager->priv->cups_bus_connection = NULL;
+        manager->priv->cups_connection_timeout_id = 0;
+
+        g_idle_add (gsd_print_notifications_manager_start_idle, manager);
 
         gnome_settings_profile_end (NULL);
 
@@ -979,14 +1138,10 @@ gsd_print_notifications_manager_stop (GsdPrintNotificationsManager *manager)
         if (manager->priv->subscription_id >= 0)
                 cancel_subscription (manager->priv->subscription_id);
 
-        g_hash_table_destroy (manager->priv->printing_printers);
+        if (manager->priv->printing_printers)
+                g_hash_table_destroy (manager->priv->printing_printers);
 
-        manager->priv->cups_bus_connection = NULL;
-
-        if (manager->priv->cups_proxy != NULL) {
-                g_object_unref (manager->priv->cups_proxy);
-                manager->priv->cups_proxy = NULL;
-        }
+        g_clear_object (&manager->priv->cups_bus_connection);
 
         for (tmp = manager->priv->timeouts; tmp; tmp = g_list_next (tmp)) {
                 data = (TimeoutData *) tmp->data;
@@ -1057,10 +1212,6 @@ gsd_print_notifications_manager_finalize (GObject *object)
         manager = GSD_PRINT_NOTIFICATIONS_MANAGER (object);
 
         g_return_if_fail (manager->priv != NULL);
-
-        if (manager->priv->cups_proxy != NULL) {
-                g_object_unref (manager->priv->cups_proxy);
-        }
 
         G_OBJECT_CLASS (gsd_print_notifications_manager_parent_class)->finalize (object);
 }

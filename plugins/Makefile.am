@@ -11,7 +11,7 @@ enabled_plugins =	\
 	media-keys	\
 	mouse		\
 	orientation	\
-	power		\
+	print-notifications\
 	sound		\
 	wacom		\
 	xrandr		\
