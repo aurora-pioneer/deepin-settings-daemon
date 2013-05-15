@@ -1,4 +1,4 @@
-基于 gnome-settings-daemon-3.4.2
+基于 gnome-settings-daemon-3.8.1
 
 注意
 background插件正常运行要求Nautilus不托管桌面, 请安装Deepin Nautilus
@@ -16,10 +16,7 @@ sudo apt-get install libxml2-dev
 sudo apt-get build-dep gnome-settings-daemon 来直接判断依赖
 
 编译 && 安装
-aclocal --force
-autoconf
-autoheader
-automake --add-missing
+./autogen.sh
 ./configure --prefix=/usr --libexecdir=/usr/lib/gnome-settings-daemon
 make clean
 make

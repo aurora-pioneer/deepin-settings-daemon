@@ -4,28 +4,28 @@
    common	: DONE
    a11y-keyboard: DONE
    a11y-settings: DONE
-   automount	: removed from 3.8
-   background	: disable
+   automount	: removed from 3.8, do we need it?
+   background	: NEED MIGRATION
    clipboard	: DONE
    color	: DONE
    cursor	: DONE
-   datetime	: build ok, but removed from 3.8
-   dummy	: DONE
-   gconf	: removed from 3.8
+   datetime	: removed from 3.8, do we need it?
+   dummy	: DONE, needs test demo
+   gconf	: removed from 3.8, do we need it?
    housekeepin	: DONE
-   idle-delay	: disable
-   key-bindings	: disable
+   idle-delay	: NEEDS MIGRATION
+   key-bindings	: NEEDS MIGRATION
    keyboard	: needs fixing
-   media-keys	: DONE
+   media-keys	: NEEDS FIXING
    mouse	: DONE, needs fixing build warnings
    orientation	: DONE
-   power	: disable
+   power	: NEEDS MIGRATION
    print-notifications: DONE
-   remote-display: NEW
-   screensaver-proxy: NEW
-   smartcard	: needs fixing
+   remote-display: NEW, do we need it?
+   screensaver-proxy: NEW, do we need it?
+   smartcard	: NEEDS FIXING 
    sound	: DONE
    updates	: depends on packagekit, do we need it?
-   wacom	: needs fixing
-   xrandr	: disable
+   wacom	: NEEDS FIXING
+   xrandr	: NEEDS MIGRATION
    xsettings	: DONE
