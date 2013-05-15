@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2007-2011 Richard Hughes <richard@hughsie.com>
+ * Copyright (C) 2007-2012 Richard Hughes <richard@hughsie.com>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -35,7 +35,6 @@
 #endif /* HAVE_UNISTD_H */
 #include <glib/gi18n.h>
 #include <gio/gio.h>
-#include <gtk/gtk.h>
 #include <libnotify/notify.h>
 #include <packagekit-glib2/packagekit.h>
 #ifdef HAVE_GUDEV
@@ -140,7 +139,8 @@ request_new (const gchar *filename, const gchar *sysfs_path)
         id_product = g_udev_device_get_property (device, "ID_MODEL_ID");
         req->id = g_strdup_printf ("%s_%s", id_vendor, id_product);
 out:
-        g_object_unref (device);
+        if (device != NULL)
+                g_object_unref (device);
         g_object_unref (client);
 #endif
         return req;
@@ -160,7 +160,7 @@ static gboolean
 device_rebind (GsdUpdatesFirmware *firmware)
 {
         gboolean ret;
-        gchar *command;
+        gchar *argv[4];
         gchar *rebind_stderr = NULL;
         gchar *rebind_stdout = NULL;
         GError *error = NULL;
@@ -184,17 +184,22 @@ device_rebind (GsdUpdatesFirmware *firmware)
                 g_string_set_size (string, string->len-1);
 
         /* use PolicyKit to do this as root */
-        command = g_strdup_printf ("pkexec %s %s",
-                                   GSD_UPDATES_FIRMWARE_DEVICE_REBIND_PROGRAM,
-                                   string->str);
-        ret = g_spawn_command_line_sync (command,
-                                         &rebind_stdout,
-                                         &rebind_stderr,
-                                         &exit_status,
-                                         &error);
+        argv[0] = "pkexec";
+        argv[1] = GSD_UPDATES_FIRMWARE_DEVICE_REBIND_PROGRAM;
+        argv[2] = string->str;
+        argv[3] = NULL;
+        ret = g_spawn_sync (NULL,
+                            argv,
+                            NULL,
+                            G_SPAWN_SEARCH_PATH,
+                            NULL, NULL,
+                            &rebind_stdout,
+                            &rebind_stderr,
+                            &exit_status,
+                            &error);
         if (!ret) {
                 g_warning ("failed to spawn '%s': %s",
-                           command, error->message);
+                           argv[1], error->message);
                 g_error_free (error);
                 goto out;
         }
@@ -209,11 +214,9 @@ device_rebind (GsdUpdatesFirmware *firmware)
 out:
         g_free (rebind_stdout);
         g_free (rebind_stderr);
-        g_free (command);
         g_string_free (string, TRUE);
         return ret;
 }
-
 static void
 libnotify_cb (NotifyNotification *notification, gchar *action, gpointer data)
 {
@@ -226,6 +229,13 @@ libnotify_cb (NotifyNotification *notification, gchar *action, gpointer data)
         } else {
                 g_warning ("unknown action id: %s", action);
         }
+        notify_notification_close (notification, NULL);
+}
+
+static void
+on_notification_closed (NotifyNotification *notification, gpointer data)
+{
+        g_object_unref (notification);
 }
 
 static void
@@ -241,9 +251,12 @@ require_restart (GsdUpdatesFirmware *firmware)
 
         /* TRANSLATORS: title of libnotify bubble */
         notification = notify_notification_new (_("Additional software was installed"), message, NULL);
+        notify_notification_set_hint_string (notification, "desktop-entry", "gpk-update-viewer");
         notify_notification_set_app_name (notification, _("Software Updates"));
         notify_notification_set_timeout (notification, NOTIFY_EXPIRES_NEVER);
         notify_notification_set_urgency (notification, NOTIFY_URGENCY_LOW);
+        g_signal_connect (notification, "closed",
+                          G_CALLBACK (on_notification_closed), NULL);
 
         /* show the bubble */
         ret = notify_notification_show (notification, &error);
@@ -266,9 +279,12 @@ require_replug (GsdUpdatesFirmware *firmware)
 
         /* TRANSLATORS: title of libnotify bubble */
         notification = notify_notification_new (_("Additional software was installed"), message, NULL);
+        notify_notification_set_hint_string (notification, "desktop-entry", "gpk-update-viewer");
         notify_notification_set_app_name (notification, _("Software Updates"));
         notify_notification_set_timeout (notification, NOTIFY_EXPIRES_NEVER);
         notify_notification_set_urgency (notification, NOTIFY_URGENCY_LOW);
+        g_signal_connect (notification, "closed",
+                          G_CALLBACK (on_notification_closed), NULL);
 
         /* show the bubble */
         ret = notify_notification_show (notification, &error);
@@ -291,9 +307,12 @@ require_nothing (GsdUpdatesFirmware *firmware)
 
         /* TRANSLATORS: title of libnotify bubble */
         notification = notify_notification_new (_("Additional software was installed"), message, NULL);
+        notify_notification_set_hint_string (notification, "desktop-entry", "gpk-update-viewer");
         notify_notification_set_app_name (notification, _("Software Updates"));
         notify_notification_set_timeout (notification, NOTIFY_EXPIRES_NEVER);
         notify_notification_set_urgency (notification, NOTIFY_URGENCY_LOW);
+        g_signal_connect (notification, "closed",
+                          G_CALLBACK (on_notification_closed), NULL);
 
         /* show the bubble */
         ret = notify_notification_show (notification, &error);
@@ -580,6 +599,7 @@ delay_timeout_cb (gpointer data)
 
         /* TRANSLATORS: title of libnotify bubble */
         notification = notify_notification_new (_("Additional firmware required"), string->str, NULL);
+        notify_notification_set_hint_string (notification, "desktop-entry", "gpk-update-viewer");
         notify_notification_set_app_name (notification, _("Software Updates"));
         notify_notification_set_timeout (notification, NOTIFY_EXPIRES_NEVER);
         notify_notification_set_urgency (notification, NOTIFY_URGENCY_LOW);
@@ -589,6 +609,9 @@ delay_timeout_cb (gpointer data)
         notify_notification_add_action (notification, "ignore-devices",
                                         /* TRANSLATORS: we should ignore this device and not ask anymore */
                                         _("Ignore devices"), libnotify_cb, firmware, NULL);
+        g_signal_connect (notification, "closed",
+                          G_CALLBACK (on_notification_closed), NULL);
+
         ret = notify_notification_show (notification, &error);
         if (!ret) {
                 g_warning ("error: %s", error->message);
@@ -628,18 +651,21 @@ remove_banned (GsdUpdatesFirmware *firmware, GPtrArray *array)
         banned = g_strsplit (banned_str, ",", 0);
 
         /* remove any banned pattern matches */
-        for (i=0; i<array->len; i++) {
+        i = 0;
+        while (i < array->len) {
+                ret = FALSE;
                 req = g_ptr_array_index (array, i);
                 for (j=0; banned[j] != NULL; j++) {
                         ret = g_pattern_match_simple (banned[j], req->filename);
                         if (ret) {
                                 g_debug ("match %s for %s, removing",
                                          banned[j], req->filename);
-                                request_free (req);
                                 g_ptr_array_remove_index_fast (array, i);
                                 break;
                         }
                 }
+                if (!ret)
+                        i++;
         }
 out:
         g_free (banned_str);
@@ -673,17 +699,22 @@ remove_ignored (GsdUpdatesFirmware *firmware, GPtrArray *array)
         ignored = g_strsplit (ignored_str, ",", 0);
 
         /* remove any ignored pattern matches */
-        for (i=0; i<array->len; i++) {
+        i = 0;
+        while (i < array->len) {
+                ret = FALSE;
                 req = g_ptr_array_index (array, i);
+                if (req->id == NULL)
+                        continue;
                 for (j=0; ignored[j] != NULL; j++) {
                         ret = g_pattern_match_simple (ignored[j], req->id);
                         if (ret) {
                                 g_debug ("match %s for %s, removing", ignored[j], req->id);
-                                request_free (req);
                                 g_ptr_array_remove_index_fast (array, i);
                                 break;
                         }
                 }
+                if (!ret)
+                        i++;
         }
 out:
         g_free (ignored_str);
@@ -720,12 +751,10 @@ get_device (GsdUpdatesFirmware *firmware, const gchar *filename)
         GFile *file;
         GFileInfo *info;
         const gchar *symlink_path;
-        guint len;
         gchar *syspath = NULL;
-        gchar **split = NULL;
         GError *error = NULL;
         gchar *target = NULL;
-        guint i;
+        gchar *tmp;
 
         /* get the file data */
         file = g_file_new_for_path (filename);
@@ -749,30 +778,24 @@ get_device (GsdUpdatesFirmware *firmware, const gchar *filename)
         }
 
         /* prepend sys to make '/sys/devices/pci0000:00/0000:00:1d.0/usb5/5-2/firmware/5-2' */
-        syspath = g_strjoin (NULL, "/sys", symlink_path, NULL);
+        syspath = g_strconcat ("/sys", symlink_path, NULL);
 
-        /* now find device without the junk */
-        split = g_strsplit (syspath, "/", -1);
-        len = g_strv_length (split);
-
-        /* start with the longest, and try to find a path that exists */
-        for (i=len; i>1; i--) {
-                split[i] = NULL;
-                target = g_strjoinv ("/", split);
+        /* start with the longest, and try to find a sub-path that exists */
+        tmp = &syspath[strlen (syspath)];
+        while (tmp != NULL) {
+                *tmp = '\0';
                 g_debug ("testing %s", target);
-                if (g_file_test (target, G_FILE_TEST_EXISTS))
+                if (g_file_test (syspath, G_FILE_TEST_EXISTS)) {
+                        target = g_strdup (syspath);
                         goto out;
-                g_free (target);
+                }
+                tmp = g_strrstr (syspath, "/");
         }
-
-        /* ensure we return error if nothing found */
-        target = NULL;
 out:
         if (info != NULL)
                 g_object_unref (info);
         g_object_unref (file);
         g_free (syspath);
-        g_strfreev (split);
         return target;
 }
 

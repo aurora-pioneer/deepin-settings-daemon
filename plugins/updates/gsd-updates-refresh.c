@@ -25,6 +25,8 @@
 #include <packagekit-glib2/packagekit.h>
 #include <libupower-glib/upower.h>
 
+#include "gnome-settings-session.h"
+
 #include "gsd-updates-common.h"
 #include "gsd-updates-refresh.h"
 
@@ -34,6 +36,7 @@ static void     gsd_updates_refresh_finalize    (GObject            *object);
 
 #define PERIODIC_CHECK_TIME     60*60   /* poke PackageKit every hour */
 #define LOGIN_TIMEOUT           3       /* seconds */
+#define SESSION_STARTUP_TIMEOUT 10      /* seconds */
 
 enum {
         PRESENCE_STATUS_AVAILABLE = 0,
@@ -57,8 +60,6 @@ struct GsdUpdatesRefreshPrivate
         gboolean                 session_idle;
         gboolean                 on_battery;
         gboolean                 network_active;
-        gboolean                 force_get_updates_login;
-        guint                    force_get_updates_login_timeout_id;
         guint                    timeout_id;
         guint                    periodic_id;
         UpClient                *client;
@@ -147,12 +148,6 @@ maybe_refresh_cache (GsdUpdatesRefresh *refresh)
                 return;
         }
 
-        /* not on battery */
-        if (refresh->priv->on_battery) {
-                g_debug ("not when on battery");
-                return;
-        }
-
         /* only do the refresh cache when the user is idle */
         if (!refresh->priv->session_idle) {
                 g_debug ("not when session active");
@@ -210,16 +205,6 @@ maybe_get_updates (GsdUpdatesRefresh *refresh)
         guint thresh;
 
         g_return_if_fail (GSD_IS_UPDATES_REFRESH (refresh));
-
-        if (!refresh->priv->force_get_updates_login) {
-                refresh->priv->force_get_updates_login = TRUE;
-                if (g_settings_get_boolean (refresh->priv->settings,
-                                            GSD_SETTINGS_FORCE_GET_UPDATES_LOGIN)) {
-                        g_debug ("forcing get update due to GSettings");
-                        g_signal_emit (refresh, signals [GET_UPDATES], 0);
-                        return;
-                }
-        }
 
         /* if we don't want to auto check for updates, don't do this either */
         thresh = g_settings_get_int (refresh->priv->settings,
@@ -303,18 +288,9 @@ change_state_cb (GsdUpdatesRefresh *refresh)
 }
 
 static gboolean
-maybe_get_updates_logon_cb (GsdUpdatesRefresh *refresh)
-{
-        maybe_get_updates (refresh);
-        /* never repeat, even if failure */
-        return FALSE;
-}
-
-static gboolean
 change_state (GsdUpdatesRefresh *refresh)
 {
-        gboolean force;
-        guint value;
+        gboolean ret;
 
         g_return_val_if_fail (GSD_IS_UPDATES_REFRESH (refresh), FALSE);
 
@@ -324,35 +300,23 @@ change_state (GsdUpdatesRefresh *refresh)
                 return FALSE;
         }
 
-        /* only force a check if the user REALLY, REALLY wants to break
-         * set policy and have an update at startup */
-        if (!refresh->priv->force_get_updates_login) {
-                force = g_settings_get_boolean (refresh->priv->settings,
-                                                GSD_SETTINGS_FORCE_GET_UPDATES_LOGIN);
-                if (force) {
-                        /* don't immediately send the signal, if we are
-                         * called during object initialization
-                         * we need to wait until upper layers finish
-                         * hooking up to the signal first */
-                        if (refresh->priv->force_get_updates_login_timeout_id == 0) {
-                                refresh->priv->force_get_updates_login_timeout_id =
-                                        g_timeout_add_seconds (LOGIN_TIMEOUT,
-                                                               (GSourceFunc) maybe_get_updates_logon_cb,
-                                                               refresh);
-                                g_source_set_name_by_id (refresh->priv->force_get_updates_login_timeout_id,
-                                                         "[GsdUpdatesRefresh] maybe-get-updates");
-                        }
-                }
+        /* not on battery unless overridden */
+        ret = g_settings_get_boolean (refresh->priv->settings,
+                                      GSD_SETTINGS_UPDATE_BATTERY);
+        if (!ret && refresh->priv->on_battery) {
+                g_debug ("not when on battery");
+                return FALSE;
         }
 
         /* wait a little time for things to settle down */
         if (refresh->priv->timeout_id != 0)
                 g_source_remove (refresh->priv->timeout_id);
-        value = g_settings_get_int (refresh->priv->settings,
-                                    GSD_SETTINGS_SESSION_STARTUP_TIMEOUT);
-        g_debug ("defering action for %i seconds", value);
+        g_debug ("defering action for %i seconds",
+                 SESSION_STARTUP_TIMEOUT);
         refresh->priv->timeout_id =
-                g_timeout_add_seconds (value, (GSourceFunc) change_state_cb, refresh);
+                g_timeout_add_seconds (SESSION_STARTUP_TIMEOUT,
+                                       (GSourceFunc) change_state_cb,
+                                       refresh);
         g_source_set_name_by_id (refresh->priv->timeout_id,
                                  "[GsdUpdatesRefresh] change-state");
 
@@ -365,21 +329,11 @@ settings_key_changed_cb (GSettings *client,
                          GsdUpdatesRefresh *refresh)
 {
         g_return_if_fail (GSD_IS_UPDATES_REFRESH (refresh));
-        if (g_strcmp0 (key, GSD_SETTINGS_SESSION_STARTUP_TIMEOUT) == 0 ||
-            g_strcmp0 (key, GSD_SETTINGS_FORCE_GET_UPDATES_LOGIN) == 0 ||
-            g_strcmp0 (key, GSD_SETTINGS_FREQUENCY_GET_UPDATES) == 0 ||
+        if (g_strcmp0 (key, GSD_SETTINGS_FREQUENCY_GET_UPDATES) == 0 ||
             g_strcmp0 (key, GSD_SETTINGS_FREQUENCY_GET_UPGRADES) == 0 ||
             g_strcmp0 (key, GSD_SETTINGS_FREQUENCY_REFRESH_CACHE) == 0 ||
-            g_strcmp0 (key, GSD_SETTINGS_AUTO_UPDATE_TYPE) == 0 ||
             g_strcmp0 (key, GSD_SETTINGS_UPDATE_BATTERY) == 0)
                 change_state (refresh);
-}
-
-gboolean
-gsd_updates_refresh_get_on_battery (GsdUpdatesRefresh *refresh)
-{
-        g_return_val_if_fail (GSD_IS_UPDATES_REFRESH (refresh), FALSE);
-        return refresh->priv->on_battery;
 }
 
 static gboolean
@@ -391,6 +345,7 @@ convert_network_state (GsdUpdatesRefresh *refresh, PkNetworkEnum state)
 
         /* online */
         if (state == PK_NETWORK_ENUM_ONLINE ||
+            state == PK_NETWORK_ENUM_WIFI ||
             state == PK_NETWORK_ENUM_WIRED)
                 return TRUE;
 
@@ -398,11 +353,6 @@ convert_network_state (GsdUpdatesRefresh *refresh, PkNetworkEnum state)
         if (state == PK_NETWORK_ENUM_MOBILE)
                 return g_settings_get_boolean (refresh->priv->settings,
                                                GSD_SETTINGS_CONNECTION_USE_MOBILE);
-
-        /* check policy */
-        if (state == PK_NETWORK_ENUM_WIFI)
-                return g_settings_get_boolean (refresh->priv->settings,
-                                               GSD_SETTINGS_CONNECTION_USE_WIFI);
 
         /* not recognised */
         g_warning ("state unknown: %i", state);
@@ -519,17 +469,14 @@ session_presence_signal_cb (GDBusProxy *proxy,
 static void
 gsd_updates_refresh_init (GsdUpdatesRefresh *refresh)
 {
-        GError *error = NULL;
         GVariant *status;
         guint status_code;
 
         refresh->priv = GSD_UPDATES_REFRESH_GET_PRIVATE (refresh);
         refresh->priv->on_battery = FALSE;
         refresh->priv->network_active = FALSE;
-        refresh->priv->force_get_updates_login = FALSE;
         refresh->priv->timeout_id = 0;
         refresh->priv->periodic_id = 0;
-        refresh->priv->force_get_updates_login_timeout_id = 0;
 
         /* we need to know the updates frequency */
         refresh->priv->settings = g_settings_new (GSD_SETTINGS_SCHEMA);
@@ -559,19 +506,8 @@ gsd_updates_refresh_init (GsdUpdatesRefresh *refresh)
 
         /* use gnome-session for the idle detection */
         refresh->priv->proxy_session =
-                g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
-                                               G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-                                               NULL, /* GDBusInterfaceInfo */
-                                               "org.gnome.SessionManager",
-                                               "/org/gnome/SessionManager/Presence",
-                                               "org.gnome.SessionManager.Presence",
-                                               NULL, /* GCancellable */
-                                               &error);
-        if (refresh->priv->proxy_session == NULL) {
-                g_warning ("Error creating proxy: %s",
-                           error->message);
-                g_error_free (error);
-        } else {
+                gnome_settings_session_get_session_proxy ();
+        if (refresh->priv->proxy_session != NULL) {
                 g_signal_connect (refresh->priv->proxy_session,
                                   "g-signal",
                                   G_CALLBACK (session_presence_signal_cb),
@@ -613,8 +549,6 @@ gsd_updates_refresh_finalize (GObject *object)
                 g_source_remove (refresh->priv->timeout_id);
         if (refresh->priv->periodic_id != 0)
                 g_source_remove (refresh->priv->periodic_id);
-        if (refresh->priv->force_get_updates_login_timeout_id != 0)
-                g_source_remove (refresh->priv->force_get_updates_login_timeout_id);
 
         g_signal_handlers_disconnect_by_data (refresh->priv->client, refresh);
 
