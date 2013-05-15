@@ -1,52 +1,38 @@
 NULL =
 
-plugin_name = keyboard
+plugin_name = a11y-keyboard
 
-gtkbuilderdir = $(pkgdatadir)
-gtkbuilder_DATA = 			\
-	gsd-a11y-preferences-dialog.ui	\
-	$(NULL)
+libexec_PROGRAMS = gsd-test-a11y-keyboard
 
-if BUILD_TEST_PROGRAMS
-noinst_PROGRAMS =				\
-	test-a11y-preferences-dialog		\
-	$(NULL)
+gsd_test_a11y_keyboard_SOURCES =		\
+	gsd-a11y-keyboard-manager.h		\
+	gsd-a11y-keyboard-manager.c		\
+	test-a11y-keyboard.c
 
-test_a11y_preferences_dialog_SOURCES =		\
-	gsd-a11y-preferences-dialog.c		\
-	gsd-a11y-preferences-dialog.h		\
-	test-a11y-preferences-dialog.c		\
-	$(NULL)
-
-test_a11y_preferences_dialog_CPPFLAGS = \
+gsd_test_a11y_keyboard_CFLAGS =					\
 	-I$(top_srcdir)/gnome-settings-daemon			\
-	-DPIXMAPDIR=\""$(pkgdatadir)"\"				\
-	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"				\
+	-I$(top_srcdir)/plugins/common				\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
-	$(AM_CPPFLAGS)
-
-test_a11y_preferences_dialog_CFLAGS = \
-	$(PLUGIN_CFLAGS)		\
-	$(SETTINGS_PLUGIN_CFLAGS)	\
+	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"			\
+	$(PLUGIN_CFLAGS)					\
+	$(LIBNOTIFY_CFLAGS)					\
+	$(SETTINGS_PLUGIN_CFLAGS)				\
 	$(AM_CFLAGS)
 
-test_a11y_preferences_dialog_LDADD = \
-	$(SETTINGS_DAEMON_LIBS)			\
-	$(SETTINGS_PLUGIN_LIBS)			\
-	$(NULL)
-endif
+gsd_test_a11y_keyboard_LDADD =					\
+	$(top_builddir)/gnome-settings-daemon/libgsd.la		\
+	$(top_builddir)/plugins/common/libcommon.la		\
+	$(LIBNOTIFY_LIBS)					\
+	$(SETTINGS_PLUGIN_LIBS)
 
 plugin_LTLIBRARIES = \
 	liba11y-keyboard.la		\
 	$(NULL)
 
 liba11y_keyboard_la_SOURCES = 		\
-	gsd-a11y-keyboard-plugin.h	\
 	gsd-a11y-keyboard-plugin.c	\
 	gsd-a11y-keyboard-manager.h	\
 	gsd-a11y-keyboard-manager.c	\
-	gsd-a11y-preferences-dialog.h	\
-	gsd-a11y-preferences-dialog.c	\
 	$(NULL)
 
 liba11y_keyboard_la_CPPFLAGS = \
@@ -58,7 +44,6 @@ liba11y_keyboard_la_CPPFLAGS = \
 liba11y_keyboard_la_CFLAGS = \
 	$(SETTINGS_PLUGIN_CFLAGS)	\
 	$(LIBNOTIFY_CFLAGS)		\
-	$(APPINDICATOR_CFLAGS)		\
 	$(AM_CFLAGS)
 
 liba11y_keyboard_la_LDFLAGS = 		\
@@ -69,7 +54,6 @@ liba11y_keyboard_la_LIBADD  = 		\
 	$(SETTINGS_PLUGIN_LIBS)		\
 	$(XF86MISC_LIBS)		\
 	$(LIBNOTIFY_LIBS)		\
-	$(APPINDICATOR_LIBS)		\
 	$(NULL)
 
 plugin_in_files = 		\
