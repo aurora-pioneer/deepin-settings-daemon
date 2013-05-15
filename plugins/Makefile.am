@@ -6,9 +6,9 @@ enabled_plugins =	\
 	a11y-keyboard	\
 	a11y-settings	\
 	clipboard	\
+	color		\
 	cursor		\
 	datetime	\
-	color		\
 	dummy		\
 	keyboard	\
 	power		\

@@ -7,3 +7,4 @@
    automount	: removed from 3.8
    background	: disable
    clipboard	: DONE
+   color	: DONE
