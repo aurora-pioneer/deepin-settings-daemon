@@ -27,3 +27,5 @@
    sound	: DONE
    updates	: depends on packagekit, do we need it?
    wacom	: needs fixing
+   xrandr	: disable
+   xsettings	: DONE

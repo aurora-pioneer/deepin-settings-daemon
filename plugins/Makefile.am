@@ -13,10 +13,7 @@ enabled_plugins =	\
 	orientation	\
 	print-notifications\
 	sound		\
-	xrandr		\
 	xsettings	\
-	key-bindings	\
-	idle-delay	\
 	$(NULL)
 
 disabled_plugins = \

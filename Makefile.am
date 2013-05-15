@@ -8,9 +8,9 @@ SUBDIRS = 			\
 	tests 			\
 	$(NULL)
 
-if ENABLE_MAN
-SUBDIRS += man
-endif
+#if ENABLE_MAN
+#SUBDIRS += man
+#endif
 
 # Honor aclocal flags
 ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS}

@@ -50,6 +50,7 @@
 #define MOUSE_SETTINGS_SCHEMA     "org.gnome.settings-daemon.peripherals.mouse"
 #define INTERFACE_SETTINGS_SCHEMA "org.gnome.desktop.interface"
 #define SOUND_SETTINGS_SCHEMA     "org.gnome.desktop.sound"
+#define PRIVACY_SETTINGS_SCHEMA     "org.gnome.desktop.privacy"
 
 #define XSETTINGS_PLUGIN_SCHEMA "org.gnome.settings-daemon.plugins.xsettings"
 #define XSETTINGS_OVERRIDE_KEY  "overrides"
@@ -242,10 +243,9 @@ struct GnomeXSettingsManagerPrivate
         GsdXSettingsGtk   *gtk;
 
         guint              shell_name_watch_id;
-        guint              unity_name_watch_id;
+        gboolean           have_shell;
 
-        gboolean           shell_running;
-        gboolean           unity_running;
+        guint              notify_idle_id;
 };
 
 #define GSD_XSETTINGS_ERROR gsd_xsettings_error_quark ()
@@ -364,8 +364,32 @@ static TranslationEntry translations [] = {
 
         { "org.gnome.desktop.sound", "theme-name",                 "Net/SoundThemeName",            translate_string_string },
         { "org.gnome.desktop.sound", "event-sounds",               "Net/EnableEventSounds" ,        translate_bool_int },
-        { "org.gnome.desktop.sound", "input-feedback-sounds",      "Net/EnableInputFeedbackSounds", translate_bool_int }
+        { "org.gnome.desktop.sound", "input-feedback-sounds",      "Net/EnableInputFeedbackSounds", translate_bool_int },
+
+        { "org.gnome.desktop.privacy", "recent-files-max-age",      "Gtk/RecentFilesMaxAge", translate_int_int },
+        { "org.gnome.desktop.privacy", "remember-recent-files",    "Gtk/RecentFilesEnabled", translate_bool_int }
 };
+
+static gboolean
+notify_idle (gpointer data)
+{
+        GnomeXSettingsManager *manager = data;
+        gint i;
+        for (i = 0; manager->priv->managers [i]; i++) {
+                xsettings_manager_notify (manager->priv->managers[i]);
+        }
+        manager->priv->notify_idle_id = 0;
+        return G_SOURCE_REMOVE;
+}
+
+static void
+queue_notify (GnomeXSettingsManager *manager)
+{
+        if (manager->priv->notify_idle_id != 0)
+                return;
+
+        manager->priv->notify_idle_id = g_idle_add (notify_idle, manager);
+}
 
 static double
 get_dpi_from_gsettings (GnomeXSettingsManager *manager)
@@ -388,9 +412,6 @@ typedef struct {
         int         dpi;
         const char *rgba;
         const char *hintstyle;
-
-	/* priv helper for OOO lcdfilter */
-	gboolean use_rgba;
 } GnomeXftSettings;
 
 /* Read GSettings and determine the appropriate Xft settings based on them. */
@@ -412,7 +433,6 @@ xft_settings_get (GnomeXSettingsManager *manager,
         settings->dpi = get_dpi_from_gsettings (manager) * 1024; /* Xft wants 1/1024ths of an inch */
         settings->rgba = "rgb";
         settings->hintstyle = "hintfull";
-        settings->use_rgba = FALSE;
 
         switch (hinting) {
         case GSD_FONT_HINTING_NONE:
@@ -456,10 +476,10 @@ xft_settings_get (GnomeXSettingsManager *manager,
                 break;
         case GSD_FONT_ANTIALIASING_MODE_RGBA:
                 settings->antialias = 1;
-                settings->use_rgba = TRUE;
+                use_rgba = TRUE;
         }
 
-        if (!settings->use_rgba) {
+        if (!use_rgba) {
                 settings->rgba = "none";
         }
 }
@@ -478,7 +498,6 @@ xft_settings_set_xsettings (GnomeXSettingsManager *manager,
                 xsettings_manager_set_string (manager->priv->managers [i], "Xft/HintStyle", settings->hintstyle);
                 xsettings_manager_set_int (manager->priv->managers [i], "Xft/DPI", settings->dpi);
                 xsettings_manager_set_string (manager->priv->managers [i], "Xft/RGBA", settings->rgba);
-                xsettings_manager_set_string (manager->priv->managers [i], "Xft/lcdfilter", settings->use_rgba ? "lcddefault" : "none");
         }
         gnome_settings_profile_end (NULL);
 }
@@ -540,8 +559,6 @@ xft_settings_set_xresources (GnomeXftSettings *settings)
                                 settings->hintstyle);
         update_property (add_string, "Xft.rgba",
                                 settings->rgba);
-        update_property (add_string, "Xft.lcdfilter",
-                                settings->use_rgba ? "lcddefault" : "none");
 
         g_debug("xft_settings_set_xresources: new res '%s'", add_string->str);
 
@@ -577,13 +594,8 @@ xft_callback (GSettings             *settings,
               const gchar           *key,
               GnomeXSettingsManager *manager)
 {
-        int i;
-
         update_xft_settings (manager);
-
-        for (i = 0; manager->priv->managers [i]; i++) {
-                xsettings_manager_notify (manager->priv->managers [i]);
-        }
+        queue_notify (manager);
 }
 
 static void
@@ -598,8 +610,8 @@ override_callback (GSettings             *settings,
 
         for (i = 0; manager->priv->managers[i]; i++) {
                 xsettings_manager_set_overrides (manager->priv->managers[i], value);
-                xsettings_manager_notify (manager->priv->managers [i]);
         }
+        queue_notify (manager);
 
         g_variant_unref (value);
 }
@@ -640,9 +652,7 @@ gtk_modules_callback (GsdXSettingsGtk       *gtk,
                 }
         }
 
-        for (i = 0; manager->priv->managers [i]; ++i) {
-                xsettings_manager_notify (manager->priv->managers [i]);
-        }
+        queue_notify (manager);
 }
 
 static void
@@ -656,8 +666,8 @@ fontconfig_callback (fontconfig_monitor_handle_t *handle,
 
         for (i = 0; manager->priv->managers [i]; i++) {
                 xsettings_manager_set_int (manager->priv->managers [i], "Fontconfig/Timestamp", timestamp);
-                xsettings_manager_notify (manager->priv->managers [i]);
         }
+        queue_notify (manager);
         gnome_settings_profile_end (NULL);
 }
 
@@ -697,23 +707,19 @@ stop_fontconfig_monitor (GnomeXSettingsManager  *manager)
 }
 
 static void
-notify_have_shell (GnomeXSettingsManager *manager)
+notify_have_shell (GnomeXSettingsManager   *manager,
+                   gboolean                 have_shell)
 {
         int i;
 
         gnome_settings_profile_start (NULL);
-
+        if (manager->priv->have_shell == have_shell)
+                return;
+        manager->priv->have_shell = have_shell;
         for (i = 0; manager->priv->managers [i]; i++) {
-                /* Shell is showing appmenu if either GNOME Shell or
-                 * Unity is running.
-                 */
-                xsettings_manager_set_int (manager->priv->managers [i], "Gtk/ShellShowsAppMenu",
-                                           manager->priv->shell_running || manager->priv->unity_running);
-                /* Shell is showing menubar *only* if Unity runs */
-                xsettings_manager_set_int (manager->priv->managers [i], "Gtk/ShellShowsMenubar",
-                                           manager->priv->unity_running);
-                xsettings_manager_notify (manager->priv->managers [i]);
+                xsettings_manager_set_int (manager->priv->managers [i], "Gtk/ShellShowsAppMenu", have_shell);
         }
+        queue_notify (manager);
         gnome_settings_profile_end (NULL);
 }
 
@@ -723,10 +729,7 @@ on_shell_appeared (GDBusConnection *connection,
                    const gchar     *name_owner,
                    gpointer         user_data)
 {
-        GnomeXSettingsManager *manager = user_data;
-
-        manager->priv->shell_running = TRUE;
-        notify_have_shell (manager);
+        notify_have_shell (user_data, TRUE);
 }
 
 static void
@@ -734,33 +737,7 @@ on_shell_disappeared (GDBusConnection *connection,
                       const gchar     *name,
                       gpointer         user_data)
 {
-        GnomeXSettingsManager *manager = user_data;
-
-        manager->priv->shell_running = FALSE;
-        notify_have_shell (manager);
-}
-
-static void
-on_unity_appeared (GDBusConnection *connection,
-                   const gchar     *name,
-                   const gchar     *name_owner,
-                   gpointer         user_data)
-{
-        GnomeXSettingsManager *manager = user_data;
-
-        manager->priv->unity_running = TRUE;
-        notify_have_shell (manager);
-}
-
-static void
-on_unity_disappeared (GDBusConnection *connection,
-                      const gchar     *name,
-                      gpointer         user_data)
-{
-        GnomeXSettingsManager *manager = user_data;
-
-        manager->priv->unity_running = FALSE;
-        notify_have_shell (manager);
+        notify_have_shell (user_data, FALSE);
 }
 
 static void
@@ -822,10 +799,7 @@ xsettings_callback (GSettings             *settings,
                                               "Net/FallbackIconTheme",
                                               "gnome");
         }
-
-        for (i = 0; manager->priv->managers [i]; i++) {
-                xsettings_manager_notify (manager->priv->managers [i]);
-        }
+        queue_notify (manager);
 }
 
 static void
@@ -883,6 +857,20 @@ setup_xsettings_managers (GnomeXSettingsManager *manager)
         return TRUE;
 }
 
+static void
+start_shell_monitor (GnomeXSettingsManager *manager)
+{
+        notify_have_shell (manager, TRUE);
+        manager->priv->have_shell = TRUE;
+        manager->priv->shell_name_watch_id = g_bus_watch_name (G_BUS_TYPE_SESSION,
+                                                               "org.gnome.Shell",
+                                                               0,
+                                                               on_shell_appeared,
+                                                               on_shell_disappeared,
+                                                               manager,
+                                                               NULL);
+}
+
 gboolean
 gnome_xsettings_manager_start (GnomeXSettingsManager *manager,
                                GError               **error)
@@ -910,6 +898,8 @@ gnome_xsettings_manager_start (GnomeXSettingsManager *manager,
                              INTERFACE_SETTINGS_SCHEMA, g_settings_new (INTERFACE_SETTINGS_SCHEMA));
         g_hash_table_insert (manager->priv->settings,
                              SOUND_SETTINGS_SCHEMA, g_settings_new (SOUND_SETTINGS_SCHEMA));
+        g_hash_table_insert (manager->priv->settings,
+                             PRIVACY_SETTINGS_SCHEMA, g_settings_new (PRIVACY_SETTINGS_SCHEMA));
 
         for (i = 0; i < G_N_ELEMENTS (translations); i++) {
                 GVariant *val;
@@ -948,23 +938,7 @@ gnome_xsettings_manager_start (GnomeXSettingsManager *manager,
 
         start_fontconfig_monitor (manager);
 
-        /* Shell flag */
-        manager->priv->shell_name_watch_id = g_bus_watch_name (G_BUS_TYPE_SESSION,
-                                                               "org.gnome.Shell",
-                                                               0,
-                                                               on_shell_appeared,
-                                                               on_shell_disappeared,
-                                                               manager,
-                                                               NULL);
-
-        /* Unity flag */
-        manager->priv->unity_name_watch_id = g_bus_watch_name (G_BUS_TYPE_SESSION,
-                                                               "com.canonical.AppMenu.Registrar",
-                                                               0,
-                                                               on_unity_appeared,
-                                                               on_unity_disappeared,
-                                                               manager,
-                                                               NULL);
+        start_shell_monitor (manager);
 
         for (i = 0; manager->priv->managers [i]; i++)
                 xsettings_manager_set_string (manager->priv->managers [i],
@@ -974,8 +948,8 @@ gnome_xsettings_manager_start (GnomeXSettingsManager *manager,
         overrides = g_settings_get_value (manager->priv->plugin_settings, XSETTINGS_OVERRIDE_KEY);
         for (i = 0; manager->priv->managers [i]; i++) {
                 xsettings_manager_set_overrides (manager->priv->managers [i], overrides);
-                xsettings_manager_notify (manager->priv->managers [i]);
         }
+        queue_notify (manager);
         g_variant_unref (overrides);
 
 
@@ -1009,9 +983,6 @@ gnome_xsettings_manager_stop (GnomeXSettingsManager *manager)
 
         if (manager->priv->shell_name_watch_id > 0)
                 g_bus_unwatch_name (manager->priv->shell_name_watch_id);
-
-        if (manager->priv->unity_name_watch_id > 0)
-                g_bus_unwatch_name (manager->priv->unity_name_watch_id);
 
         if (p->settings != NULL) {
                 g_hash_table_destroy (p->settings);
