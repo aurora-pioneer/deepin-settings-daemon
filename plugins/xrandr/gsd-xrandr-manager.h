@@ -23,12 +23,6 @@
 
 #include <glib-object.h>
 
-#define GNOME_DESKTOP_USE_UNSTABLE_API                                          
-                                                                                
-#include <libgnome-desktop/gnome-rr-config.h>                                   
-#include <libgnome-desktop/gnome-rr.h>                                          
-#include <libgnome-desktop/gnome-pnp-ids.h>
-
 G_BEGIN_DECLS
 
 #define GSD_TYPE_XRANDR_MANAGER         (gsd_xrandr_manager_get_type ())

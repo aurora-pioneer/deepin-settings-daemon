@@ -22,11 +22,12 @@
 #ifndef DEEPIN_XRANDR_H
 #define DEEPIN_XRANDR_H
 
-#include "gsd-xrandr-manager.h"
+#define GNOME_DESKTOP_USE_UNSTABLE_API                                          
+                                                                                
+#include <libgnome-desktop/gnome-rr-config.h>                                   
+#include <libgnome-desktop/gnome-rr.h>
 
-#define DEEPIN_EXPORT
-
-extern int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings);
-extern void deepin_xrandr_cleanup();
+int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings);
+void deepin_xrandr_cleanup();
 
 #endif /* DEEPIN_XRANDR_H */

@@ -532,7 +532,7 @@ static void m_set_rotation(char *rotation)
     system(buffer);
 }
 
-DEEPIN_EXPORT int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings) 
+int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings) 
 {
     GnomeRRConfig *config = NULL;
     char backup_filename[PATH_MAX] = {'\0'}; 
@@ -594,7 +594,7 @@ DEEPIN_EXPORT int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     return 0;
 }
 
-DEEPIN_EXPORT void deepin_xrandr_cleanup() 
+void deepin_xrandr_cleanup() 
 {
     xmlCleanupParser();
     

@@ -41,6 +41,12 @@
 #include <libupower-glib/upower.h>
 #include <X11/Xatom.h>
 
+#define GNOME_DESKTOP_USE_UNSTABLE_API
+
+#include <libgnome-desktop/gnome-rr-config.h>
+#include <libgnome-desktop/gnome-rr.h>
+#include <libgnome-desktop/gnome-pnp-ids.h>
+
 #ifdef HAVE_WACOM
 #include <libwacom/libwacom.h>
 #endif /* HAVE_WACOM */
@@ -2077,6 +2083,7 @@ gsd_xrandr_manager_start (GsdXrandrManager *manager,
         manager->priv->running = TRUE;
         manager->priv->settings = g_settings_new (CONF_SCHEMA);
         deepin_xrandr_init(manager->priv->rw_screen, manager->priv->settings);
+
         show_timestamps_dialog (manager, "Startup");
         if (!apply_stored_configuration_at_startup (manager, GDK_CURRENT_TIME)) /* we don't have a real timestamp at startup anyway */
                 if (!apply_default_configuration_from_file (manager, GDK_CURRENT_TIME))

@@ -17,6 +17,7 @@ enabled_plugins =	\
 	print-notifications\
 	sound		\
 	xsettings	\
+	xrandr		\
 	$(NULL)
 
 disabled_plugins = \
