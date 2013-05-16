@@ -52,6 +52,9 @@ void            grab_button      (int      deviceid,
                                   gboolean grab,
                                   GSList  *screens);
 
+Key *           parse_key        (const char    *str);
+void            free_key         (Key           *key);
+
 G_END_DECLS
 
 #endif /* __GSD_COMMON_KEYGRAB_H */

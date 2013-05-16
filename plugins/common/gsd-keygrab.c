@@ -417,3 +417,36 @@ grab_button (int      deviceid,
 				  gdk_screen_get_root_window (screen));
         }
 }
+
+Key *
+parse_key (const char *str)
+{
+	Key *key;
+
+	if (str == NULL ||
+	    *str == '\0' ||
+	    g_str_equal (str, "disabled")) {
+		return NULL;
+	}
+
+	key = g_new0 (Key, 1);
+	gtk_accelerator_parse_with_keycode (str, &key->keysym, &key->keycodes, &key->state);
+	if (key->keysym == 0 &&
+	    key->keycodes == NULL &&
+	    key->state == 0) {
+		g_free (key);
+                return NULL;
+	}
+
+	return key;
+}
+
+void
+free_key (Key *key)
+{
+	if (key == NULL)
+		return;
+	g_free (key->keycodes);
+	g_free (key);
+}
+
