@@ -10,7 +10,7 @@ libpower_la_SOURCES = 					\
 	gpm-common.h					\
 	gsd-backlight-linux.c				\
 	gsd-backlight-linux.h				\
-	deepin_power.c					\                                           
+	deepin_power.c        			\
     deepin_power.h                  \
 	gsd-power-manager.c				\
 	gsd-power-manager.h				\
@@ -72,6 +72,8 @@ gsd_test_power_SOURCES =				\
 	gpm-common.h					\
 	gsd-backlight-linux.c				\
 	gsd-backlight-linux.h				\
+	deepin_power.c					\
+	deepin_power.h					\
 	gsd-power-manager.c				\
 	gsd-power-manager.h				\
 	gsm-inhibitor-flag.h				\
@@ -86,7 +88,8 @@ gsd_test_power_LDADD =					\
 	$(top_builddir)/plugins/common/libcommon.la	\
 	$(top_builddir)/gnome-settings-daemon/libgsd.la \
 	$(POWER_LIBS)					\
-	$(SETTINGS_PLUGIN_LIBS)
+	$(SETTINGS_PLUGIN_LIBS)			\
+	$(LIBXML2_LIBS)
 
 EXTRA_DIST = 						\
 	$(plugin_in_files)				\

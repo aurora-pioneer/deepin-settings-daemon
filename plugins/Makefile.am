@@ -18,6 +18,7 @@ enabled_plugins =	\
 	sound		\
 	xsettings	\
 	xrandr		\
+	power		\
 	$(NULL)
 
 disabled_plugins = \
