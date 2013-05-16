@@ -17,7 +17,7 @@
    key-bindings	: DONE
    keyboard	: needs fixing
    media-keys	: NEEDS FIXING
-   mouse	: DONE, needs fixing build warnings
+   mouse	: DONE
    orientation	: DONE
    power	: DONE
    print-notifications: DONE
