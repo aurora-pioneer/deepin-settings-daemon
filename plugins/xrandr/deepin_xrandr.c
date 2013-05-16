@@ -26,7 +26,7 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
-#include "gsd-xrandr-manager.h"
+#include "deepin_xrandr.h"
 
 #define BUF_SIZE 1024
 
@@ -532,7 +532,7 @@ static void m_set_rotation(char *rotation)
     system(buffer);
 }
 
-int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings) 
+DEEPIN_EXPORT int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings) 
 {
     GnomeRRConfig *config = NULL;
     char backup_filename[PATH_MAX] = {'\0'}; 
@@ -594,7 +594,7 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     return 0;
 }
 
-void deepin_xrandr_cleanup() 
+DEEPIN_EXPORT void deepin_xrandr_cleanup() 
 {
     xmlCleanupParser();
     

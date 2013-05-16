@@ -1,11 +1,11 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
- * Copyright (C) 2007 William Jon McCann <mccann@jhu.edu>
+ * Copyright (C) 2008 William Jon McCann <jmccann@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,12 +18,18 @@
  *
  */
 
-#include "config.h"
 
-#include <glib/gi18n-lib.h>
-#include <gmodule.h>
+#ifndef __GSM_MANAGER_LOGOUT_MODE_H
+#define __GSM_MANAGER_LOGOUT_MODE_H
 
-#include "gnome-settings-plugin.h"
-#include "gsd-power-manager.h"
+G_BEGIN_DECLS
 
-GNOME_SETTINGS_PLUGIN_REGISTER (GsdPower, gsd_power)
+typedef enum {
+        GSM_MANAGER_LOGOUT_MODE_NORMAL = 0,
+        GSM_MANAGER_LOGOUT_MODE_NO_CONFIRMATION,
+        GSM_MANAGER_LOGOUT_MODE_FORCE
+} GsmManagerLogoutMode;
+
+G_END_DECLS
+
+#endif /* __GSM_MANAGER_LOGOUT_MODE_H */
