@@ -19,6 +19,7 @@ enabled_plugins =	\
 	xsettings	\
 	xrandr		\
 	power		\
+	datetime	\
 	$(NULL)
 
 disabled_plugins = \

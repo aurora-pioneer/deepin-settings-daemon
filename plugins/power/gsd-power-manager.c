@@ -50,6 +50,7 @@
 #include "gnome-settings-session.h"
 #include "gsd-enums.h"
 #include "gsd-power-manager.h"
+#include "deepin_power.h"
 
 #define GNOME_SESSION_DBUS_NAME                 "org.gnome.SessionManager"
 #define GNOME_SESSION_DBUS_PATH_PRESENCE        "/org/gnome/SessionManager/Presence"
@@ -3451,6 +3452,7 @@ gsd_power_manager_start (GsdPowerManager *manager,
         manager->priv->settings = g_settings_new (GSD_POWER_SETTINGS_SCHEMA);
         g_signal_connect (manager->priv->settings, "changed",
                           G_CALLBACK (engine_settings_key_changed_cb), manager);
+        deepin_power_init(manager->priv->settings);
         manager->priv->settings_screensaver = g_settings_new ("org.gnome.desktop.screensaver");
         manager->priv->settings_session = g_settings_new ("org.gnome.desktop.session");
         g_signal_connect (manager->priv->settings_session, "changed",
@@ -3566,6 +3568,8 @@ void
 gsd_power_manager_stop (GsdPowerManager *manager)
 {
         g_debug ("Stopping power manager");
+
+        deepin_power_cleanup();
 
         if (manager->priv->inhibit_lid_switch_timer_id != 0) {
                 g_source_remove (manager->priv->inhibit_lid_switch_timer_id);
