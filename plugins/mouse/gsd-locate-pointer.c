@@ -159,7 +159,6 @@ timeline_frame_cb (GsdTimeline *timeline,
                    gpointer     user_data)
 {
   GsdLocatePointerData *data = (GsdLocatePointerData *) user_data;
-  GdkScreen *screen;
   gint cursor_x, cursor_y;
 
   if (gtk_widget_is_composited (data->widget))
@@ -175,9 +174,20 @@ timeline_frame_cb (GsdTimeline *timeline,
       data->progress += CIRCLES_PROGRESS_INTERVAL;
     }
 
-  screen = gdk_window_get_screen (data->window);
-  gdk_window_get_pointer (gdk_screen_get_root_window (screen),
-                          &cursor_x, &cursor_y, NULL);
+//
+// gdk_window_get_pointer (gdk_screen_get_root_window (screen),
+//                         &cursor_x, &cursor_y, NULL);
+// use gdk_device_get_position instead of gdk_window_get_device_position
+// 'coz we use root window here.
+  GdkDisplay *display;
+  GdkDeviceManager * device_manager;
+  GdkDevice* pointer_device;
+
+  display = gdk_window_get_display (data->window);
+  device_manager = gdk_display_get_device_manager (display);
+  pointer_device = gdk_device_manager_get_client_pointer (device_manager);
+  gdk_device_get_position (pointer_device, NULL, &cursor_x, &cursor_y);
+//
   gdk_window_move (data->window,
                    cursor_x - WINDOW_SIZE / 2,
                    cursor_y - WINDOW_SIZE / 2);
@@ -290,7 +300,20 @@ move_locate_pointer_window (GsdLocatePointerData *data,
   cairo_region_t *region;
   gint cursor_x, cursor_y;
 
-  gdk_window_get_pointer (gdk_screen_get_root_window (screen), &cursor_x, &cursor_y, NULL);
+//
+// gdk_window_get_pointer (gdk_screen_get_root_window (screen),
+//                         &cursor_x, &cursor_y, NULL);
+// use gdk_device_get_position instead of gdk_window_get_device_position
+// 'coz we use root window here.
+  GdkDisplay *display;
+  GdkDeviceManager * device_manager;
+  GdkDevice* pointer_device;
+
+  display = gdk_window_get_display (data->window);
+  device_manager = gdk_display_get_device_manager (display);
+  pointer_device = gdk_device_manager_get_client_pointer (device_manager);
+  gdk_device_get_position (pointer_device, NULL, &cursor_x, &cursor_y);
+//
 
   gdk_window_move_resize (data->window,
                           cursor_x - WINDOW_SIZE / 2,
