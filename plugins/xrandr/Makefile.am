@@ -35,7 +35,9 @@ libexec_PROGRAMS = gsd-test-xrandr
 gsd_test_xrandr_SOURCES =		\
 	test-xrandr.c			\
 	gsd-xrandr-manager.c		\
-	gsd-xrandr-manager.h
+	gsd-xrandr-manager.h	\
+	deepin_xrandr.c		\
+	deepin_xrandr.h
 
 gsd_test_xrandr_CPPFLAGS =					\
 	-I$(top_srcdir)/data/					\
@@ -49,6 +51,7 @@ gsd_test_xrandr_CFLAGS =			\
 	$(PLUGIN_CFLAGS)		\
 	$(SETTINGS_PLUGIN_CFLAGS)	\
 	$(XRANDR_CFLAGS)		\
+	$(LIBXML2_CFLAGS)   \
 	$(AM_CFLAGS)
 
 gsd_test_xrandr_LDADD =						\
@@ -56,7 +59,8 @@ gsd_test_xrandr_LDADD =						\
 	$(top_builddir)/plugins/common/libcommon.la		\
 	$(SETTINGS_DAEMON_LIBS)			\
 	$(SETTINGS_PLUGIN_LIBS)			\
-	$(XRANDR_LIBS)
+	$(XRANDR_LIBS)	\
+	$(LIBXML2_LIBS)
 
 plugin_LTLIBRARIES = \
 	libxrandr.la
