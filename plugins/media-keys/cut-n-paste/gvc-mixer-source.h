@@ -50,7 +50,7 @@ GType               gvc_mixer_source_get_type            (void);
 
 GvcMixerStream *    gvc_mixer_source_new               (pa_context    *context,
                                                         guint          index,
-                                                        GvcChannelMap *channel_map);
+                                                        GvcChannelMap *map);
 
 G_END_DECLS
 

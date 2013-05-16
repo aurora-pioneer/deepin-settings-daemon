@@ -1,8 +1,6 @@
 [GNOME Settings Plugin]
 Module=media-keys
 IAge=0
-# Default Priority
-# Priority=100
 _Name=Media keys
 _Description=Media keys plugin
 Authors=

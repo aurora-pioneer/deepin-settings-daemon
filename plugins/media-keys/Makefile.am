@@ -5,14 +5,12 @@ plugin_name = media-keys
 
 NULL =
 
-SUBDIRS = gvc
+SUBDIRS = cut-n-paste
 plugin_LTLIBRARIES = libmedia-keys.la
 
 BUILT_SOURCES = 			\
 	gsd-marshal.h			\
 	gsd-marshal.c			\
-	shell-key-grabber.c		\
-	shell-key-grabber.h		\
 	$(NULL)
 
 gsd-marshal.c: gsd-marshal.list
@@ -21,21 +19,15 @@ gsd-marshal.c: gsd-marshal.list
 gsd-marshal.h: gsd-marshal.list
 	$(AM_V_GEN) $(GLIB_GENMARSHAL) --prefix=gsd_marshal $< --header --internal > $@
 
-shell-key-grabber.c: shell-key-grabber.h
-shell-key-grabber.h: Makefile.am org.gnome.ShellKeyGrabber.xml
-	gdbus-codegen --interface-prefix org.gnome.		\
-	              --generate-c-code shell-key-grabber	\
-	              --c-namespace Shell			\
-	              $(srcdir)/org.gnome.ShellKeyGrabber.xml
-
 libmedia_keys_la_SOURCES = 		\
 	gsd-media-keys-plugin.c		\
 	gsd-media-keys-manager.h	\
 	gsd-media-keys-manager.c	\
-	gsd-screenshot-utils.h		\
-	gsd-screenshot-utils.c		\
+	gsd-media-keys-window.h		\
+	gsd-media-keys-window.c		\
+	gsd-osd-window.c		\
+	gsd-osd-window.h		\
 	shortcuts-list.h		\
-	shell-keybinding-modes.h	\
 	$(BUILT_SOURCES)		\
 	$(NULL)
 
@@ -43,7 +35,7 @@ libmedia_keys_la_CPPFLAGS = \
 	-I$(top_srcdir)/data/					\
 	-I$(top_srcdir)/gnome-settings-daemon			\
 	-I$(top_srcdir)/plugins/common				\
-	-I$(top_srcdir)/plugins/media-keys/gvc			\
+	-I$(top_srcdir)/plugins/media-keys/cut-n-paste		\
 	-DBINDIR=\"$(bindir)\"					\
 	-DPIXMAPDIR=\""$(pkgdatadir)"\"				\
 	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"			\
@@ -61,7 +53,7 @@ libmedia_keys_la_LDFLAGS = 		\
 
 libmedia_keys_la_LIBADD  = 		\
 	$(top_builddir)/plugins/common/libcommon.la			\
-	$(top_builddir)/plugins/media-keys/gvc/libgvc.la		\
+	$(top_builddir)/plugins/media-keys/cut-n-paste/libgvc.la	\
 	$(MEDIA_KEYS_LIBS)						\
 	$(SETTINGS_PLUGIN_LIBS)						\
 	-lm
@@ -71,38 +63,71 @@ plugin_in_files = 		\
 
 plugin_DATA = $(plugin_in_files:.gnome-settings-plugin.in=.gnome-settings-plugin)
 
-libexec_PROGRAMS = gsd-test-media-keys
+noinst_PROGRAMS =				\
+	test-media-keys				\
+	test-media-window			\
+	$(NULL)
 
-gsd_test_media_keys_SOURCES =			\
+test_media_window_SOURCES =			\
+	gsd-osd-window.c			\
+	gsd-osd-window.h			\
+	gsd-media-keys-window.c			\
+	gsd-media-keys-window.h			\
+	test-media-window.c			\
+	$(NULL)
+
+test_media_window_CPPFLAGS = \
+	-I$(top_srcdir)/data/					\
+	-I$(top_srcdir)/gnome-settings-daemon			\
+	-I$(top_srcdir)/plugins/common				\
+	-I$(top_srcdir)/plugins/media-keys/cut-n-paste		\
+	-DDATADIR=\""$(datadir)"\"				\
+	-DPIXMAPDIR=\""$(pkgdatadir)"\"				\
+	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"			\
+	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
+	$(AM_CPPFLAGS)
+
+test_media_window_CFLAGS = \
+	$(SETTINGS_PLUGIN_CFLAGS)	\
+	$(AM_CFLAGS)
+
+test_media_window_LDADD = \
+	$(top_builddir)/plugins/common/libcommon.la			\
+	$(SETTINGS_DAEMON_LIBS)			\
+	$(SETTINGS_PLUGIN_LIBS)			\
+	-lm
+
+test_media_keys_SOURCES =			\
 	gsd-media-keys-manager.c		\
 	gsd-media-keys-manager.h		\
-	gsd-screenshot-utils.h			\
-	gsd-screenshot-utils.c			\
+	gsd-media-keys-window.h			\
+	gsd-media-keys-window.c			\
+	gsd-osd-window.c			\
+	gsd-osd-window.h			\
 	test-media-keys.c			\
 	$(BUILT_SOURCES)			\
 	$(NULL)
 
-gsd_test_media_keys_CPPFLAGS = \
+test_media_keys_CPPFLAGS = \
 	-I$(top_srcdir)/data/					\
 	-I$(top_srcdir)/gnome-settings-daemon			\
 	-I$(top_srcdir)/plugins/common				\
-	-I$(top_srcdir)/plugins/media-keys/gvc			\
+	-I$(top_srcdir)/plugins/media-keys/cut-n-paste		\
 	-DBINDIR=\"$(bindir)\"					\
 	-DPIXMAPDIR=\""$(pkgdatadir)"\"				\
 	-DGTKBUILDERDIR=\""$(pkgdatadir)"\"			\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\"	\
 	$(AM_CPPFLAGS)
 
-gsd_test_media_keys_CFLAGS = \
-	$(PLUGIN_CFLAGS)		\
+test_media_keys_CFLAGS = \
 	$(SETTINGS_PLUGIN_CFLAGS)	\
 	$(MEDIA_KEYS_CFLAGS)		\
 	$(AM_CFLAGS)
 
-gsd_test_media_keys_LDADD = \
+test_media_keys_LDADD = \
 	$(top_builddir)/gnome-settings-daemon/libgsd.la		\
-	$(top_builddir)/plugins/common/libcommon.la		\
-	$(top_builddir)/plugins/media-keys/gvc/libgvc.la	\
+	$(top_builddir)/plugins/common/libcommon.la			\
+	$(top_builddir)/plugins/media-keys/cut-n-paste/libgvc.la	\
 	$(SETTINGS_DAEMON_LIBS)			\
 	$(SETTINGS_PLUGIN_LIBS)			\
 	$(MEDIA_KEYS_LIBS)			\
@@ -111,7 +136,6 @@ gsd_test_media_keys_LDADD = \
 EXTRA_DIST = 				\
 	gsd-marshal.list		\
 	README.media-keys-API		\
-	org.gnome.ShellKeyGrabber.xml	\
 	$(plugin_in_files)
 
 CLEANFILES = 			\

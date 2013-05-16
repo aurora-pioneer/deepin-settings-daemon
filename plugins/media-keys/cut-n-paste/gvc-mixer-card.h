@@ -1,7 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 8 -*-
  *
  * Copyright (C) 2008-2009 Red Hat, Inc.
- * Copyright (C) Conor Curran 2011 <conor.curran@canonical.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +22,6 @@
 #define __GVC_MIXER_CARD_H
 
 #include <glib-object.h>
-#include <gio/gio.h>
 
 G_BEGIN_DECLS
 
@@ -51,22 +49,12 @@ typedef struct
 
 typedef struct
 {
-        char  *profile;
-        char  *human_profile;
-        char  *status;
-        guint  priority;
-        guint  n_sinks, n_sources;
+        char *profile;
+        char *human_profile;
+        char *status;
+        guint priority;
+        guint n_sinks, n_sources;
 } GvcMixerCardProfile;
-
-typedef struct
-{
-        char  *port;
-        char  *human_port;
-        guint  priority;
-        gint   available;
-        gint   direction;
-        GList *profiles;
-} GvcMixerCardPort;
 
 GType                 gvc_mixer_card_get_type          (void);
 
@@ -76,13 +64,9 @@ const char *          gvc_mixer_card_get_name          (GvcMixerCard *card);
 const char *          gvc_mixer_card_get_icon_name     (GvcMixerCard *card);
 GvcMixerCardProfile * gvc_mixer_card_get_profile       (GvcMixerCard *card);
 const GList *         gvc_mixer_card_get_profiles      (GvcMixerCard *card);
-const GList *         gvc_mixer_card_get_ports         (GvcMixerCard *card);
+
 gboolean              gvc_mixer_card_change_profile    (GvcMixerCard *card,
                                                         const char *profile);
-GIcon *               gvc_mixer_card_get_gicon         (GvcMixerCard *card);
-
-int                   gvc_mixer_card_profile_compare   (GvcMixerCardProfile *a,
-                                                        GvcMixerCardProfile *b);
 
 /* private */
 gboolean              gvc_mixer_card_set_name          (GvcMixerCard *card,
@@ -93,8 +77,6 @@ gboolean              gvc_mixer_card_set_profile       (GvcMixerCard *card,
                                                         const char   *profile);
 gboolean              gvc_mixer_card_set_profiles      (GvcMixerCard *card,
                                                         GList        *profiles);
-gboolean              gvc_mixer_card_set_ports         (GvcMixerCard *stream,
-                                                        GList        *ports);
 
 G_END_DECLS
 

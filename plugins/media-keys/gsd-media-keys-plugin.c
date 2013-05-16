@@ -27,3 +27,5 @@
 #include "gsd-media-keys-manager.h"
 
 GNOME_SETTINGS_PLUGIN_REGISTER (GsdMediaKeys, gsd_media_keys)
+
+

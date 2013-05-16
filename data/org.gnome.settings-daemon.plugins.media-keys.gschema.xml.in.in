@@ -66,7 +66,7 @@
       <_description>Binding to skip to previous track.</_description>
     </key>
     <key name="priority" type="i">
-      <default>0</default>
+      <default>98</default>
       <_summary>Priority to use for this plugin</_summary>
       <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
     </key>
@@ -174,6 +174,16 @@
       <default>'&lt;Alt&gt;&lt;Super&gt;minus'</default>
       <_summary>Magnifier zoom out</_summary>
       <_description>Binding for the magnifier to zoom out</_description>
+    </key>
+    <key name="switch-input-source" type="s">
+      <default>''</default>
+      <_summary>Switch input source</_summary>
+      <_description>Binding to select the next input source</_description>
+    </key>
+    <key name="switch-input-source-backward" type="s">
+      <default>''</default>
+      <_summary>Switch input source backward</_summary>
+      <_description>Binding to select the previous input source</_description>
     </key>
   </schema>
 
