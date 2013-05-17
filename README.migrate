@@ -9,7 +9,7 @@
    clipboard	: DONE
    color	: DONE
    cursor	: DONE
-   datetime	: removed from 3.8, do we need it? Yes, we seriously need it :)
+   datetime	: DONE.removed from 3.8, but we need it.
    dummy	: DONE
    gconf	: removed from 3.8, do we need it?
    housekeepin	: DONE
