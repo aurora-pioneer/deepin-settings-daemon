@@ -30,6 +30,7 @@ libpower_la_CFLAGS = \
 	$(PLUGIN_CFLAGS)				\
 	$(KEYRING_CFLAGS)				\
 	$(UPOWER_CFLAGS)				\
+	$(POWER_CFLAGS)					\
 	$(GNOME_DESKTOP_CFLAGS)				\
 	$(SETTINGS_PLUGIN_CFLAGS)			\
 	$(LIBXML2_CFLAGS)   				\
@@ -42,6 +43,7 @@ libpower_la_LIBADD  = 					\
 	$(top_builddir)/plugins/common/libcommon.la	\
 	$(top_builddir)/gnome-settings-daemon/libgsd.la \
 	$(UPOWER_LIBS)					\
+	$(POWER_LIBS)					\
 	$(GNOME_DESKTOP_LIBS)				\
 	$(KEYRING_LIBS)					\
 	$(SETTINGS_PLUGIN_LIBS)			\
