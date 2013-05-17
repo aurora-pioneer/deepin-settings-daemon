@@ -82,6 +82,12 @@ static void m_parse_plan(xmlDocPtr doc, xmlNodePtr cur, GSettings *settings)
     g_settings_set_int(settings, "sleep-inactive-ac-timeout", suspend_value);
     g_settings_set_int(settings, "sleep-inactive-battery-timeout", suspend_value);
     g_settings_set_uint(m_session_settings, "idle-delay", close_monitor_value);
+    if (close_monitor_value == 0) {
+        g_settings_set_boolean(settings, "idle-dim-battery", FALSE);
+    } else {
+        g_settings_set_boolean(settings, "idle-dim-battery", TRUE);
+    }
+    
     g_settings_sync();
 }
 
