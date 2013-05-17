@@ -7,6 +7,7 @@ enabled_plugins =	\
 	clipboard	\
 	color		\
 	cursor		\
+	datetime	\
 	dummy		\
 	housekeeping    \
 	idle-delay	\
@@ -15,12 +16,12 @@ enabled_plugins =	\
 	media-keys	\
 	mouse		\
 	orientation	\
+	power		\
 	print-notifications\
 	sound		\
-	xsettings	\
+	wacom		\
 	xrandr		\
-	power		\
-	datetime	\
+	xsettings	\
 	$(NULL)
 
 disabled_plugins = \

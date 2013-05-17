@@ -23,10 +23,10 @@
    print-notifications: DONE
    remote-display: NEW, do we need it?
    screensaver-proxy: NEW, do we need it?
-   smartcard	: NEEDS FIXING 
+   smartcard	: DONE
    sound	: DONE
    updates	: depends on packagekit, do we need it?
-   wacom	: NEEDS FIXING
+   wacom	: DONE
    xrandr	: DONE
    xsettings	: DONE
 
