@@ -11,6 +11,7 @@ enabled_plugins =	\
 	housekeeping    \
 	idle-delay	\
 	key-bindings	\
+	keyboard	\
 	media-keys	\
 	mouse		\
 	orientation	\

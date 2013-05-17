@@ -15,8 +15,8 @@
    housekeepin	: DONE
    idle-delay	: DONE
    key-bindings	: DONE
-   keyboard	: needs fixing
-   media-keys	: NEEDS FIXING
+   keyboard	: DONE
+   media-keys	: DONE
    mouse	: DONE
    orientation	: DONE
    power	: DONE
