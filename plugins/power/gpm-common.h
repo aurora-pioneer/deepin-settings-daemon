@@ -27,7 +27,6 @@
 
 G_BEGIN_DECLS
 
-/* UPower helpers */
 gchar           *gpm_get_timestring                     (guint           time);
 const gchar     *gpm_device_to_localised_string         (UpDevice       *device);
 const gchar     *gpm_device_kind_to_localised_string    (UpDeviceKind    kind,
@@ -39,41 +38,6 @@ GIcon           *gpm_upower_get_device_icon             (UpDevice       *device,
                                                          gboolean        use_symbolic);
 gchar           *gpm_upower_get_device_summary          (UpDevice       *device);
 gchar           *gpm_upower_get_device_description      (UpDevice       *device);
-
-/* Power helpers */
-gboolean         gsd_power_is_hardware_a_vm             (void);
-guint            gsd_power_enable_screensaver_watchdog  (void);
-void             reset_idletime                         (void);
-
-/* Backlight helpers */
-
-/* on ACPI machines we have 4-16 levels, on others it's ~150 */
-#define BRIGHTNESS_STEP_AMOUNT(max) ((max) < 20 ? 1 : (max) / 20)
-
-#define ABS_TO_PERCENTAGE(min, max, value) gsd_power_backlight_abs_to_percentage(min, max, value)
-#define PERCENTAGE_TO_ABS(min, max, value) (min + (((max - min) * value) / 100))
-
-int              gsd_power_backlight_abs_to_percentage  (int min, int max, int value);
-gboolean         backlight_available                    (GnomeRRScreen *rr_screen);
-int              backlight_get_abs                      (GnomeRRScreen *rr_screen, GError **error);
-int              backlight_get_percentage               (GnomeRRScreen *rr_screen, GError **error);
-int              backlight_get_min                      (GnomeRRScreen *rr_screen);
-int              backlight_get_max                      (GnomeRRScreen *rr_screen, GError **error);
-gboolean         backlight_set_percentage               (GnomeRRScreen *rr_screen,
-                                                         guint value,
-                                                         GError **error);
-int              backlight_step_up                      (GnomeRRScreen *rr_screen, GError **error);
-int              backlight_step_down                    (GnomeRRScreen *rr_screen, GError **error);
-int              backlight_set_abs                      (GnomeRRScreen *rr_screen,
-                                                         guint value,
-                                                         GError **error);
-
-/* RandR helpers */
-gboolean         external_monitor_is_connected          (GnomeRRScreen *screen);
-
-/* Sound helpers */
-void             play_loop_start                        (guint *id);
-void             play_loop_stop                         (guint *id);
 
 G_END_DECLS
 
