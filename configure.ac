@@ -619,7 +619,6 @@ echo "
 
         Session tracking:         ${SESSION_TRACKING}
         LCMS DICT support:        ${have_new_lcms}
-        IBus support:             ${enable_ibus}
         Libnotify support:        ${have_libnotify}
         PackageKit support:       ${have_packagekit}
         Smartcard support:        ${have_smartcard_support}
