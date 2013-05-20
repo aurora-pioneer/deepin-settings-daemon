@@ -5,7 +5,6 @@ enabled_plugins =	\
 	a11y-settings	\
 	background	\
 	clipboard	\
-	color		\
 	cursor		\
 	datetime	\
 	dummy		\
@@ -25,6 +24,7 @@ enabled_plugins =	\
 	$(NULL)
 
 disabled_plugins = \
+	color	\
 	$(NULL)
 
 if HAVE_PACKAGEKIT
