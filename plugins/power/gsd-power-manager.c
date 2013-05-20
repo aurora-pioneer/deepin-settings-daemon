@@ -2288,6 +2288,8 @@ do_lid_open_action (GsdPowerManager *manager)
         gboolean ret;
         GError *error = NULL;
 
+        printf("DEBUG: do_lid_open_action using current power plan\n");
+        deepin_power_using_current_plan(manager->priv->settings);
         /* play a sound, using sounds from the naming spec */
         ca_context_play (manager->priv->canberra_context, 0,
                          CA_PROP_EVENT_ID, "lid-open",
@@ -2391,7 +2393,7 @@ do_lid_closed_action (GsdPowerManager *manager)
 
         if (action_type != GSD_POWER_ACTION_SUSPEND &&
             action_type != GSD_POWER_ACTION_HIBERNATE) {
-                if (up_client_get_lid_force_sleep (manager->priv->up_client)) {
+            if (up_client_get_lid_force_sleep (manager->priv->up_client)) {
                         g_warning ("to prevent damage, now forcing suspend");
                         do_power_action_type (manager, GSD_POWER_ACTION_SUSPEND);
                         return;
@@ -3641,6 +3643,12 @@ upower_notify_sleep_cb (UpClient *client,
                         GsdPowerManager *manager)
 {
         system(LOCK_CMD);
+
+        if (strcmp(g_settings_get_string(manager->priv->settings, "lid-close-ac-action"), "suspend") == 0 || 
+            strcmp(g_settings_get_string(manager->priv->settings, "lid-close-battery-action"), "suspend")) {
+            printf("DEBUG: using saving plan\n");
+            deepin_power_using_saving_plan(manager->priv->settings);
+        }
 
         if (manager->priv->screensaver_proxy != NULL) {
                 g_debug ("doing gnome-screensaver lock");

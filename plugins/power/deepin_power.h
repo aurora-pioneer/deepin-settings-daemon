@@ -23,6 +23,8 @@
 #define DEEPIN_POWER_H
 
 int deepin_power_init(GSettings *settings);
+void deepin_power_using_current_plan(GSettings *settings);
+void deepin_power_using_saving_plan(GSettings *settings);
 void deepin_power_cleanup();
 
 #endif /* DEEPIN_POWER_H */

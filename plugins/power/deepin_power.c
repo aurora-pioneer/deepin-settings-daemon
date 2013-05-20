@@ -115,30 +115,10 @@ static void m_settings_changed(GSettings *settings,
                                gchar *key, 
                                gpointer user_data) 
 {
-    gchar *current_plan = NULL;
-    xmlDocPtr doc = NULL;
-    xmlNodePtr cur = NULL;
-
     if (strcmp(key, "current-plan") != 0) 
         return;
 
-    current_plan = g_settings_get_string(settings, "current-plan");
-    
-    doc = xmlParseFile(m_backup_filename);
-    if (!doc) 
-        return;
-    cur = xmlDocGetRootElement(doc);
-    if (!cur) {
-        xmlFreeDoc(doc);
-        return;
-    }
-    cur = cur->xmlChildrenNode;
-    while (cur) {                                                               
-        if (!xmlStrcmp(cur->name, (const xmlChar *) "configuration")) {         
-            m_parse_configuration(doc, cur, settings, current_plan);                            
-        }                                                                       
-        cur = cur->next;                                                        
-    }
+    deepin_power_using_current_plan(settings);
 }
 
 int deepin_power_init(GSettings *settings) 
@@ -172,6 +152,45 @@ int deepin_power_init(GSettings *settings)
                      NULL);
 
     return 0;
+}
+
+void deepin_power_using_saving_plan(GSettings *settings) 
+{
+    int close_monitor_value = 300;
+    int suspend_value = 900;
+
+    g_settings_set_int(settings, "sleep-display-ac", close_monitor_value);         
+    g_settings_set_int(settings, "sleep-display-battery", close_monitor_value); 
+    g_settings_set_int(settings, "sleep-inactive-ac-timeout", suspend_value);   
+    g_settings_set_int(settings, "sleep-inactive-battery-timeout", suspend_value);
+    g_settings_set_uint(m_session_settings, "idle-delay", close_monitor_value);
+    g_settings_set_boolean(settings, "idle-dim-battery", TRUE);
+    g_settings_sync();
+}
+
+void deepin_power_using_current_plan(GSettings *settings) 
+{
+    gchar *current_plan = NULL;                                                 
+    xmlDocPtr doc = NULL;                                                       
+    xmlNodePtr cur = NULL;                                                      
+                                                                                
+    current_plan = g_settings_get_string(settings, "current-plan");             
+                                                                                
+    doc = xmlParseFile(m_backup_filename);                                      
+    if (!doc)                                                                   
+        return;                                                                 
+    cur = xmlDocGetRootElement(doc);                                            
+    if (!cur) {                                                                 
+        xmlFreeDoc(doc);                                                        
+        return;                                                                 
+    }                                                                           
+    cur = cur->xmlChildrenNode;                                                 
+    while (cur) {                                                               
+        if (!xmlStrcmp(cur->name, (const xmlChar *) "configuration")) {         
+            m_parse_configuration(doc, cur, settings, current_plan);                
+        }                                                                       
+        cur = cur->next;                                                        
+    }
 }
 
 void deepin_power_cleanup() 
