@@ -1833,7 +1833,7 @@ update_screen_cb (GObject             *source_object,
 
         /* update the dialog with the new value */
         g_variant_get (new_percentage, "(u)", &percentage);
-        printf("DEBUG: media-key set brightness %d", percentage);
+        //printf("DEBUG: media-key set brightness %d\n", percentage);
         deepin_media_key_set_brightness(percentage / 100.0);
 
         guint osd_percentage;
