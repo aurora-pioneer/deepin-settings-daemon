@@ -21,6 +21,8 @@ gsd-marshal.h: gsd-marshal.list
 
 libmedia_keys_la_SOURCES = 		\
 	gsd-media-keys-plugin.c		\
+	deepin_media_key.h			\
+	deepin_media_key.c			\
 	gsd-media-keys-manager.h	\
 	gsd-media-keys-manager.c	\
 	gsd-media-keys-window.h		\
@@ -98,6 +100,8 @@ test_media_window_LDADD = \
 	-lm
 
 test_media_keys_SOURCES =			\
+	deepin_media_key.c				\
+	deepin_media_key.h				\
 	gsd-media-keys-manager.c		\
 	gsd-media-keys-manager.h		\
 	gsd-media-keys-window.h			\
