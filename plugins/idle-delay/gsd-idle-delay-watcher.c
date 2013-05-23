@@ -38,6 +38,7 @@ static void     gsd_idle_delay_watcher_class_init (GsdIdleDelayWatcherClass *kla
 static void     gsd_idle_delay_watcher_init       (GsdIdleDelayWatcher      *watcher);
 static void     gsd_idle_delay_watcher_finalize   (GObject        	    *object);
 
+static gboolean watchdog_timer (GsdIdleDelayWatcher *watcher);
 #define GSD_IDLE_DELAY_WATCHER_GET_PRIVATE(o) \
 	(G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_IDLE_DELAY_WATCHER, GsdIdleDelayWatcherPrivate))
 
@@ -52,6 +53,7 @@ struct GsdIdleDelayWatcherPrivate
         guint           idle_notice : 1;
 
         GDBusProxy	*presence_proxy; //gnome session presence dbus
+        guint           watchdog_timer_id; //disable X server builtin screensaver
 };
 
 enum {
@@ -67,6 +69,25 @@ enum {
 static guint signals [LAST_SIGNAL] = { 0, };
 
 G_DEFINE_TYPE (GsdIdleDelayWatcher, gsd_idle_delay_watcher, G_TYPE_OBJECT)
+
+
+static void
+remove_watchdog_timer (GsdIdleDelayWatcher *watcher)
+{
+        if (watcher->priv->watchdog_timer_id != 0) {
+                g_source_remove (watcher->priv->watchdog_timer_id);
+                watcher->priv->watchdog_timer_id = 0;
+        }
+}
+
+static void
+add_watchdog_timer (GsdIdleDelayWatcher *watcher,
+                    glong      timeout)
+{
+        watcher->priv->watchdog_timer_id = g_timeout_add (timeout,
+                                                          (GSourceFunc)watchdog_timer,
+                                                          watcher);
+}
 
 static void
 gsd_idle_delay_watcher_get_property (GObject    *object,
@@ -383,6 +404,8 @@ gsd_idle_delay_watcher_init (GsdIdleDelayWatcher *watcher)
         watcher->priv->active = FALSE;
 
         connect_presence_watcher (watcher);
+
+        add_watchdog_timer (watcher, 600000);
 }
 
 static void
@@ -395,12 +418,102 @@ gsd_idle_delay_watcher_finalize (GObject *object)
 
         g_return_if_fail (watcher->priv != NULL);
 
+        remove_watchdog_timer (watcher);
+
         watcher->priv->active = FALSE;
 
         if (watcher->priv->presence_proxy != NULL) 
                 g_object_unref (watcher->priv->presence_proxy);
 
         G_OBJECT_CLASS (gsd_idle_delay_watcher_parent_class)->finalize (object);
+}
+
+// copied from gnome-screensaver
+/* Figuring out what the appropriate XSetScreenSaver() parameters are
+   (one wouldn't expect this to be rocket science.)
+*/
+static void
+disable_builtin_screensaver (GsdIdleDelayWatcher *watcher,
+                             gboolean   unblank_screen)
+{
+        int current_server_timeout, current_server_interval;
+        int current_prefer_blank,   current_allow_exp;
+        int desired_server_timeout, desired_server_interval;
+        int desired_prefer_blank,   desired_allow_exp;
+
+        XGetScreenSaver (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()),
+                         &current_server_timeout,
+                         &current_server_interval,
+                         &current_prefer_blank,
+                         &current_allow_exp);
+
+        desired_server_timeout  = current_server_timeout;
+        desired_server_interval = current_server_interval;
+        desired_prefer_blank    = current_prefer_blank;
+        desired_allow_exp       = current_allow_exp;
+
+        desired_server_interval = 0;
+
+        /* I suspect (but am not sure) that DontAllowExposures might have
+           something to do with powering off the monitor as well, at least
+           on some systems that don't support XDPMS?  Who know... */
+        desired_allow_exp = AllowExposures;
+
+        /* When we're not using an extension, set the server-side timeout to 0,
+           so that the server never gets involved with screen blanking, and we
+           do it all ourselves.  (However, when we *are* using an extension,
+           we tell the server when to notify us, and rather than blanking the
+           screen, the server will send us an X event telling us to blank.)
+        */
+        desired_server_timeout = 0;
+
+        if (desired_server_timeout     != current_server_timeout
+            || desired_server_interval != current_server_interval
+            || desired_prefer_blank    != current_prefer_blank
+            || desired_allow_exp       != current_allow_exp) {
+
+                g_debug ("disabling server builtin screensaver:"
+                          " (xset s %d %d; xset s %s; xset s %s)",
+                          desired_server_timeout,
+                          desired_server_interval,
+                          (desired_prefer_blank ? "blank" : "noblank"),
+                          (desired_allow_exp ? "expose" : "noexpose"));
+
+                XSetScreenSaver (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()),
+                                 desired_server_timeout,
+                                 desired_server_interval,
+                                 desired_prefer_blank,
+                                 desired_allow_exp);
+
+                XSync (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), FALSE);
+        }
+
+        if (unblank_screen) {
+                /* Turn off the server builtin saver if it is now running. */
+                XForceScreenSaver (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), ScreenSaverReset);
+        }
+}
+
+
+/* This timer goes off every few minutes, whether the user is idle or not,
+   to try and clean up anything that has gone wrong.
+
+   It calls disable_builtin_screensaver() so that if xset has been used,
+   or some other program (like xlock) has messed with the XSetScreenSaver()
+   settings, they will be set back to sensible values (if a server extension
+   is in use, messing with xlock can cause the screensaver to never get a wakeup
+   event, and could cause monitor power-saving to occur, and all manner of
+   heinousness.)
+
+ */
+
+static gboolean
+watchdog_timer (GsdIdleDelayWatcher *watcher)
+{
+
+        disable_builtin_screensaver (watcher, FALSE);
+
+        return TRUE;
 }
 
 GsdIdleDelayWatcher *
