@@ -196,10 +196,14 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
     GnomeRRConfig *config = NULL;
     GnomeRROutputInfo **output_infos = NULL;
     GnomeRROutput *output = NULL;
+    GError *error = NULL;
     char *output_name = NULL;
     double value = 0.0;
     char buffer[BUF_SIZE];
     int i = 0;
+    int backlight_min = 0;
+    int backlight_max = 0;
+    int backlight = 0;
     
     config = gnome_rr_config_new_current(screen, NULL);
     if (!config) 
@@ -240,6 +244,12 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
         memset(buffer, 0, BUF_SIZE);
         sprintf(buffer, "xrandr --output %s --brightness %f", output_name, value);
         system(buffer);
+
+        backlight_min = gnome_rr_output_get_backlight_min(output);
+        backlight_max = gnome_rr_output_get_backlight_max(output);
+        gnome_rr_output_set_backlight(output, 
+                                      (backlight_max - backlight_min) * value, 
+                                      &error);
         
         i++;
     }
