@@ -2875,6 +2875,10 @@ backlight_step_down (GsdPowerManager *manager, GError **error)
                        goto out;
                 step = BRIGHTNESS_STEP_AMOUNT (max - min + 1);
                 discrete = MAX (now - step, 0);
+                // TODO: reduce discrete value
+                if (discrete < max) 
+                    discrete += 1;
+                //printf("DEBUG: step %d, now %d, discrete %d\n", step, now, discrete);
                 ret = gnome_rr_output_set_backlight (output,
                                                      discrete,
                                                      error);
