@@ -133,6 +133,7 @@ static void m_config_file_changed(GFileMonitor *monitor,
                                   gpointer user_data) 
 {
     GnomeRRScreen *screen = (GnomeRRScreen*) user_data;
+    GnomeRRConfig *config = NULL;
     char *filename = NULL;
     xmlDocPtr doc = NULL;
     xmlNodePtr cur = NULL;
@@ -141,6 +142,8 @@ static void m_config_file_changed(GFileMonitor *monitor,
 
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
+
+    config = gnome_rr_config_new_current(screen, NULL);
 
     m_is_config_file_changed = TRUE;
 
@@ -161,6 +164,12 @@ static void m_config_file_changed(GFileMonitor *monitor,
             m_parse_configuration(doc, cur, screen);
         }
         cur = cur->next;
+    }
+
+    if (config) {
+        gnome_rr_config_save(config, NULL);
+        g_object_unref(config);
+        config = NULL;
     }
 }
 
