@@ -202,8 +202,10 @@ watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
 		{
 			DPMSForceLevel (manager->priv->x11_display, DPMSModeOn);
 		}
-		g_settings_set_double (manager->priv->xrandr_settings,
+		/* FIXME: why set brightness to 100% when not in effect?
+        g_settings_set_double (manager->priv->xrandr_settings,
 				       "brightness", 1.0);
+        */
         }
 
         return TRUE;
