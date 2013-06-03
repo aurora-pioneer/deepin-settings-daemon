@@ -51,11 +51,11 @@ struct GsdIdleDelayManagerPrivate
 {
 	GsdIdleDelayWatcher	*watcher;
 	GSettings		*settings;	 //idle-delay gsettings
-	double			settings_brightness;
-    double          backup_brightness; /* backup the preview xrandr brightness */
+	double			settings_brightness; //this is the brightness we use when we dim
 	guint			settings_timeout;
 	guint			timeout_id;
 	GSettings		*xrandr_settings;//xrandr gsettings.
+        double          	backup_brightness; /* backup the preview xrandr brightness */
 	//X stuff for DPMS
 	Display*		x11_display;
 	gboolean		dpms_supported;
@@ -171,9 +171,10 @@ on_timeout_cb (gpointer user_data)
 	else
 	{
 		g_settings_set_double (manager->priv->xrandr_settings,
-			       "brightness", 0.1);
+			               XRANDR_KEY_BRIGHTNESS, 0.1);
 	}
 	//never call it again.
+	g_source_remove (manager->priv->timeout_id);
 	manager->priv->timeout_id = 0;
 	return FALSE;
 }
@@ -182,53 +183,46 @@ static gboolean
 watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
                         GsdIdleDelayManager *manager)
 {
-    g_debug ("Idle notice signal detected: %d", in_effect);
+	g_debug ("Idle notice signal detected: %d", in_effect);
 
-    if (manager->priv->timeout_id > 0)
+	if (manager->priv->timeout_id > 0)
 	{
 		g_source_remove (manager->priv->timeout_id);
 		manager->priv->timeout_id = 0;
 	}
 
-    if (in_effect) {
-        /* TODO: backup the preview brightness (before changed xrandr brightness) 
-         * for restore xrandr brightness when idle-delay not in effect
-         */
-	    manager->priv->backup_brightness = g_settings_get_double(manager->priv->xrandr_settings, 
-                                                                 "brightness");	
-        g_settings_set_double(manager->priv->xrandr_settings,
-				              "brightness", 
-                              manager->priv->settings_brightness);
-		manager->priv->timeout_id = g_timeout_add(manager->priv->settings_timeout * MSEC_PER_SEC,
-							                      on_timeout_cb, 
-                                                  manager);
-    } else {
+	if (in_effect) 
+	{
+	    manager->priv->backup_brightness = g_settings_get_double (manager->priv->xrandr_settings, 
+                                                                      XRANDR_KEY_BRIGHTNESS);	
+            //set dim brightness, not confused with xrandr brightness
+            g_settings_set_double (manager->priv->xrandr_settings, XRANDR_KEY_BRIGHTNESS, 
+                                   manager->priv->settings_brightness);
+
+	    manager->priv->timeout_id = g_timeout_add (manager->priv->settings_timeout * MSEC_PER_SEC,
+						       on_timeout_cb, manager);
+	} 
+	else 
+	{
 		if (manager->priv->dpms_supported)
 			DPMSForceLevel (manager->priv->x11_display, DPMSModeOn);
-        
-        /* TODO: hk please do not simply changed xrandr brightness to 100% 
-         * when idle-delay is not in effect! User might want to change the 
-         * brightness though DSS display module or Fn brightness +-
-         * It is better to backup the preview brightness :)
-         */
-        g_settings_set_double(manager->priv->xrandr_settings, 
-                              "brightness", 
-                              manager->priv->backup_brightness);
-    }
-
-    return TRUE;
+        	//restore xrandr brightness before previous idle-delay.
+        	g_settings_set_double (manager->priv->xrandr_settings, XRANDR_KEY_BRIGHTNESS, 
+				       manager->priv->backup_brightness);
+	}
+	return TRUE;
 }
 
 static void
 brightness_changed_cb (GSettings* settings, gchar* key, gpointer user_data)
 {
-    if (g_strcmp0 (key, IDLE_DELAY_KEY_BRIGHTNESS))
+    	if (g_strcmp0 (key, IDLE_DELAY_KEY_BRIGHTNESS))
 		return;
 
 	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
-    manager->priv->settings_brightness = g_settings_get_double (manager->priv->settings,
+    	manager->priv->settings_brightness = g_settings_get_double (manager->priv->settings,
 								    IDLE_DELAY_KEY_BRIGHTNESS);
-    g_debug ("brightness changed: %lf", manager->priv->settings_brightness);
+    	g_debug ("brightness changed: %lf", manager->priv->settings_brightness);
 }
 
 static void
@@ -339,10 +333,9 @@ gsd_idle_delay_manager_finalize (GObject *object)
 
         g_return_if_fail (idle_delay_manager->priv != NULL);
 	
-	g_object_unref (idle_delay_manager->priv->xrandr_settings);
-
 	disconnect_gsettings_signals (idle_delay_manager);
 	g_object_unref (idle_delay_manager->priv->settings);
+	g_object_unref (idle_delay_manager->priv->xrandr_settings);
 
         disconnect_watcher_signals (idle_delay_manager);
         g_object_unref (idle_delay_manager->priv->watcher);

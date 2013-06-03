@@ -29,6 +29,7 @@
 #define IDLE_DELAY_KEY_TIMEOUT		"timeout"
 
 #define XRANDR_SCHEMA			"org.gnome.settings-daemon.plugins.xrandr"
+#define XRANDR_KEY_BRIGHTNESS		"brightness"
 
 /* DBus */
 #define DBUS_SERVICE                    "org.freedesktop.DBus"
