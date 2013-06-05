@@ -1,0 +1,4 @@
+implement all the keys supported by synaptics driver
+
+see man synaptics
+    man synclient
