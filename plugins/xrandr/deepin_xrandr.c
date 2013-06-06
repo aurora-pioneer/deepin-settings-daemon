@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
+#include <gtk/gtk.h>  //gtk is initialized in gnome-settings-daemon/main.c
 
 #include "deepin_xrandr.h"
 
@@ -53,7 +54,7 @@ static void m_get_same_mode(GnomeRRMode **primary,
 static void m_use_mirror(char *primary_output_name, 
                          char *other_output_name, 
                          char *same);
-static void m_use_extend(char *primary_output_name, char *other_output_name);
+static void m_use_extend(GnomeRRScreen* screen, char *primary_output_name, char *other_output_name);
 static void m_only_one_shown(char *primary_output_name, 
                              char *other_output_name, 
                              int index);
@@ -359,7 +360,7 @@ static void m_set_multi_monitors(GnomeRRScreen *screen, GSettings *settings)
     }
 
     if (g_settings_get_boolean(settings, "extend-multi-monitors")) {
-        m_use_extend(primary_output_name, other_output_name);
+        m_use_extend(screen, primary_output_name, other_output_name);
         return;
     }
 
@@ -395,16 +396,33 @@ static void m_use_mirror(char *primary_output_name,
     system(buffer);
 }
 
-static void m_use_extend(char *primary_output_name, char *other_output_name) 
+static void m_use_extend(GnomeRRScreen* screen, char *primary_output_name, char *other_output_name) 
 {
     /* xrandr --output LVDS --auto --output VGA-0 --auto --right-of LVDS */
     char buffer[BUF_SIZE] = {'\0'};
 
+    //FIXME: temporary hack to align two outputs
+    GdkScreen* gdk_screen = gdk_screen_get_default ();
+    gint screen_width = gdk_screen_get_width (gdk_screen);
+    gint screen_height = gdk_screen_get_height (gdk_screen);
+    GnomeRROutput* primary_output = gnome_rr_screen_get_output_by_name (screen, primary_output_name);
+    GnomeRROutput* other_output = gnome_rr_screen_get_output_by_name (screen, other_output_name);
+    GnomeRRMode* primary_mode = gnome_rr_output_get_current_mode (primary_output);
+    GnomeRRMode* other_mode = gnome_rr_output_get_current_mode (other_output);
+    gint primary_width = gnome_rr_mode_get_width (primary_mode);
+    gint primary_height = gnome_rr_mode_get_height (primary_mode);
+    gint other_width = gnome_rr_mode_get_width (other_mode);
+    gint other_height = gnome_rr_mode_get_height (other_mode);
+    
+    gint primary_x = 0;
+    gint primary_y = screen_height - primary_height;
+    guint other_x = primary_width;
+    guint other_y = screen_height -other_height;
+
     sprintf(buffer, 
-            "xrandr --output %s --auto --output %s --auto --right-of %s", 
-            primary_output_name, 
-            other_output_name, 
-            primary_output_name);
+            "xrandr --output %s --auto --pos %dx%d --output %s --auto --pos %dx%d", 
+            primary_output_name,  primary_x, primary_y,
+            other_output_name, other_x, other_y); 
     system(buffer);
 }
 
