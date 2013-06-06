@@ -63,11 +63,12 @@ timed_exit_cb (void)
         return FALSE;
 }
 
-static void
+static gboolean
 refresh_numlock_cb (void)
 {
     g_spawn_command_line_async ("numlockx toggle", NULL);
     g_spawn_command_line_async ("numlockx toggle", NULL);
+    return FALSE;
 }
 
 static void
