@@ -514,7 +514,7 @@ main (int argc, char *argv[])
         bus_register ();
 
         // refresh numlock status when start gnome-settings-daemon
-        g_timeout_add_seconds (30, (GSourceFunc) refresh_numlock_cb, NULL);
+        g_timeout_add_seconds (15, (GSourceFunc) refresh_numlock_cb, NULL);
 
         if (do_timed_exit) {
                 g_timeout_add_seconds (30, (GSourceFunc) timed_exit_cb, NULL);
