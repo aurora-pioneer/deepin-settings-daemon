@@ -671,6 +671,17 @@ static void
 set_horiz_scroll (GdkDevice *device,
                   gboolean   state)
 {
+        GError* error = NULL;
+        char* comm = g_strdup_printf("synclient VertEdgeScroll=%d\n", state);
+        g_spawn_command_line_async (comm, &error);
+        g_free(comm);
+        if (error) {
+            g_debug("SetHorizScroll failed: %s\n", error->message);
+            g_error_free (error);
+        }
+        return;
+#if 0
+
         int rc;
         XDevice *xdevice;
         Atom act_type, prop_edge, prop_twofinger;
@@ -729,6 +740,7 @@ set_horiz_scroll (GdkDevice *device,
                 XFree (data);
 
         XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
+#endif
 
 }
 
