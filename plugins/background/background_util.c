@@ -39,8 +39,6 @@
 
 #include "background_util.h"
 
-#define BG_GAUSSIAN_PICT_PATH	"/tmp/.deepin_background_gaussian.png"
-
 /*
  *	how to generate gaussian blurred images:
  *	background plugin (A); gsd-background-helper (B)
@@ -276,6 +274,10 @@ register_account_service_background_path (GsdBackgroundManager* manager, const c
     }
 }
 
+// FIXME: there's is a possible race condition here.
+// is the gsettings change signal user-initiated?
+static gboolean is_gnome_initiated = TRUE;
+
 static void
 bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer user_data)
 {
@@ -289,6 +291,20 @@ bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer user_dat
 	register_account_service_background_path (manager, cur_pict_path);
 	start_gaussian_helper (cur_pict_path);
     }
+    //
+    char* gnome_pict_uri = g_settings_get_string (manager->priv->gnome_settings, GNOME_BG_PICTURE_URI);
+    char* pict_uri = g_filename_to_uri (cur_pict_path, NULL, NULL);
+    g_free (cur_pict_path);
+
+    if (g_strcmp0 (pict_uri, gnome_pict_uri)) // avoid change signal avalanche.
+    {
+g_debug ("********************deepin bg settings changed\n");
+	is_gnome_initiated = FALSE;
+	g_settings_set_string (manager->priv->gnome_settings, GNOME_BG_PICTURE_URI, pict_uri);
+    }
+
+    g_free (gnome_pict_uri);
+    g_free (pict_uri);
 }
 
 static void
@@ -299,14 +315,27 @@ gnome_bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer us
 
     GsdBackgroundManager* manager = user_data;
 
-    char* pict_uri = g_settings_get_string (settings, GNOME_BG_PICTURE_URI);
-    g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, pict_uri);
-    g_free (pict_uri);
+    //if 1-
+    if (is_gnome_initiated) // avoid change signal avalanche.
+    {
+g_debug ("********************gnome bg settings changed\n");
+    	char* pict_uri = g_settings_get_string (settings, GNOME_BG_PICTURE_URI);
+    	char* deepin_pict_uris = g_settings_get_string (manager->priv->deepin_settings, BG_PICTURE_URIS);
+
+	g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, pict_uri);
+
+    	g_free (pict_uri);
+    	g_free (deepin_pict_uris);
+    }
+
+    is_gnome_initiated = TRUE;
 }
 
 static void
 initial_setup (GsdBackgroundManager* manager)
 {
+    is_gnome_initiated = TRUE;
+
     prev_pict_path = NULL;
 
     char* cur_pict_path = NULL; 
