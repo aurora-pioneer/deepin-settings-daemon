@@ -2,3 +2,7 @@ implement all the keys supported by synaptics driver
 
 see man synaptics
     man synclient
+
+support Thinkpad trackpoint device
+
+see http://www.thinkwiki.org/wiki/How_to_configure_the_TrackPoint
