@@ -18,7 +18,7 @@
  *
  */
 
-#ifdef  _GSD_TOUCHPAD_SYNAPTICS_H
+#ifndef  _GSD_TOUCHPAD_SYNAPTICS_H
 #define _GSD_TOUCHPAD_SYNAPTICS_H
 
 #define SETTINGS_TOUCHPAD_DIR      "org.gnome.settings-daemon.peripherals.touchpad"
@@ -32,5 +32,15 @@
 #define KEY_NATURAL_SCROLL_ENABLED       "natural-scroll"
 
 gboolean touchpad_has_single_button (XDevice *device);
+void set_tap_to_click (GdkDevice *device, gboolean state, gboolean left_handed);
+gboolean get_touchpad_handedness (GsdMouseManager *manager, gboolean mouse_left_handed);
+void set_edge_scroll (GdkDevice *device, GsdTouchpadScrollMethod  method);
+void set_horiz_scroll (GdkDevice *device, gboolean   state);
+void set_touchpad_disabled (GdkDevice *device);
+int set_disable_w_typing (GsdMouseManager *manager, gboolean state);
+void ensure_touchpad_active (GsdMouseManager *manager);
+void touchpad_callback (GSettings *settings, const gchar *key, GsdMouseManager *manager);
+void set_touchpad_enabled (int id);
+void set_natural_scroll (GsdMouseManager *manager, GdkDevice *device, gboolean natural_scroll);
 
 #endif /* _GSD_TOUCHPAD_SYNAPTICS_H */

@@ -17,11 +17,42 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  */
+#include "config.h"
 
-/* Keys for both touchpad and mouse */
-#define KEY_LEFT_HANDED         "left-handed"                /* a boolean for mouse, an enum for touchpad */
-#define KEY_MOTION_ACCELERATION "motion-acceleration"
-#define KEY_MOTION_THRESHOLD    "motion-threshold"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <math.h>
+#ifdef __linux
+#include <sys/prctl.h>
+#endif
+
+#include <locale.h>
+
+#include <glib.h>
+#include <glib/gi18n.h>
+#include <gio/gio.h>
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#include <gdk/gdkx.h>
+#include <gdk/gdkkeysyms.h>
+#include <X11/keysym.h>
+#include <X11/Xatom.h>
+
+#include <X11/extensions/XInput.h>
+#include <X11/extensions/XIproto.h>
+
+#include "gsd-mouse-manager.h"
+#include "gsd-input-helper.h"
+#include "gsd-enums.h"
+
+#include "gsd-common-misc.h"
+#include "gsd-touchpad-synaptics.h"
+
 
 gboolean
 touchpad_has_single_button (XDevice *device)
@@ -84,7 +115,7 @@ syndaemon_died (GPid pid, gint status, gpointer user_data)
         manager->priv->syndaemon_spawned = FALSE;
 }
 
-static int
+int
 set_disable_w_typing (GsdMouseManager *manager, gboolean state)
 {
         if (state && touchpad_is_present ()) {
@@ -136,7 +167,7 @@ set_disable_w_typing (GsdMouseManager *manager, gboolean state)
         return 0;
 }
 
-static void
+void
 set_tap_to_click (GdkDevice *device,
                   gboolean   state,
                   gboolean   left_handed)
@@ -185,7 +216,7 @@ set_tap_to_click (GdkDevice *device,
         XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
-static void
+void
 set_horiz_scroll (GdkDevice *device,
                   gboolean   state)
 {
@@ -250,7 +281,7 @@ set_horiz_scroll (GdkDevice *device,
 
 }
 
-static void
+void
 set_edge_scroll (GdkDevice               *device,
                  GsdTouchpadScrollMethod  method)
 {
@@ -314,7 +345,7 @@ set_edge_scroll (GdkDevice               *device,
         XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
-static void
+void
 set_touchpad_disabled (GdkDevice *device)
 {
         int id;
@@ -341,7 +372,7 @@ set_touchpad_disabled (GdkDevice *device)
         XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
-static void
+void
 set_touchpad_enabled (int id)
 {
         XDevice *xdevice;
@@ -366,7 +397,7 @@ set_touchpad_enabled (int id)
         XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
-static gboolean
+gboolean
 get_touchpad_handedness (GsdMouseManager *manager, gboolean mouse_left_handed)
 {
         switch (g_settings_get_enum (manager->priv->touchpad_settings, KEY_LEFT_HANDED)) {
@@ -381,7 +412,7 @@ get_touchpad_handedness (GsdMouseManager *manager, gboolean mouse_left_handed)
         }
 }
 
-static void
+void
 set_natural_scroll (GsdMouseManager *manager,
                     GdkDevice       *device,
                     gboolean         natural_scroll)
@@ -442,7 +473,7 @@ set_natural_scroll (GsdMouseManager *manager,
         XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
-static void
+void
 touchpad_callback (GSettings       *settings,
                    const gchar     *key,
                    GsdMouseManager *manager)
@@ -502,7 +533,7 @@ touchpad_callback (GSettings       *settings,
 }
 
 /* Re-enable touchpad when any other pointing device isn't present. */
-static void
+void
 ensure_touchpad_active (GsdMouseManager *manager)
 {
         if (mouse_is_present () == FALSE && touchscreen_is_present () == FALSE && trackball_is_present () == FALSE && touchpad_is_present ())
