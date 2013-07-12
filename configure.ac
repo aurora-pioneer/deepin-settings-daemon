@@ -582,13 +582,14 @@ data/org.gnome.settings-daemon.plugins.idle-delay.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.power.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.color.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.media-keys.gschema.xml.in
-data/org.gnome.settings-daemon.peripherals.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.housekeeping.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.orientation.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.updates.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.xrandr.gschema.xml.in
-data/org.gnome.settings-daemon.peripherals.wacom.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.print-notifications.gschema.xml.in
+data/org.gnome.settings-daemon.peripherals.gschema.xml.in
+data/org.gnome.settings-daemon.peripherals.wacom.gschema.xml.in
+data/org.gnome.settings-daemon.peripherals.touchpad.gschema.xml.in
 po/Makefile.in
 man/Makefile
 tests/Makefile
