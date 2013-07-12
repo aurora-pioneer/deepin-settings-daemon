@@ -6,3 +6,4 @@ see man synaptics
 support Thinkpad trackpoint device
 
 see http://www.thinkwiki.org/wiki/How_to_configure_the_TrackPoint
+    man evdev

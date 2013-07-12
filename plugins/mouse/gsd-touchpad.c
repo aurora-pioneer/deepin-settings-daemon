@@ -51,8 +51,7 @@
 #include "gsd-enums.h"
 
 #include "gsd-common-misc.h"
-#include "gsd-touchpad-synaptics.h"
-
+#include "gsd-touchpad.h"
 
 gboolean
 touchpad_has_single_button (XDevice *device)

@@ -53,7 +53,8 @@
 #include "gsd-enums.h"
 
 #include "gsd-common-misc.h"
-#include "gsd-touchpad-synaptics.h"
+#include "gsd-touchpad.h"
+#include "gsd-trackpoint.h"
 
 #define GSD_MOUSE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_MOUSE_MANAGER, GsdMouseManagerPrivate))
 
@@ -369,7 +370,7 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
         gnome_settings_profile_start (NULL);
 
         set_devicepresence_handler (manager);
-
+        //1. mouse
         manager->priv->mouse_settings = g_settings_new (SETTINGS_MOUSE_DIR);
         g_signal_connect (manager->priv->mouse_settings, "changed",
                           G_CALLBACK (mouse_callback), manager);
@@ -377,10 +378,12 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
         manager->priv->mouse_a11y_settings = g_settings_new ("org.gnome.desktop.a11y.mouse");
         g_signal_connect (manager->priv->mouse_a11y_settings, "changed",
                           G_CALLBACK (mouse_callback), manager);
-
+        //2. touchpad
         manager->priv->touchpad_settings = g_settings_new (SETTINGS_TOUCHPAD_DIR);
         g_signal_connect (manager->priv->touchpad_settings, "changed",
                           G_CALLBACK (touchpad_callback), manager);
+        //3. trackpoint
+        //TODO:
 
         manager->priv->syndaemon_spawned = FALSE;
 

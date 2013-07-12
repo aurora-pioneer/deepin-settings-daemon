@@ -52,7 +52,7 @@
 #include "gsd-enums.h"
 
 #include "gsd-common-misc.h"
-#include "gsd-touchpad-synaptics.h"
+#include "gsd-touchpad.h"
 
 XDevice *
 open_gdk_device (GdkDevice *device)
