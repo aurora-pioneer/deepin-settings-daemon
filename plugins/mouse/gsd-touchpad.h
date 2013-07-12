@@ -18,7 +18,7 @@
  *
  */
 
-#ifndef  _GSD_TOUCHPAD_SYNAPTICS_H
+#ifndef _GSD_TOUCHPAD_SYNAPTICS_H
 #define _GSD_TOUCHPAD_SYNAPTICS_H
 
 #define SETTINGS_TOUCHPAD_DIR      "org.gnome.settings-daemon.peripherals.touchpad"

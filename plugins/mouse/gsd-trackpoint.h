@@ -17,8 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  */
+//similar to wacom case, for those who don't have thinkpad, we still have this setting
 
 #ifndef _GSD_TRACKPOINT_H_
 #define _GSD_TRACKPOINT_H_
+
+#define SETTINGS_TRACKPOINT_DIR      "org.gnome.settings-daemon.peripherals.trackpoint"
+
+/* Touchpad settings */
+//TODO: which evdev parameters we want to set.
+
+void trackpoint_callback (GSettings *settings, const gchar *key, GsdMouseManager *manager);
 
 #endif /* _GSD_TRACKPOINT_H_ */

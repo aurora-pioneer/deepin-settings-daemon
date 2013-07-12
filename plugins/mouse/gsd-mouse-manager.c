@@ -383,7 +383,10 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
         g_signal_connect (manager->priv->touchpad_settings, "changed",
                           G_CALLBACK (touchpad_callback), manager);
         //3. trackpoint
-        //TODO:
+        //TODO: check if trackpoint exists.
+        manager->priv->trackpoint_settings = g_settings_new (SETTINGS_TRACKPOINT_DIR);
+        g_signal_connect (manager->priv->trackpoint_settings, "changed",
+                          G_CALLBACK (trackpoint_callback), manager);
 
         manager->priv->syndaemon_spawned = FALSE;
 

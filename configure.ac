@@ -590,6 +590,7 @@ data/org.gnome.settings-daemon.plugins.print-notifications.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.wacom.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.touchpad.gschema.xml.in
+data/org.gnome.settings-daemon.peripherals.trackpoint.gschema.xml.in
 po/Makefile.in
 man/Makefile
 tests/Makefile

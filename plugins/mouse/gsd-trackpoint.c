@@ -20,3 +20,10 @@
 
 
 #include "gsd-trackpoint.h"
+
+void
+trackpoint_callback (GSettings *settings, const gchar *key, GsdMouseManager *manager)
+{
+
+}
+

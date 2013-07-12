@@ -1,0 +1,4 @@
+<schemalist>
+  <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.peripherals.trackpoint" path="/org/gnome/settings-daemon/peripherals/trackpoint/">
+  </schema>
+</schemalist>

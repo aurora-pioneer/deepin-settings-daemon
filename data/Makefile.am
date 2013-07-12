@@ -22,6 +22,7 @@ gsettings_SCHEMAS =							\
 	org.gnome.settings-daemon.plugins.updates.gschema.xml		\
 	org.gnome.settings-daemon.plugins.orientation.gschema.xml	\
 	org.gnome.settings-daemon.peripherals.touchpad.gschema.xml\
+	org.gnome.settings-daemon.peripherals.trackpoint.gschema.xml\
 	org.gnome.settings-daemon.peripherals.wacom.gschema.xml
 
 @INTLTOOL_XML_NOMERGE_RULE@

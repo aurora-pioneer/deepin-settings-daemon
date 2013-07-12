@@ -41,10 +41,12 @@ struct GsdMouseManagerPrivate
         gboolean mousetweaks_daemon_running;
         gboolean locate_pointer_spawned;
         GPid locate_pointer_pid;
-        //touchpad stuff
+        //2. touchpad
         GSettings *touchpad_settings;
         gboolean syndaemon_spawned;
         GPid syndaemon_pid;
+        //3. trackpoint
+        GSettings *trackpoint_settings;
 };
 
 XDevice * open_gdk_device (GdkDevice *device);
