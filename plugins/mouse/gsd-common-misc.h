@@ -29,33 +29,34 @@
 
 struct GsdMouseManagerPrivate
 {
-        GdkDeviceManager *device_manager;
-
         guint start_idle_id;
-        GSettings *mouse_settings;
-        GSettings *mouse_a11y_settings;
-        guint device_added_id;
-        guint device_removed_id;
         GHashTable *blacklist;
 
+        GdkDeviceManager *device_manager;
+        guint device_added_id;
+        guint device_removed_id;
+
+        //1. mouse
+        GSettings *mouse_settings;
+        GSettings *mouse_a11y_settings;
         gboolean mousetweaks_daemon_running;
         gboolean locate_pointer_spawned;
         GPid locate_pointer_pid;
+
         //2. touchpad
         GSettings *touchpad_settings;
         gboolean syndaemon_spawned;
         GPid syndaemon_pid;
+
         //3. trackpoint
         GSettings *trackpoint_settings;
 };
 
-XDevice * open_gdk_device (GdkDevice *device);
-gboolean device_is_ignored (GsdMouseManager *manager,  GdkDevice *device);
-void set_motion (GsdMouseManager *manager, GdkDevice *device);
-void set_left_handed (GsdMouseManager *manager, GdkDevice *device,
-                      gboolean mouse_left_handed, gboolean touchpad_left_handed);
-gboolean xinput_device_has_buttons (GdkDevice *device);
-
-
+XDevice*    open_gdk_device             (GdkDevice *device);
+gboolean    device_is_ignored           (GsdMouseManager *manager,  GdkDevice *device);
+void        set_motion                  (GsdMouseManager *manager, GdkDevice *device);
+void        set_left_handed             (GsdMouseManager *manager, GdkDevice *device, gboolean mouse_left_handed, gboolean touchpad_left_handed);
+gboolean    xinput_device_has_buttons   (GdkDevice *device);
+void        set_devicepresence_handler  (GsdMouseManager *manager);
 
 #endif /* _GSD_COMMON_MISC_H_ */

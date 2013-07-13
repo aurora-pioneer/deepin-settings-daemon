@@ -42,7 +42,7 @@ typedef struct GsdLocatePointerData GsdLocatePointerData;
 struct GsdLocatePointerData
 {
   GsdTimeline *timeline;
-  GtkWidget *widget; 
+  GtkWidget *widget;
   GdkWindow *window;
 
   gdouble progress;
@@ -525,7 +525,6 @@ set_locate_pointer (void)
         }
     }
 }
-
 
 int
 main (int argc, char *argv[])

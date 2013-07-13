@@ -53,6 +53,7 @@
 
 #include "gsd-common-misc.h"
 #include "gsd-touchpad.h"
+#include "gsd-mouse.h"
 
 XDevice *
 open_gdk_device (GdkDevice *device)
@@ -371,6 +372,63 @@ bail:
         XFreeDeviceList (device_info);
 
         return FALSE;
+}
+
+static void
+device_added_cb (GdkDeviceManager *device_manager,
+                 GdkDevice        *device,
+                 GsdMouseManager  *manager)
+{
+        if (device_is_ignored (manager, device) == FALSE) {
+                if (run_custom_command (device, COMMAND_DEVICE_ADDED) == FALSE) {
+                        set_mouse_settings (manager, device);
+                } else {
+                        int id;
+                        g_object_get (G_OBJECT (device), "device-id", &id, NULL);
+                        g_hash_table_insert (manager->priv->blacklist,
+                                             GINT_TO_POINTER (id), GINT_TO_POINTER (1));
+                }
+
+                /* If a touchpad was to appear... */
+                set_disable_w_typing (manager, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TOUCHPAD_DISABLE_W_TYPING));
+        }
+}
+
+static void
+device_removed_cb (GdkDeviceManager *device_manager,
+                   GdkDevice        *device,
+                   GsdMouseManager  *manager)
+{
+	int id;
+
+	/* Remove the device from the hash table so that
+	 * device_is_ignored () doesn't check for blacklisted devices */
+	g_object_get (G_OBJECT (device), "device-id", &id, NULL);
+	g_hash_table_remove (manager->priv->blacklist,
+			     GINT_TO_POINTER (id));
+
+        if (device_is_ignored (manager, device) == FALSE) {
+                run_custom_command (device, COMMAND_DEVICE_REMOVED);
+
+                /* If a touchpad was to disappear... */
+                set_disable_w_typing (manager, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TOUCHPAD_DISABLE_W_TYPING));
+
+                ensure_touchpad_active (manager);
+        }
+}
+
+void
+set_devicepresence_handler (GsdMouseManager *manager)
+{
+        GdkDeviceManager *device_manager;
+
+        device_manager = gdk_display_get_device_manager (gdk_display_get_default ());
+
+        manager->priv->device_added_id = g_signal_connect (G_OBJECT (device_manager), "device-added",
+                                                           G_CALLBACK (device_added_cb), manager);
+        manager->priv->device_removed_id = g_signal_connect (G_OBJECT (device_manager), "device-removed",
+                                                             G_CALLBACK (device_removed_cb), manager);
+        manager->priv->device_manager = device_manager;
 }
 
 
