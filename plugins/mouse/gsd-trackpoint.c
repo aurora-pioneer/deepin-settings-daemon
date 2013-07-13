@@ -51,9 +51,13 @@
 #include "gsd-enums.h"
 
 #include "gsd-common-misc.h"
-#include "gsd-touchpad.h"
-
 #include "gsd-trackpoint.h"
+
+void
+trackpoint_apply_settings (GsdMouseManager *manager, GdkDevice *device)
+{
+
+}
 
 void
 trackpoint_callback (GSettings *settings, const gchar *key, GsdMouseManager *manager)

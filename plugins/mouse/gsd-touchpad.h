@@ -31,9 +31,12 @@
 #define KEY_TOUCHPAD_ENABLED             "touchpad-enabled"
 #define KEY_NATURAL_SCROLL_ENABLED       "natural-scroll"
 
-gboolean touchpad_has_single_button (XDevice *device);
+
+void        touchpad_apply_settings     (GsdMouseManager *manager, GdkDevice *device);
+gboolean    get_touchpad_handedness     (GsdMouseManager *manager);
+gboolean    touchpad_has_single_button  (XDevice *device);
+
 void set_tap_to_click (GdkDevice *device, gboolean state, gboolean left_handed);
-gboolean get_touchpad_handedness (GsdMouseManager *manager, gboolean mouse_left_handed);
 void set_edge_scroll (GdkDevice *device, GsdTouchpadScrollMethod  method);
 void set_horiz_scroll (GdkDevice *device, gboolean   state);
 void set_touchpad_disabled (GdkDevice *device);

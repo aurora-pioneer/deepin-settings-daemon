@@ -29,9 +29,10 @@
 #define KEY_SECONDARY_CLICK_ENABLED      "secondary-click-enabled"
 #define KEY_MIDDLE_BUTTON_EMULATION      "middle-button-enabled"
 
+void mouse_apply_settings   (GsdMouseManager *manager, GdkDevice *device);
+
 void set_middle_button      (GsdMouseManager *manager, GdkDevice *device, gboolean middle_button);
 void set_mousetweaks_daemon (GsdMouseManager *manager, gboolean dwell_click_enabled, gboolean secondary_click_enabled);
-void set_mouse_settings     (GsdMouseManager *manager, GdkDevice *device);
 void mouse_callback         (GSettings *settings, const gchar *key, GsdMouseManager *manager);
 void set_locate_pointer     (GsdMouseManager *manager, gboolean state);
 

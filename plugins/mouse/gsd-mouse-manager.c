@@ -17,22 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  */
-
 #include "config.h"
-
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
-#include <math.h>
-#ifdef __linux
-#include <sys/prctl.h>
-#endif
-
-#include <locale.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -60,19 +45,19 @@
 #define GSD_MOUSE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_MOUSE_MANAGER, GsdMouseManagerPrivate))
 
 static void     gsd_mouse_manager_class_init  (GsdMouseManagerClass *klass);
-static void     gsd_mouse_manager_init        (GsdMouseManager      *mouse_manager);
-static void     gsd_mouse_manager_finalize    (GObject             *object);
+static void     gsd_mouse_manager_init        (GsdMouseManager *mouse_manager);
+static void     gsd_mouse_manager_finalize    (GObject *object);
 
 G_DEFINE_TYPE (GsdMouseManager, gsd_mouse_manager, G_TYPE_OBJECT)
 
 static gpointer manager_object = NULL;
 
 static GObject *
-gsd_mouse_manager_constructor (GType                  type,
-                              guint                  n_construct_properties,
-                              GObjectConstructParam *construct_properties)
+gsd_mouse_manager_constructor (GType type,
+                               guint n_construct_properties,
+                               GObjectConstructParam *construct_properties)
 {
-        GsdMouseManager      *mouse_manager;
+        GsdMouseManager *mouse_manager;
 
         mouse_manager = GSD_MOUSE_MANAGER (G_OBJECT_CLASS (gsd_mouse_manager_parent_class)->constructor (type,
                                                                                                       n_construct_properties,
@@ -90,7 +75,7 @@ gsd_mouse_manager_dispose (GObject *object)
 static void
 gsd_mouse_manager_class_init (GsdMouseManagerClass *klass)
 {
-        GObjectClass   *object_class = G_OBJECT_CLASS (klass);
+        GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
         object_class->constructor = gsd_mouse_manager_constructor;
         object_class->dispose = gsd_mouse_manager_dispose;
@@ -103,6 +88,7 @@ static void
 gsd_mouse_manager_init (GsdMouseManager *manager)
 {
         manager->priv = GSD_MOUSE_MANAGER_GET_PRIVATE (manager);
+
         manager->priv->blacklist = g_hash_table_new (g_direct_hash, g_direct_equal);
 }
 
@@ -113,7 +99,7 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
 
         gnome_settings_profile_start (NULL);
 
-        set_devicepresence_handler (manager);
+        setup_device_manager (manager);
         //1. mouse
         manager->priv->mouse_settings = g_settings_new (SETTINGS_MOUSE_DIR);
         g_signal_connect (manager->priv->mouse_settings, "changed",
@@ -135,6 +121,7 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
         manager->priv->syndaemon_spawned = FALSE;
 
         set_locate_pointer (manager, g_settings_get_boolean (manager->priv->mouse_settings, KEY_LOCATE_POINTER));
+
         set_mousetweaks_daemon (manager,
                                 g_settings_get_boolean (manager->priv->mouse_a11y_settings, KEY_DWELL_CLICK_ENABLED),
                                 g_settings_get_boolean (manager->priv->mouse_a11y_settings, KEY_SECONDARY_CLICK_ENABLED));
@@ -148,7 +135,10 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
                         continue;
 
                 if (run_custom_command (device, COMMAND_DEVICE_PRESENT) == FALSE) {
-                        set_mouse_settings (manager, device);
+                        mouse_apply_settings (manager, device);
+                        touchpad_apply_settings (manager, device);
+                        trackpoint_apply_settings (manager, device);
+
                 } else {
                         int id;
                         g_object_get (G_OBJECT (device), "device-id", &id, NULL);

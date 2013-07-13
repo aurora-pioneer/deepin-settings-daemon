@@ -53,6 +53,33 @@
 #include "gsd-common-misc.h"
 #include "gsd-touchpad.h"
 
+void
+touchpad_apply_settings (GsdMouseManager *manager, GdkDevice *device)
+{
+    gboolean touchpad_left_handed;
+    touchpad_left_handed = get_touchpad_handedness (manager);
+
+    /* If the device is a touchpad, swap tap buttons
+     * around too, otherwise a tap would be a right-click */
+    XDevice* xdevice = open_gdk_device (device);
+    gboolean tap = g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TAP_TO_CLICK);
+    gboolean single_button = touchpad_has_single_button (xdevice);
+    XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
+    if (single_button)
+        set_left_handed_common (manager, device, touchpad_left_handed);
+    else if (tap)
+        set_tap_to_click (device, tap, touchpad_left_handed);
+
+    set_motion_common (manager, device, manager->priv->touchpad_settings);
+
+    set_tap_to_click (device, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TAP_TO_CLICK), touchpad_left_handed);
+    set_edge_scroll (device, g_settings_get_enum (manager->priv->touchpad_settings, KEY_SCROLL_METHOD));
+    set_horiz_scroll (device, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_PAD_HORIZ_SCROLL));
+    set_natural_scroll (manager, device, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_NATURAL_SCROLL_ENABLED));
+    if (g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TOUCHPAD_ENABLED) == FALSE)
+            set_touchpad_disabled (device);
+}
+
 gboolean
 touchpad_has_single_button (XDevice *device)
 {
@@ -397,7 +424,7 @@ set_touchpad_enabled (int id)
 }
 
 gboolean
-get_touchpad_handedness (GsdMouseManager *manager, gboolean mouse_left_handed)
+get_touchpad_handedness (GsdMouseManager *manager)
 {
         switch (g_settings_get_enum (manager->priv->touchpad_settings, KEY_LEFT_HANDED)) {
         case GSD_TOUCHPAD_HANDEDNESS_RIGHT:
@@ -405,7 +432,7 @@ get_touchpad_handedness (GsdMouseManager *manager, gboolean mouse_left_handed)
         case GSD_TOUCHPAD_HANDEDNESS_LEFT:
                 return TRUE;
         case GSD_TOUCHPAD_HANDEDNESS_MOUSE:
-                return mouse_left_handed;
+                return g_settings_get_boolean (manager->priv->mouse_settings, KEY_LEFT_HANDED);
         default:
                 g_assert_not_reached ();
         }
@@ -507,11 +534,9 @@ touchpad_callback (GSettings       *settings,
                                 set_touchpad_enabled (gdk_x11_device_get_id (device));
                 } else if (g_str_equal (key, KEY_MOTION_ACCELERATION) ||
                            g_str_equal (key, KEY_MOTION_THRESHOLD)) {
-                        set_motion (manager, device);
+                        set_motion_common (manager, device, manager->priv->touchpad_settings);
                 } else if (g_str_equal (key, KEY_LEFT_HANDED)) {
-                        gboolean mouse_left_handed;
-                        mouse_left_handed = g_settings_get_boolean (manager->priv->mouse_settings, KEY_LEFT_HANDED);
-                        set_left_handed (manager, device, mouse_left_handed, get_touchpad_handedness (manager, mouse_left_handed));
+                        set_left_handed_common (manager, device, get_touchpad_handedness (manager));
                 } else if (g_str_equal (key, KEY_NATURAL_SCROLL_ENABLED)) {
                         set_natural_scroll (manager, device, g_settings_get_boolean (settings, key));
                 }

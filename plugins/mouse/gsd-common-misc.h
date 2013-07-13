@@ -29,8 +29,8 @@
 
 struct GsdMouseManagerPrivate
 {
-        guint start_idle_id;
         GHashTable *blacklist;
+        guint start_idle_id;
 
         GdkDeviceManager *device_manager;
         guint device_added_id;
@@ -52,11 +52,13 @@ struct GsdMouseManagerPrivate
         GSettings *trackpoint_settings;
 };
 
-XDevice*    open_gdk_device             (GdkDevice *device);
+void        setup_device_manager        (GsdMouseManager *manager);
 gboolean    device_is_ignored           (GsdMouseManager *manager,  GdkDevice *device);
-void        set_motion                  (GsdMouseManager *manager, GdkDevice *device);
-void        set_left_handed             (GsdMouseManager *manager, GdkDevice *device, gboolean mouse_left_handed, gboolean touchpad_left_handed);
+
+void        set_left_handed_common      (GsdMouseManager *manager, GdkDevice *device, gboolean left_handed);
+void        set_motion_common           (GsdMouseManager *manager, GdkDevice *device, GSettings* settings);
+
+XDevice*    open_gdk_device             (GdkDevice *device);
 gboolean    xinput_device_has_buttons   (GdkDevice *device);
-void        set_devicepresence_handler  (GsdMouseManager *manager);
 
 #endif /* _GSD_COMMON_MISC_H_ */
