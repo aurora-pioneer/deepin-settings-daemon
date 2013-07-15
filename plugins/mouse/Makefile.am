@@ -4,10 +4,10 @@ plugin_LTLIBRARIES = libmouse.la
 
 libmouse_la_SOURCES = 		\
 	gsd-mouse-plugin.c	\
-	gsd-device.c	\
-	gsd-mouse.c\
-	gsd-touchpad.c	\
-	gsd-trackpoint.c\
+	gsd-mm-device.c	\
+	gsd-mm-mouse.c\
+	gsd-mm-touchpad.c	\
+	gsd-mm-trackpoint.c\
 	gsd-mouse-manager.h	\
 	gsd-mouse-manager.c
 
@@ -59,10 +59,10 @@ libexec_PROGRAMS += gsd-test-mouse
 
 gsd_test_mouse_SOURCES =		\
 	test-mouse.c			\
-	gsd-device.c	\
-	gsd-mouse.c\
-	gsd-touchpad.c	\
-	gsd-trackpoint.c	\
+	gsd-mm-device.c	\
+	gsd-mm-mouse.c\
+	gsd-mm-touchpad.c	\
+	gsd-mm-trackpoint.c	\
 	gsd-mouse-manager.c		\
 	gsd-mouse-manager.h
 

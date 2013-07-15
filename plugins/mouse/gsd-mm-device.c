@@ -39,10 +39,10 @@
 #include "gsd-input-helper.h"
 #include "gsd-enums.h"
 
-#include "gsd-device.h"
-#include "gsd-mouse.h"
-#include "gsd-touchpad.h"
-#include "gsd-trackpoint.h"
+#include "gsd-mm-device.h"
+#include "gsd-mm-mouse.h"
+#include "gsd-mm-touchpad.h"
+#include "gsd-mm-trackpoint.h"
 
 static void     device_added_cb         (GdkDeviceManager *device_manager, GdkDevice *device, GsdMouseManager *manager);
 static void     device_removed_cb       (GdkDeviceManager *device_manager, GdkDevice *device, GsdMouseManager *manager);

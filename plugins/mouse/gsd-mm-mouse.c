@@ -50,8 +50,8 @@
 #include "gsd-input-helper.h"
 #include "gsd-enums.h"
 
-#include "gsd-device.h"
-#include "gsd-mouse.h"
+#include "gsd-mm-device.h"
+#include "gsd-mm-mouse.h"
 
 void
 mouse_apply_settings (GsdMouseManager *manager, GdkDevice *device)

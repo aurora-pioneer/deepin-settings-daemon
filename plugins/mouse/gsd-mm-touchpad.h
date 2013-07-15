@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef _GSD_TOUCHPAD_SYNAPTICS_H
-#define _GSD_TOUCHPAD_SYNAPTICS_H
+#ifndef _GSD_MM_TOUCHPAD_H_
+#define _GSD_MM_TOUCHPAD_H_
 
 #define SETTINGS_TOUCHPAD_DIR      "org.gnome.settings-daemon.peripherals.touchpad"
 
@@ -46,4 +46,4 @@ void touchpad_callback (GSettings *settings, const gchar *key, GsdMouseManager *
 void set_touchpad_enabled (int id);
 void set_natural_scroll (GsdMouseManager *manager, GdkDevice *device, gboolean natural_scroll);
 
-#endif /* _GSD_TOUCHPAD_SYNAPTICS_H */
+#endif /* _GSD_MM_TOUCHPAD_H_ */

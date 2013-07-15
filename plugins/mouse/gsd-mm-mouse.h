@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef _GSD_MOUSE_H_
-#define _GSD_MOUSE_H_
+#ifndef _GSD_MM_MOUSE_H_
+#define _GSD_MM_MOUSE_H_
 
 #define SETTINGS_MOUSE_DIR         "org.gnome.settings-daemon.peripherals.mouse"
 
@@ -36,4 +36,4 @@ void set_mousetweaks_daemon (GsdMouseManager *manager, gboolean dwell_click_enab
 void mouse_callback         (GSettings *settings, const gchar *key, GsdMouseManager *manager);
 void set_locate_pointer     (GsdMouseManager *manager, gboolean state);
 
-#endif /*_GSD_MOUSE_H_*/
+#endif /*_GSD_MM_MOUSE_H_*/

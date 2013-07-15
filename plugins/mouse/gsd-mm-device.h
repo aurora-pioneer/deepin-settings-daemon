@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  */
-#ifndef _GSD_DEVICE_H_
-#define _GSD_DEVICE_H_
+#ifndef _GSD_MM_DEVICE_H_
+#define _GSD_MM_DEVICE_H_
 
 #include "gsd-mouse-manager.h"
 
@@ -69,4 +69,4 @@ XDevice*            open_gdk_device             (GdkDevice *device);
 void                device_set_motion           (GsdMouseManager *manager, GdkDevice *device, GSettings* settings);
 void                device_set_left_handed      (GsdMouseManager *manager, GdkDevice *device, gboolean left_handed);
 
-#endif /* _GSD_DEVICE_H_*/
+#endif /* _GSD_MM_DEVICE_H_*/

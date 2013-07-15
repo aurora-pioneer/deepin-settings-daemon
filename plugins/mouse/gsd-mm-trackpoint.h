@@ -19,8 +19,8 @@
  */
 //similar to wacom case, for those who don't have thinkpad, we still have this setting
 
-#ifndef _GSD_TRACKPOINT_H_
-#define _GSD_TRACKPOINT_H_
+#ifndef _GSD_MM_TRACKPOINT_H_
+#define _GSD_MM_TRACKPOINT_H_
 
 #define SETTINGS_TRACKPOINT_DIR      "org.gnome.settings-daemon.peripherals.trackpoint"
 
@@ -32,4 +32,4 @@ void trackpoint_apply_settings (GsdMouseManager *manager, GdkDevice *device);
 
 void trackpoint_callback (GSettings *settings, const gchar *key, GsdMouseManager *manager);
 
-#endif /* _GSD_TRACKPOINT_H_ */
+#endif /* _GSD_MM_TRACKPOINT_H_ */

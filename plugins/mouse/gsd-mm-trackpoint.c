@@ -50,8 +50,8 @@
 #include "gsd-input-helper.h"
 #include "gsd-enums.h"
 
-#include "gsd-device.h"
-#include "gsd-trackpoint.h"
+#include "gsd-mm-device.h"
+#include "gsd-mm-trackpoint.h"
 
 void
 trackpoint_apply_settings (GsdMouseManager *manager, GdkDevice *device)

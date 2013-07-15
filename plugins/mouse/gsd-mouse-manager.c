@@ -37,10 +37,10 @@
 #include "gsd-input-helper.h"
 #include "gsd-enums.h"
 
-#include "gsd-device.h"
-#include "gsd-mouse.h"
-#include "gsd-touchpad.h"
-#include "gsd-trackpoint.h"
+#include "gsd-mm-device.h"
+#include "gsd-mm-mouse.h"
+#include "gsd-mm-touchpad.h"
+#include "gsd-mm-trackpoint.h"
 
 #define GSD_MOUSE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_MOUSE_MANAGER, GsdMouseManagerPrivate))
 
