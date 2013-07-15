@@ -54,6 +54,17 @@
 #include "gsd-mm-touchpad.h"
 
 void
+touchpad_init_settings (GsdMouseManager *manager)
+{
+    manager->priv->touchpad_settings = g_settings_new (SETTINGS_TOUCHPAD_DIR);
+    g_signal_connect (manager->priv->touchpad_settings, "changed",
+                      G_CALLBACK (touchpad_callback), manager);
+
+    manager->priv->syndaemon_spawned = FALSE;
+    set_disable_w_typing (manager, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TOUCHPAD_DISABLE_W_TYPING));
+}
+
+void
 touchpad_apply_settings (GsdMouseManager *manager, GdkDevice *device)
 {
     gboolean touchpad_left_handed;
@@ -398,29 +409,33 @@ set_touchpad_disabled (GdkDevice *device)
         XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
+/*
+ *  enable device @id only if it's a touchpad device
+ */
 void
-set_touchpad_enabled (int id)
+touchpad_set_enabled (int id)
 {
-        XDevice *xdevice;
+    XDevice *xdevice;
 
-        g_debug ("Trying to set device enabled for %d", id);
+    g_debug ("Trying to set device enabled for %d", id);
 
-        gdk_error_trap_push ();
-        xdevice = XOpenDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), id);
-        if (gdk_error_trap_pop () != 0)
-                return;
+    gdk_error_trap_push ();
+    xdevice = XOpenDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), id);
+    if (gdk_error_trap_pop () != 0)
+        return;
 
-        if (!device_is_touchpad (xdevice)) {
-                XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
-                return;
-        }
-
-        if (set_device_enabled (id, TRUE) == FALSE)
-                g_warning ("Error enabling device \"%d\"", id);
-        else
-                g_debug ("Enabled device %d", id);
-
+    if (!device_is_touchpad (xdevice))
+    {
         XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
+        return;
+    }
+
+    if (set_device_enabled (id, TRUE) == FALSE)
+        g_warning ("Error enabling device \"%d\"", id);
+    else
+        g_debug ("Enabled device %d", id);
+
+    XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
 gboolean
@@ -531,7 +546,7 @@ touchpad_callback (GSettings       *settings,
                         if (g_settings_get_boolean (settings, key) == FALSE)
                                 set_touchpad_disabled (device);
                         else
-                                set_touchpad_enabled (gdk_x11_device_get_id (device));
+                                touchpad_set_enabled (gdk_x11_device_get_id (device));
                 } else if (g_str_equal (key, KEY_MOTION_ACCELERATION) ||
                            g_str_equal (key, KEY_MOTION_THRESHOLD)) {
                         device_set_motion (manager, device, manager->priv->touchpad_settings);
@@ -550,17 +565,23 @@ touchpad_callback (GSettings       *settings,
                         int device_id;
 
                         device_id = GPOINTER_TO_INT (l->data);
-                        set_touchpad_enabled (device_id);
+                        touchpad_set_enabled (device_id);
                 }
                 g_list_free (devices);
         }
 }
 
-/* Re-enable touchpad when any other pointing device isn't present. */
+/*
+ * Re-enable touchpad when any other pointing device isn't present.
+ * *_is_present () functions are in plugins/common/gsd-input-helper.c
+ */
 void
-ensure_touchpad_active (GsdMouseManager *manager)
+touchpad_ensure_active (GsdMouseManager *manager)
 {
-        if (mouse_is_present () == FALSE && touchscreen_is_present () == FALSE && trackball_is_present () == FALSE && touchpad_is_present ())
-                g_settings_set_boolean (manager->priv->touchpad_settings, KEY_TOUCHPAD_ENABLED, TRUE);
+    if (mouse_is_present () == FALSE &&
+        touchscreen_is_present () == FALSE &&
+        trackball_is_present () == FALSE &&
+        touchpad_is_present ())
+        g_settings_set_boolean (manager->priv->touchpad_settings, KEY_TOUCHPAD_ENABLED, TRUE);
 }
 

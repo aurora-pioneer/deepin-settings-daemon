@@ -54,6 +54,15 @@
 #include "gsd-mm-trackpoint.h"
 
 void
+trackpoint_init_settings (GsdMouseManager *manager)
+{
+    //TODO: check if trackpoint exists.
+    manager->priv->trackpoint_settings = g_settings_new (SETTINGS_TRACKPOINT_DIR);
+    g_signal_connect (manager->priv->trackpoint_settings, "changed",
+                      G_CALLBACK (trackpoint_callback), manager);
+}
+
+void
 trackpoint_apply_settings (GsdMouseManager *manager, GdkDevice *device)
 {
 

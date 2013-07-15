@@ -27,8 +27,8 @@
 /* Touchpad settings */
 //TODO: which evdev parameters we want to set.
 
-
-void trackpoint_apply_settings (GsdMouseManager *manager, GdkDevice *device);
+void trackpoint_init_settings   (GsdMouseManager *manager);
+void trackpoint_apply_settings  (GsdMouseManager *manager, GdkDevice *device);
 
 void trackpoint_callback (GSettings *settings, const gchar *key, GsdMouseManager *manager);
 

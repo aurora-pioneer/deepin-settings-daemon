@@ -54,6 +54,24 @@
 #include "gsd-mm-mouse.h"
 
 void
+mouse_init_settings (GsdMouseManager *manager)
+{
+    manager->priv->mouse_settings = g_settings_new (SETTINGS_MOUSE_DIR);
+    g_signal_connect (manager->priv->mouse_settings, "changed",
+                      G_CALLBACK (mouse_callback), manager);
+
+    manager->priv->mouse_a11y_settings = g_settings_new ("org.gnome.desktop.a11y.mouse");
+    g_signal_connect (manager->priv->mouse_a11y_settings, "changed",
+                      G_CALLBACK (mouse_callback), manager);
+
+    //device irrelevant settings
+    mouse_set_locate_pointer (manager, g_settings_get_boolean (manager->priv->mouse_settings, KEY_LOCATE_POINTER));
+    set_mousetweaks_daemon (manager,
+                            g_settings_get_boolean (manager->priv->mouse_a11y_settings, KEY_DWELL_CLICK_ENABLED),
+                            g_settings_get_boolean (manager->priv->mouse_a11y_settings, KEY_SECONDARY_CLICK_ENABLED));
+}
+
+void
 mouse_apply_settings (GsdMouseManager *manager, GdkDevice *device)
 {
     gboolean mouse_left_handed;
@@ -175,7 +193,7 @@ mouse_callback (GSettings       *settings,
                                         g_settings_get_boolean (settings, KEY_SECONDARY_CLICK_ENABLED));
                 return;
         } else if (g_str_equal (key, KEY_LOCATE_POINTER)) {
-                set_locate_pointer (manager, g_settings_get_boolean (settings, KEY_LOCATE_POINTER));
+                mouse_set_locate_pointer (manager, g_settings_get_boolean (settings, KEY_LOCATE_POINTER));
                 return;
         }
 
@@ -202,35 +220,33 @@ mouse_callback (GSettings       *settings,
 }
 
 void
-set_locate_pointer (GsdMouseManager *manager,
-                    gboolean         state)
+mouse_set_locate_pointer (GsdMouseManager *manager, gboolean state)
 {
-        if (state) {
-                GError *error = NULL;
-                char *args[2];
+    if (state)
+    {
+        if (manager->priv->locate_pointer_spawned)
+            return;
 
-                if (manager->priv->locate_pointer_spawned)
-                        return;
+        char *args[2];
+        args[0] = LIBEXECDIR "/gsd-locate-pointer";
+        args[1] = NULL;
 
-                args[0] = LIBEXECDIR "/gsd-locate-pointer";
-                args[1] = NULL;
+        GError *error = NULL;
+        g_spawn_async (NULL, args, NULL, 0, NULL, NULL,
+                       &manager->priv->locate_pointer_pid, &error);
 
-                g_spawn_async (NULL, args, NULL,
-                               0, NULL, NULL,
-                               &manager->priv->locate_pointer_pid, &error);
+        manager->priv->locate_pointer_spawned = (error == NULL);
 
-                manager->priv->locate_pointer_spawned = (error == NULL);
-
-                if (error) {
-                        g_settings_set_boolean (manager->priv->mouse_settings, KEY_LOCATE_POINTER, FALSE);
-                        g_error_free (error);
-                }
-
-        } else if (manager->priv->locate_pointer_spawned) {
-                kill (manager->priv->locate_pointer_pid, SIGHUP);
-                g_spawn_close_pid (manager->priv->locate_pointer_pid);
-                manager->priv->locate_pointer_spawned = FALSE;
+        if (error)
+        {
+            g_settings_set_boolean (manager->priv->mouse_settings, KEY_LOCATE_POINTER, FALSE);
+            g_error_free (error);
         }
+    }
+    else if (manager->priv->locate_pointer_spawned)
+    {
+        kill (manager->priv->locate_pointer_pid, SIGHUP);
+        g_spawn_close_pid (manager->priv->locate_pointer_pid);
+        manager->priv->locate_pointer_spawned = FALSE;
+    }
 }
-
-
