@@ -33,11 +33,10 @@ G_BEGIN_DECLS
 #define GSD_MOUSE_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), GSD_TYPE_MOUSE_MANAGER, GsdMouseManagerClass))
 
 typedef struct GsdMouseManagerPrivate GsdMouseManagerPrivate;
-
 typedef struct
 {
         GObject                     parent;
-        GsdMouseManagerPrivate *priv;
+        GsdMouseManagerPrivate      *priv;
 } GsdMouseManager;
 
 typedef struct

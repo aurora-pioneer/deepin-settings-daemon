@@ -37,7 +37,7 @@
 #include "gsd-input-helper.h"
 #include "gsd-enums.h"
 
-#include "gsd-common-misc.h"
+#include "gsd-device.h"
 #include "gsd-mouse.h"
 #include "gsd-touchpad.h"
 #include "gsd-trackpoint.h"
@@ -100,6 +100,7 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
         gnome_settings_profile_start (NULL);
 
         setup_device_manager (manager);
+
         //1. mouse
         manager->priv->mouse_settings = g_settings_new (SETTINGS_MOUSE_DIR);
         g_signal_connect (manager->priv->mouse_settings, "changed",

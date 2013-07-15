@@ -39,7 +39,7 @@
 #include "gsd-input-helper.h"
 #include "gsd-enums.h"
 
-#include "gsd-common-misc.h"
+#include "gsd-device.h"
 #include "gsd-mouse.h"
 #include "gsd-touchpad.h"
 #include "gsd-trackpoint.h"
@@ -47,6 +47,7 @@
 static void     device_added_cb         (GdkDeviceManager *device_manager, GdkDevice *device, GsdMouseManager *manager);
 static void     device_removed_cb       (GdkDeviceManager *device_manager, GdkDevice *device, GsdMouseManager *manager);
 static gboolean device_is_blacklisted   (GsdMouseManager *manager, GdkDevice *device);
+static gboolean device_has_buttons      (GdkDevice *device);
 
 void
 setup_device_manager (GsdMouseManager *manager)
@@ -139,106 +140,105 @@ device_is_blacklisted (GsdMouseManager *manager, GdkDevice *device)
 
     return FALSE;
 }
+
 XDevice *
 open_gdk_device (GdkDevice *device)
 {
-        XDevice *xdevice;
-        int id;
+    XDevice *xdevice;
 
-        g_object_get (G_OBJECT (device), "device-id", &id, NULL);
+    int id;
+    g_object_get (G_OBJECT (device), "device-id", &id, NULL);
 
-        gdk_error_trap_push ();
+    gdk_error_trap_push ();
+    xdevice = XOpenDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), id);
+    if (gdk_error_trap_pop () != 0)
+        return NULL;
 
-        xdevice = XOpenDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), id);
-
-        if (gdk_error_trap_pop () != 0)
-                return NULL;
-
-        return xdevice;
+    return xdevice;
 }
 
 void
-set_motion_common (GsdMouseManager *manager, GdkDevice *device, GSettings* settings)
+device_set_motion (GsdMouseManager *manager, GdkDevice *device, GSettings* settings)
 {
-        XDevice *xdevice;
-        XPtrFeedbackControl feedback;
-        XFeedbackState *states, *state;
-        int num_feedbacks;
-        int numerator, denominator;
-        gfloat motion_acceleration;
-        int motion_threshold;
-        guint i;
+    XDevice *xdevice;
+    XPtrFeedbackControl feedback;
+    XFeedbackState *states, *state;
+    int num_feedbacks;
+    int numerator, denominator;
+    gfloat motion_acceleration;
+    int motion_threshold;
+    guint i;
 
-        xdevice = open_gdk_device (device);
-        if (xdevice == NULL)
-                return;
+    xdevice = open_gdk_device (device);
+    if (xdevice == NULL)
+        return;
 
     g_debug ("setting motion on %s", gdk_device_get_name (device));
 
-        /* Calculate acceleration */
-        motion_acceleration = g_settings_get_double (settings, KEY_MOTION_ACCELERATION);
+    /* Calculate acceleration */
+    motion_acceleration = g_settings_get_double (settings, KEY_MOTION_ACCELERATION);
 
-        if (motion_acceleration >= 1.0) {
-                /* we want to get the acceleration, with a resolution of 0.5
-                 */
-                if ((motion_acceleration - floor (motion_acceleration)) < 0.25) {
-                        numerator = floor (motion_acceleration);
-                        denominator = 1;
-                } else if ((motion_acceleration - floor (motion_acceleration)) < 0.5) {
-                        numerator = ceil (2.0 * motion_acceleration);
-                        denominator = 2;
-                } else if ((motion_acceleration - floor (motion_acceleration)) < 0.75) {
-                        numerator = floor (2.0 *motion_acceleration);
-                        denominator = 2;
-                } else {
-                        numerator = ceil (motion_acceleration);
-                        denominator = 1;
-                }
-        } else if (motion_acceleration < 1.0 && motion_acceleration > 0) {
-                /* This we do to 1/10ths */
-                numerator = floor (motion_acceleration * 10) + 1;
-                denominator= 10;
+    if (motion_acceleration >= 1.0)
+    {
+        //we want to get the acceleration, with a resolution of 0.5
+        if ((motion_acceleration - floor (motion_acceleration)) < 0.25) {
+                numerator = floor (motion_acceleration);
+                denominator = 1;
+        } else if ((motion_acceleration - floor (motion_acceleration)) < 0.5) {
+                numerator = ceil (2.0 * motion_acceleration);
+                denominator = 2;
+        } else if ((motion_acceleration - floor (motion_acceleration)) < 0.75) {
+                numerator = floor (2.0 *motion_acceleration);
+                denominator = 2;
         } else {
-                numerator = -1;
-                denominator = -1;
+                numerator = ceil (motion_acceleration);
+                denominator = 1;
         }
+    } else if (motion_acceleration < 1.0 && motion_acceleration > 0) {
+            /* This we do to 1/10ths */
+            numerator = floor (motion_acceleration * 10) + 1;
+            denominator= 10;
+    } else {
+            numerator = -1;
+            denominator = -1;
+    }
 
-        /* And threshold */
-        motion_threshold = g_settings_get_int (settings, KEY_MOTION_THRESHOLD);
+    /* And threshold */
+    motion_threshold = g_settings_get_int (settings, KEY_MOTION_THRESHOLD);
 
-        /* Get the list of feedbacks for the device */
-        states = XGetFeedbackControl (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice, &num_feedbacks);
-        if (states == NULL)
-                goto out;
-        state = (XFeedbackState *) states;
-        for (i = 0; i < num_feedbacks; i++) {
-                if (state->class == PtrFeedbackClass) {
-                        /* And tell the device */
-                        feedback.class      = PtrFeedbackClass;
-                        feedback.length     = sizeof (XPtrFeedbackControl);
-                        feedback.id         = state->id;
-                        feedback.threshold  = motion_threshold;
-                        feedback.accelNum   = numerator;
-                        feedback.accelDenom = denominator;
+    /* Get the list of feedbacks for the device */
+    states = XGetFeedbackControl (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice, &num_feedbacks);
+    if (states == NULL)
+            goto out;
+    state = (XFeedbackState *) states;
+    for (i = 0; i < num_feedbacks; i++) {
+        if (state->class == PtrFeedbackClass) {
+            /* And tell the device */
+            feedback.class      = PtrFeedbackClass;
+            feedback.length     = sizeof (XPtrFeedbackControl);
+            feedback.id         = state->id;
+            feedback.threshold  = motion_threshold;
+            feedback.accelNum   = numerator;
+            feedback.accelDenom = denominator;
 
-                        g_debug ("Setting accel %d/%d, threshold %d for device '%s'",
-                                 numerator, denominator, motion_threshold, gdk_device_get_name (device));
+            g_debug ("Setting accel %d/%d, threshold %d for device '%s'",
+                     numerator, denominator, motion_threshold, gdk_device_get_name (device));
 
-                        XChangeFeedbackControl (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()),
-                                                xdevice,
-                                                DvAccelNum | DvAccelDenom | DvThreshold,
-                                                (XFeedbackControl *) &feedback);
+            XChangeFeedbackControl (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()),
+                                    xdevice,
+                                    DvAccelNum | DvAccelDenom | DvThreshold,
+                                    (XFeedbackControl *) &feedback);
 
-                        break;
-                }
-                state = (XFeedbackState *) ((char *) state + state->length);
+            break;
         }
+        state = (XFeedbackState *) ((char *) state + state->length);
+    }
 
-        XFreeFeedbackList (states);
+    XFreeFeedbackList (states);
 
-    out:
+out:
 
-        XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
+    XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
 static void
@@ -299,14 +299,14 @@ configure_button_layout (guchar   *buttons,
 }
 
 void
-set_left_handed_common  (GsdMouseManager *manager, GdkDevice *device, gboolean left_handed)
+device_set_left_handed (GsdMouseManager *manager, GdkDevice *device, gboolean left_handed)
 {
     XDevice *xdevice;
     guchar *buttons;
     gsize buttons_capacity = 16;
     gint n_buttons;
 
-    if (!xinput_device_has_buttons (device))
+    if (!device_has_buttons (device))
         return;
 
     xdevice = open_gdk_device (device);
@@ -341,8 +341,8 @@ set_left_handed_common  (GsdMouseManager *manager, GdkDevice *device, gboolean l
     g_free (buttons);
 }
 
-gboolean
-xinput_device_has_buttons (GdkDevice *device)
+static gboolean
+device_has_buttons (GdkDevice *device)
 {
         int i;
         XAnyClassInfo *class_info;
@@ -391,3 +391,14 @@ bail:
         return FALSE;
 }
 
+GsdMMDeviceType
+device_get_type (GdkDevice* device)
+{
+    return 0;
+}
+
+void
+device_apply_settings (GsdMouseManager *manager, GdkDevice *device)
+{
+
+}

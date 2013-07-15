@@ -50,7 +50,7 @@
 #include "gsd-input-helper.h"
 #include "gsd-enums.h"
 
-#include "gsd-common-misc.h"
+#include "gsd-device.h"
 #include "gsd-trackpoint.h"
 
 void

@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  */
-#ifndef _GSD_COMMON_MISC_H_
-#define _GSD_COMMON_MISC_H_
+#ifndef _GSD_DEVICE_H_
+#define _GSD_DEVICE_H_
 
 #include "gsd-mouse-manager.h"
 
@@ -27,7 +27,13 @@
 #define KEY_MOTION_ACCELERATION "motion-acceleration"
 #define KEY_MOTION_THRESHOLD    "motion-threshold"
 
-struct GsdMouseManagerPrivate
+typedef enum {
+    GSD_MM_DEVICE_TYPE_MOUSE,
+    GSD_MM_DEVICE_TYPE_TOUCHPAD,
+    GSD_MM_DEVICE_TYPE_TRACKPOINT
+} GsdMMDeviceType;
+
+typedef struct GsdMouseManagerPrivate
 {
         GHashTable *blacklist;
         guint start_idle_id;
@@ -50,15 +56,17 @@ struct GsdMouseManagerPrivate
 
         //3. trackpoint
         GSettings *trackpoint_settings;
-};
+} GsdMouseManagerPrivate;
 
-void        setup_device_manager        (GsdMouseManager *manager);
-gboolean    device_is_ignored           (GsdMouseManager *manager,  GdkDevice *device);
+void                setup_device_manager        (GsdMouseManager *manager);
+gboolean            device_is_ignored           (GsdMouseManager *manager,  GdkDevice *device);
+GsdMMDeviceType     device_get_type             (GdkDevice* device);
+void                device_apply_settings       (GsdMouseManager *manager, GdkDevice *device);
 
-void        set_left_handed_common      (GsdMouseManager *manager, GdkDevice *device, gboolean left_handed);
-void        set_motion_common           (GsdMouseManager *manager, GdkDevice *device, GSettings* settings);
+XDevice*            open_gdk_device             (GdkDevice *device);
 
-XDevice*    open_gdk_device             (GdkDevice *device);
-gboolean    xinput_device_has_buttons   (GdkDevice *device);
 
-#endif /* _GSD_COMMON_MISC_H_ */
+void                device_set_motion           (GsdMouseManager *manager, GdkDevice *device, GSettings* settings);
+void                device_set_left_handed      (GsdMouseManager *manager, GdkDevice *device, gboolean left_handed);
+
+#endif /* _GSD_DEVICE_H_*/

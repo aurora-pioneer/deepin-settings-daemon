@@ -4,7 +4,7 @@ plugin_LTLIBRARIES = libmouse.la
 
 libmouse_la_SOURCES = 		\
 	gsd-mouse-plugin.c	\
-	gsd-common-misc.c	\
+	gsd-device.c	\
 	gsd-mouse.c\
 	gsd-touchpad.c	\
 	gsd-trackpoint.c\
@@ -59,7 +59,7 @@ libexec_PROGRAMS += gsd-test-mouse
 
 gsd_test_mouse_SOURCES =		\
 	test-mouse.c			\
-	gsd-common-misc.c	\
+	gsd-device.c	\
 	gsd-mouse.c\
 	gsd-touchpad.c	\
 	gsd-trackpoint.c	\

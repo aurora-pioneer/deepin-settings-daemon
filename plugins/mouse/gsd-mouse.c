@@ -50,9 +50,8 @@
 #include "gsd-input-helper.h"
 #include "gsd-enums.h"
 
-#include "gsd-common-misc.h"
+#include "gsd-device.h"
 #include "gsd-mouse.h"
-#include "gsd-touchpad.h" //FIXME: remove touchpad stuff
 
 void
 mouse_apply_settings (GsdMouseManager *manager, GdkDevice *device)
@@ -60,8 +59,8 @@ mouse_apply_settings (GsdMouseManager *manager, GdkDevice *device)
     gboolean mouse_left_handed;
     mouse_left_handed = g_settings_get_boolean (manager->priv->mouse_settings, KEY_LEFT_HANDED);
 
-    set_left_handed_common (manager, device, mouse_left_handed);
-    set_motion_common (manager, device, manager->priv->mouse_settings);
+    device_set_left_handed (manager, device, mouse_left_handed);
+    device_set_motion (manager, device, manager->priv->mouse_settings);
 
     set_middle_button (manager, device, g_settings_get_boolean (manager->priv->mouse_settings, KEY_MIDDLE_BUTTON_EMULATION));
 }
@@ -191,10 +190,10 @@ mouse_callback (GSettings       *settings,
                 if (g_str_equal (key, KEY_LEFT_HANDED)) {
                         gboolean mouse_left_handed;
                         mouse_left_handed = g_settings_get_boolean (settings, KEY_LEFT_HANDED);
-                        set_left_handed_common (manager, device, mouse_left_handed);
+                        device_set_left_handed (manager, device, mouse_left_handed);
                 } else if (g_str_equal (key, KEY_MOTION_ACCELERATION) ||
                            g_str_equal (key, KEY_MOTION_THRESHOLD)) {
-                        set_motion_common (manager, device, manager->priv->mouse_settings);
+                        device_set_motion (manager, device, manager->priv->mouse_settings);
                 } else if (g_str_equal (key, KEY_MIDDLE_BUTTON_EMULATION)) {
                         set_middle_button (manager, device, g_settings_get_boolean (settings, KEY_MIDDLE_BUTTON_EMULATION));
                 }
