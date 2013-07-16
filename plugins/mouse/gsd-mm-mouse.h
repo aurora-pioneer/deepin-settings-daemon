@@ -33,8 +33,6 @@ void mouse_init_settings            (GsdMouseManager *manager);
 void mouse_apply_settings           (GsdMouseManager *manager, GdkDevice *device);
 void mouse_set_locate_pointer       (GsdMouseManager *manager, gboolean state);
 
-void set_middle_button      (GsdMouseManager *manager, GdkDevice *device, gboolean middle_button);
-void set_mousetweaks_daemon (GsdMouseManager *manager, gboolean dwell_click_enabled, gboolean secondary_click_enabled);
 void mouse_callback         (GSettings *settings, const gchar *key, GsdMouseManager *manager);
 
 #endif /*_GSD_MM_MOUSE_H_*/
