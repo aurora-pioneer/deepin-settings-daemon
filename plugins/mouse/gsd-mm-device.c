@@ -89,9 +89,7 @@ device_added_cb (GdkDeviceManager *device_manager, GdkDevice *device, GsdMouseMa
     {
         if (run_custom_command (device, COMMAND_DEVICE_ADDED) == FALSE) /*see gsd-input-helper.c*/
         {
-            mouse_apply_settings (manager, device);
-            touchpad_apply_settings (manager, device);
-            trackpoint_apply_settings (manager, device);
+            device_apply_settings (manager, device);
         }
         else /* we should not apply any more settings */
         {
@@ -141,6 +139,10 @@ device_is_blacklisted (GsdMouseManager *manager, GdkDevice *device)
     return FALSE;
 }
 
+/*
+ *  Get a XDevice* from a GdkDevice*
+ *  NOTE: you need to manually close the device by XCloseDevice after using it.
+ */
 XDevice *
 open_gdk_device (GdkDevice *device)
 {
@@ -181,26 +183,37 @@ device_set_motion (GsdMouseManager *manager, GdkDevice *device, GSettings* setti
     if (motion_acceleration >= 1.0)
     {
         //we want to get the acceleration, with a resolution of 0.5
-        if ((motion_acceleration - floor (motion_acceleration)) < 0.25) {
-                numerator = floor (motion_acceleration);
-                denominator = 1;
-        } else if ((motion_acceleration - floor (motion_acceleration)) < 0.5) {
-                numerator = ceil (2.0 * motion_acceleration);
-                denominator = 2;
-        } else if ((motion_acceleration - floor (motion_acceleration)) < 0.75) {
-                numerator = floor (2.0 *motion_acceleration);
-                denominator = 2;
-        } else {
-                numerator = ceil (motion_acceleration);
-                denominator = 1;
+        if ((motion_acceleration - floor (motion_acceleration)) < 0.25)
+        {
+            numerator = floor (motion_acceleration);
+            denominator = 1;
         }
-    } else if (motion_acceleration < 1.0 && motion_acceleration > 0) {
-            /* This we do to 1/10ths */
-            numerator = floor (motion_acceleration * 10) + 1;
-            denominator= 10;
-    } else {
-            numerator = -1;
-            denominator = -1;
+        else if ((motion_acceleration - floor (motion_acceleration)) < 0.5)
+        {
+            numerator = ceil (2.0 * motion_acceleration);
+            denominator = 2;
+        }
+        else if ((motion_acceleration - floor (motion_acceleration)) < 0.75)
+        {
+            numerator = floor (2.0 *motion_acceleration);
+            denominator = 2;
+        }
+        else
+        {
+            numerator = ceil (motion_acceleration);
+            denominator = 1;
+        }
+    }
+    else if (motion_acceleration < 1.0 && motion_acceleration > 0)
+    {
+        /* This we do to 1/10ths */
+        numerator = floor (motion_acceleration * 10) + 1;
+        denominator= 10;
+    }
+    else
+    {
+        numerator = -1;
+        denominator = -1;
     }
 
     /* And threshold */
@@ -209,10 +222,12 @@ device_set_motion (GsdMouseManager *manager, GdkDevice *device, GSettings* setti
     /* Get the list of feedbacks for the device */
     states = XGetFeedbackControl (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice, &num_feedbacks);
     if (states == NULL)
-            goto out;
+        goto out;
     state = (XFeedbackState *) states;
-    for (i = 0; i < num_feedbacks; i++) {
-        if (state->class == PtrFeedbackClass) {
+    for (i = 0; i < num_feedbacks; i++)
+    {
+        if (state->class == PtrFeedbackClass)
+        {
             /* And tell the device */
             feedback.class      = PtrFeedbackClass;
             feedback.length     = sizeof (XPtrFeedbackControl);
@@ -237,65 +252,68 @@ device_set_motion (GsdMouseManager *manager, GdkDevice *device, GSettings* setti
     XFreeFeedbackList (states);
 
 out:
-
     XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
 static void
-configure_button_layout (guchar   *buttons,
-                         gint      n_buttons,
-                         gboolean  left_handed)
+configure_button_layout (guchar *buttons, gint n_buttons, gboolean left_handed)
 {
-        const gint left_button = 1;
-        gint right_button;
-        gint i;
+    const gint left_button = 1;
+    gint right_button;
+    gint i;
 
-        /* if the button is higher than 2 (3rd button) then it's
-         * probably one direction of a scroll wheel or something else
-         * uninteresting
+    /* if the button is higher than 2 (3rd button) then it's
+     * probably one direction of a scroll wheel or something else
+     * uninteresting
+     */
+    right_button = MIN (n_buttons, 3);
+
+    /* If we change things we need to make sure we only swap buttons.
+     * If we end up with multiple physical buttons assigned to the same
+     * logical button the server will complain. This code assumes physical
+     * button 0 is the physical left mouse button, and that the physical
+     * button other than 0 currently assigned left_button or right_button
+     * is the physical right mouse button.
+     */
+
+    /* check if the current mapping satisfies the above assumptions */
+    if (buttons[left_button - 1] != left_button &&
+        buttons[left_button - 1] != right_button)
+        /* The current mapping is weird. Swapping buttons is probably not a
+         * good idea.
          */
-        right_button = MIN (n_buttons, 3);
+        return;
 
-        /* If we change things we need to make sure we only swap buttons.
-         * If we end up with multiple physical buttons assigned to the same
-         * logical button the server will complain. This code assumes physical
-         * button 0 is the physical left mouse button, and that the physical
-         * button other than 0 currently assigned left_button or right_button
-         * is the physical right mouse button.
-         */
-
-        /* check if the current mapping satisfies the above assumptions */
-        if (buttons[left_button - 1] != left_button &&
-            buttons[left_button - 1] != right_button)
-                /* The current mapping is weird. Swapping buttons is probably not a
-                 * good idea.
-                 */
-                return;
-
-        /* check if we are left_handed and currently not swapped */
-        if (left_handed && buttons[left_button - 1] == left_button) {
-                /* find the right button */
-                for (i = 0; i < n_buttons; i++) {
-                        if (buttons[i] == right_button) {
-                                buttons[i] = left_button;
-                                break;
-                        }
-                }
-                /* swap the buttons */
-                buttons[left_button - 1] = right_button;
+    /* check if we are left_handed and currently not swapped */
+    if (left_handed && buttons[left_button - 1] == left_button)
+    {
+        /* find the right button */
+        for (i = 0; i < n_buttons; i++)
+        {
+            if (buttons[i] == right_button)
+            {
+                buttons[i] = left_button;
+                break;
+            }
         }
-        /* check if we are not left_handed but are swapped */
-        else if (!left_handed && buttons[left_button - 1] == right_button) {
-                /* find the right button */
-                for (i = 0; i < n_buttons; i++) {
-                        if (buttons[i] == left_button) {
-                                buttons[i] = right_button;
-                                break;
-                        }
-                }
-                /* swap the buttons */
-                buttons[left_button - 1] = left_button;
+        /* swap the buttons */
+        buttons[left_button - 1] = right_button;
+    }
+    /* check if we are not left_handed but are swapped */
+    else if (!left_handed && buttons[left_button - 1] == right_button)
+    {
+        /* find the right button */
+        for (i = 0; i < n_buttons; i++)
+        {
+            if (buttons[i] == left_button)
+            {
+                buttons[i] = right_button;
+                break;
+            }
         }
+        /* swap the buttons */
+        buttons[left_button - 1] = left_button;
+    }
 }
 
 void
@@ -344,61 +362,114 @@ device_set_left_handed (GsdMouseManager *manager, GdkDevice *device, gboolean le
 static gboolean
 device_has_buttons (GdkDevice *device)
 {
-        int i;
-        XAnyClassInfo *class_info;
+    int i;
+    XAnyClassInfo *class_info;
 
-        /* FIXME can we use the XDevice's classes here instead? */
-        XDeviceInfo *device_info, *info;
-        gint n_devices;
-        int id;
+    /* FIXME can we use the XDevice's classes here instead? */
+    XDeviceInfo *device_info, *info;
+    gint n_devices;
+    int id;
 
-        /* Find the XDeviceInfo for the GdkDevice */
-        g_object_get (G_OBJECT (device), "device-id", &id, NULL);
+    /* Find the XDeviceInfo for the GdkDevice */
+    g_object_get (G_OBJECT (device), "device-id", &id, NULL);
 
-        device_info = XListInputDevices (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), &n_devices);
-        if (device_info == NULL)
-                return FALSE;
+    device_info = XListInputDevices (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), &n_devices);
+    if (device_info == NULL)
+        return FALSE;
 
-        info = NULL;
-        for (i = 0; i < n_devices; i++) {
-                if (device_info[i].id == id) {
-                        info = &device_info[i];
-                        break;
-                }
+    info = NULL;
+    for (i = 0; i < n_devices; i++)
+    {
+        if (device_info[i].id == id)
+        {
+            info = &device_info[i];
+            break;
         }
-        if (info == NULL)
-                goto bail;
+    }
+    if (info == NULL)
+        goto bail;
 
-        class_info = info->inputclassinfo;
-        for (i = 0; i < info->num_classes; i++) {
-                if (class_info->class == ButtonClass) {
-                        XButtonInfo *button_info;
+    class_info = info->inputclassinfo;
+    for (i = 0; i < info->num_classes; i++)
+    {
+        if (class_info->class == ButtonClass)
+        {
+            XButtonInfo *button_info;
 
-                        button_info = (XButtonInfo *) class_info;
-                        if (button_info->num_buttons > 0) {
-                                XFreeDeviceList (device_info);
-                                return TRUE;
-                        }
-                }
-
-                class_info = (XAnyClassInfo *) (((guchar *) class_info) +
-                                                class_info->length);
+            button_info = (XButtonInfo *) class_info;
+            if (button_info->num_buttons > 0)
+            {
+                XFreeDeviceList (device_info);
+                return TRUE;
+            }
         }
+
+        class_info = (XAnyClassInfo *) (((guchar *) class_info) +
+                                        class_info->length);
+    }
 
 bail:
-        XFreeDeviceList (device_info);
+    XFreeDeviceList (device_info);
 
-        return FALSE;
+    return FALSE;
+}
+
+//TODO:
+static gboolean
+device_is_mouse (XDevice* xdevice)
+{
+    return FALSE;
+}
+//check device property TPPS/2 IBM TrackPoint
+static gboolean
+device_is_trackpoint (XDevice* xdevice)
+{
+    return FALSE;
 }
 
 GsdMMDeviceType
 device_get_type (GdkDevice* device)
 {
-    return 0;
+    GsdMMDeviceType device_type = GSD_MM_DEVICE_TYPE_UNKNOWN;
+
+    XDevice* xdevice = open_gdk_device (device);
+    if (device_is_mouse (xdevice))
+    {
+        device_type = GSD_MM_DEVICE_TYPE_MOUSE;
+        goto out;
+    }
+    if (device_is_touchpad (xdevice))//device_is_touchpad is in gsd-input-helper.c
+    {
+        device_type = GSD_MM_DEVICE_TYPE_TOUCHPAD;
+        goto out;
+    }
+    if (device_is_trackpoint (xdevice))
+    {
+        device_type = GSD_MM_DEVICE_TYPE_TRACKPOINT;
+        goto out;
+    }
+out:
+    XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
+    return device_type;
 }
 
 void
 device_apply_settings (GsdMouseManager *manager, GdkDevice *device)
 {
-
+    GsdMMDeviceType device_type = device_get_type (device);
+    switch (device_type)
+    {
+        case GSD_MM_DEVICE_TYPE_MOUSE:
+            mouse_apply_settings (manager, device);
+            break;
+        case GSD_MM_DEVICE_TYPE_TOUCHPAD:
+            touchpad_apply_settings (manager, device);
+            break;
+        case GSD_MM_DEVICE_TYPE_TRACKPOINT:
+            trackpoint_apply_settings (manager, device);
+            break;
+        case GSD_MM_DEVICE_TYPE_UNKNOWN:
+        default:
+            break;
+    }
 }

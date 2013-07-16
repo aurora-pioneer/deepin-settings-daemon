@@ -106,9 +106,6 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
         if (run_custom_command (device, COMMAND_DEVICE_PRESENT) == FALSE)
         {
             device_apply_settings (manager, device);
-            //mouse_apply_settings (manager, device);
-            //touchpad_apply_settings (manager, device);
-            //trackpoint_apply_settings (manager, device);
         }
         else/* otherwise blacklist the device */
         {
