@@ -41,6 +41,97 @@
 #define KEY_SCROLL_METHOD                "scroll-method"
 #define KEY_TAP_TO_CLICK                 "tap-to-click"
 #define KEY_NATURAL_SCROLL_ENABLED       "natural-scroll"
+//synclient properties
+//1. Property: Synaptics Edges
+#define TOUCHPAD_LEFT_EDGE                  "LeftEdge"
+#define TOUCHPAD_RIGHT_EDGE                 "RightEdge"
+#define TOUCHPAD_TOP_EDGE                   "TopEdge"
+#define TOUCHPAD_BOTTOM_EDGE                "BottomEdge"
+//2. Property: Synaptics Finger
+#define TOUCHPAD_FINGER_LOW                 "FingerLow"
+#define TOUCHPAD_FINGER_HIGH                "FingerHigh"
+#define TOUCHPAD_FINGER_PRESS               "FingerPress"
+//3. Property: Synaptics Tap Durations
+#define TOUCHPAD_MAX_TAP_TIME               "MaxTapTime"
+#define TOUCHPAD_MAX_DOUBLE_TAP_TIME        "MaxDoubleTapTime"
+#define TOUCHPAD_CLICK_TIME                 "ClickTime"
+//4. Property: Synaptics Tap Move
+#define TOUCHPAD_MAX_TAP_MOVE               "MaxTapMove"
+//.  Property: Synaptics Tap FastTap
+#define TOUCHPAD_FAST_TAPS                  "FastTaps"
+//5. Property: Synaptics ClickPad
+#define TOUCHPAD_CLICK_PAD                  "ClickPad"
+//.  Property: Synaptics Edge Scrolling
+#define TOUCHPAD_VERT_EDGE_SCROLL           "VertEdgeScroll"
+#define TOUCHPAD_HORIZ_EDGE_SCROLL          "HorizEdgeScroll"
+#define TOUCHPAD_CORNER_COASTING            "CornerCoasting"
+//   Property: Synaptics Two-Finger Scrolling
+#define TOUCHPAD_VERT_TWO_FINGER_SCROLL     "VertTwoFingerScroll"
+#define TOUCHPAD_HORIZ_TWO_FINGER_SCROLL    "HorizTwoFingerScroll"
+//   Property: Synaptics Scrolling Distance
+#define TOUCHPAD_VERT_SCROLL_DELTA          "VertScrollDelta"
+#define TOUCHPAD_HORIZ_SCROLL_DELTA         "HorizScrollDelta"
+//   Property: Synaptics Edge Motion Pressure
+#define TOUCHPAD_EDGE_MOTION_MINZ           "EdgeMotionMinZ"
+#define TOUCHPAD_EDGE_MOTION_MAXZ           "EdgeMotionMaxZ"
+//   Property: Synaptics Edge Motion Speed
+#define TOUCHPAD_EDGE_MOTION_MIN_SPEED      "EdgeMotionMinSpeed"
+#define TOUCHPAD_EDGE_MOTION_MAX_SPEED      "EdgeMotionMaxSpeed"
+//   Property: Synaptics Edge Motion Always
+#define TOUCHPAD_EDGE_MOTION_USE_ALWAYS     "EdgeMotionUseAlways"
+//   Property: Synaptics Move Speed
+#define TOUCHPAD_MIN_SPEED                  "MinSpeed"
+#define TOUCHPAD_MAX_SPEED                  "MaxSpeed"
+#define TOUCHPAD_ACCEL_FACTOR               "AccelFactor"
+#define TOUCHPAD_TRACKSTICK_SPEED           "TrackstickSpeed"
+//   Property: Synaptics Pressure Motion
+#define TOUCHPAD_PRESSURE_MOTION_MINZ       "PressureMotionMinZ"
+#define TOUCHPAD_PRESSURE_MOTION_MAXZ       "PressureMotionMaxZ"
+//   Property: Synaptics Pressure Motion Factor
+#define TOUCHPAD_PRESSURE_MOTION_MIN_FACTOR "PressureMotionMinFactor"
+#define TOUCHPAD_PRESSURE_MOTION_MAX_FACTOR "PressureMotionMaxFactor"
+//  ???
+#define TOUCHPAD_HORIZ_HYSTERESIS           "HorizHysteresis"
+#define TOUCHPAD_VERT_HYSTERESIS            "VertHysteresis"
+//   Property: Synaptics Button Scrolling
+#define TOUCHPAD_UP_DOWN_SCROLLING          "UpDownScrolling"
+#define TOUCHPAD_LEFT_RIGHT_SCROLLING       "LeftRightScrolling"
+//   Property: Synaptics Button Scrolling Repeat
+#define TOUCHPAD_UP_DOWN_SCROLL_REPEAT      "UpDownScrollRepeat"
+#define TOUCHPAD_LEFT_RIGHT_SCROLL_REPEAT   "LeftRightScrollRepeat"
+//   Property: Synaptics Button Scrolling Time
+#define TOUCHPAD_SCROLL_BUTTON_REPEAT       "ScrollButtonRepeat"
+//   Property: Synaptics Middle Button Timeout
+#define TOUCHPAD_EMULATE_MIDBUTTON_TIME     "EmulateMidButtonTime"
+//   Property: Synaptics Two-Finger Pressure
+#define TOUCHPAD_EMULATE_TWO_FINGER_MINZ    "EmulateTwoFingerMinZ"
+#define TOUCHPAD_EMULATE_TWO_FINGER_MINW    "EmulateTwoFingerMinW"
+//   Property: Synaptics Off
+#define TOUCHPAD_OFF                         "TouchpadOff"
+//   Property: Synaptics Locked Drags
+#define TOUCHPAD_LOCKED_DRAGS                "LockedDrags"
+//   Property: Synaptics Locked Drags Timeout
+#define TOUCHPAD_LOCKED_DRAG_TIMEOUT         "LockedDragTimeout"
+//   Property: Synaptics Tap Action
+#define TOUCHPAD_RT_CORNER_BUTTON            "RTCornerButton"
+#define TOUCHPAD_RB_CORNER_BUTTON            "RBCornerButton"
+#define TOUCHPAD_LT_CORNER_BUTTON            "LTCornerButton"
+#define TOUCHPAD_LB_CORNER_BUTTON            "LBCornerButton"
+#define TOUCHPAD_TAP_BUTTON1                 "TapButton1"
+#define TOUCHPAD_TAP_BUTTON2                 "TapButton2"
+#define TOUCHPAD_TAP_BUTTON3                 "TapButton3"
+#define TOUCHPAD_CLICK_FINGER1              "ClickFinger1"
+#define TOUCHPAD_CLICK_FINGER2              "ClickFinger2"
+#define TOUCHPAD_CLICK_FINGER3              "ClickFinger3"
+//   Property: Synaptics Circular Scrolling
+#define TOUCHPAD_CIRCULAR_SCROLLING         "CircularScrolling"
+//   Property: Synaptics Circular Scrolling Distance
+#define TOUCHPAD_CIRC_SCROLL_DELTA          "CircScrollDelta"
+//   Property: Synaptics Circular Scrolling Trigger
+#define TOUCHPAD_CIRC_SCROLL_TRIGGER        "CircScrollTrigger"
+//   Property: Synaptics Circular Pad
+#define TOUCHPAD_CIRCULAR_PAD               "CircularPad"
+//   Property: Synatpic
 
 static void set_tap_to_click        (GdkDevice *device, gboolean state, gboolean left_handed);
 static void set_edge_scroll         (GdkDevice *device, GsdTouchpadScrollMethod method);
