@@ -19,32 +19,10 @@
  */
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
-#include <math.h>
-#ifdef __linux
-#include <sys/prctl.h>
-#endif
-
-#include <locale.h>
-
-#include <glib.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 #include <gtk/gtk.h>
-#include <gdk/gdk.h>
 #include <gdk/gdkx.h>
-#include <gdk/gdkkeysyms.h>
-#include <X11/keysym.h>
 #include <X11/Xatom.h>
-
-#include <X11/extensions/XInput.h>
-#include <X11/extensions/XIproto.h>
 
 #include "gsd-mouse-manager.h"
 #include "gsd-input-helper.h"
@@ -52,6 +30,14 @@
 
 #include "gsd-mm-device.h"
 #include "gsd-mm-mouse.h"
+
+#define SETTINGS_MOUSE_DIR         "org.gnome.settings-daemon.peripherals.mouse"
+
+/* Mouse settings */
+#define KEY_LOCATE_POINTER               "locate-pointer"
+#define KEY_DWELL_CLICK_ENABLED          "dwell-click-enabled"
+#define KEY_SECONDARY_CLICK_ENABLED      "secondary-click-enabled"
+#define KEY_MIDDLE_BUTTON_EMULATION      "middle-button-enabled"
 
 static void mouse_set_middle_button (GsdMouseManager *manager, GdkDevice *device, gboolean middle_button);
 static void mouse_set_tweaks_daemon (GsdMouseManager *manager, gboolean dwell_click_enabled, gboolean secondary_click_enabled);

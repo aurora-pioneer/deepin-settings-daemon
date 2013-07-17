@@ -89,9 +89,7 @@ gsd_mouse_manager_idle_cb (GsdMouseManager *manager)
 
     setup_device_manager (manager);
 
-    mouse_init_settings (manager);
-    touchpad_init_settings (manager);
-    trackpoint_init_settings (manager);
+    device_init_settings (manager);
 
     //apply settings to the corresponding devices.
     GList *devices, *l;

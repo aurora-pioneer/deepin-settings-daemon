@@ -31,8 +31,7 @@ typedef enum {
     GSD_MM_DEVICE_TYPE_UNKNOWN,
     GSD_MM_DEVICE_TYPE_MOUSE,
     GSD_MM_DEVICE_TYPE_TOUCHPAD,
-    GSD_MM_DEVICE_TYPE_TRACKPOINT,
-    GSD_MM_DEVICE_TYPE_TRACKBALL
+    GSD_MM_DEVICE_TYPE_TRACKPOINT
 } GsdMMDeviceType;
 
 typedef struct GsdMouseManagerPrivate
@@ -65,6 +64,7 @@ XDevice*            open_gdk_device             (GdkDevice *device);
 gboolean            device_is_ignored           (GsdMouseManager *manager,  GdkDevice *device);
 
 GsdMMDeviceType     device_get_type             (GdkDevice* device);
+void                device_init_settings        (GsdMouseManager *manager);
 void                device_apply_settings       (GsdMouseManager *manager, GdkDevice *device);
 
 void                device_set_motion           (GsdMouseManager *manager, GdkDevice *device, GSettings* settings);

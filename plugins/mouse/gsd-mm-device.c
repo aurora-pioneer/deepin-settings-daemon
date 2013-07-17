@@ -21,18 +21,10 @@
 
 #include <math.h>
 
-#include <glib.h>
-#include <glib/gi18n.h>
-#include <gio/gio.h>
-#include <gtk/gtk.h>
-#include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
-#include <X11/keysym.h>
-#include <X11/Xatom.h>
 
-#include <X11/extensions/XInput.h>
-#include <X11/extensions/XIproto.h>
+#include <X11/Xatom.h>
 
 #include "gnome-settings-profile.h"
 #include "gsd-mouse-manager.h"
@@ -106,10 +98,9 @@ device_added_cb (GdkDeviceManager *device_manager, GdkDevice *device, GsdMouseMa
 static void
 device_removed_cb (GdkDeviceManager *device_manager, GdkDevice *device, GsdMouseManager *manager)
 {
-    int id;
-
     /* Remove the device from the hash table so that
     * device_is_ignored () doesn't check for blacklisted devices */
+    int id;
     g_object_get (G_OBJECT (device), "device-id", &id, NULL);
     g_hash_table_remove (manager->priv->blacklist, GINT_TO_POINTER (id));
 
@@ -404,8 +395,7 @@ device_has_buttons (GdkDevice *device)
             }
         }
 
-        class_info = (XAnyClassInfo *) (((guchar *) class_info) +
-                                        class_info->length);
+        class_info = (XAnyClassInfo *) (((guchar *) class_info) + class_info->length);
     }
 
 bail:
@@ -533,4 +523,12 @@ device_apply_settings (GsdMouseManager *manager, GdkDevice *device)
         default:
             break;
     }
+}
+
+void
+device_init_settings (GsdMouseManager *manager)
+{
+    mouse_init_settings (manager);
+    touchpad_init_settings (manager);
+    trackpoint_init_settings (manager);
 }

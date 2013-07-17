@@ -35,21 +35,20 @@ G_BEGIN_DECLS
 typedef struct GsdMouseManagerPrivate GsdMouseManagerPrivate;
 typedef struct
 {
-        GObject                     parent;
-        GsdMouseManagerPrivate      *priv;
+    GObject                     parent;
+    GsdMouseManagerPrivate      *priv;
 } GsdMouseManager;
 
 typedef struct
 {
-        GObjectClass   parent_class;
+    GObjectClass   parent_class;
 } GsdMouseManagerClass;
 
-GType                   gsd_mouse_manager_get_type            (void);
+GType               gsd_mouse_manager_get_type  (void);
 
-GsdMouseManager *       gsd_mouse_manager_new                 (void);
-gboolean                gsd_mouse_manager_start               (GsdMouseManager *manager,
-                                                               GError         **error);
-void                    gsd_mouse_manager_stop                (GsdMouseManager *manager);
+GsdMouseManager *   gsd_mouse_manager_new       (void);
+gboolean            gsd_mouse_manager_start     (GsdMouseManager *manager, GError **error);
+void                gsd_mouse_manager_stop      (GsdMouseManager *manager);
 
 G_END_DECLS
 

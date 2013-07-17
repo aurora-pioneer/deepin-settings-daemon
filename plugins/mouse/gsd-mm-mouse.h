@@ -21,18 +21,12 @@
 #ifndef _GSD_MM_MOUSE_H_
 #define _GSD_MM_MOUSE_H_
 
-#define SETTINGS_MOUSE_DIR         "org.gnome.settings-daemon.peripherals.mouse"
-
-/* Mouse settings */
-#define KEY_LOCATE_POINTER               "locate-pointer"
-#define KEY_DWELL_CLICK_ENABLED          "dwell-click-enabled"
-#define KEY_SECONDARY_CLICK_ENABLED      "secondary-click-enabled"
-#define KEY_MIDDLE_BUTTON_EMULATION      "middle-button-enabled"
 
 void mouse_init_settings            (GsdMouseManager *manager);
 void mouse_apply_settings           (GsdMouseManager *manager, GdkDevice *device);
+
 void mouse_set_locate_pointer       (GsdMouseManager *manager, gboolean state);
 
-void mouse_callback         (GSettings *settings, const gchar *key, GsdMouseManager *manager);
+void mouse_callback                 (GSettings *settings, const gchar *key, GsdMouseManager *manager);
 
 #endif /*_GSD_MM_MOUSE_H_*/

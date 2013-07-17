@@ -19,32 +19,13 @@
  */
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
-#include <math.h>
 #ifdef __linux
 #include <sys/prctl.h>
 #endif
 
-#include <locale.h>
-
-#include <glib.h>
-#include <glib/gi18n.h>
-#include <gio/gio.h>
-#include <gtk/gtk.h>
-#include <gdk/gdk.h>
 #include <gdk/gdkx.h>
-#include <gdk/gdkkeysyms.h>
-#include <X11/keysym.h>
 #include <X11/Xatom.h>
-
-#include <X11/extensions/XInput.h>
-#include <X11/extensions/XIproto.h>
 
 #include "gsd-mouse-manager.h"
 #include "gsd-input-helper.h"
@@ -52,6 +33,20 @@
 
 #include "gsd-mm-device.h"
 #include "gsd-mm-touchpad.h"
+
+#define SETTINGS_TOUCHPAD_DIR      "org.gnome.settings-daemon.peripherals.touchpad"
+
+/* Touchpad settings */
+#define KEY_PAD_HORIZ_SCROLL             "horiz-scroll-enabled"
+#define KEY_SCROLL_METHOD                "scroll-method"
+#define KEY_TAP_TO_CLICK                 "tap-to-click"
+#define KEY_NATURAL_SCROLL_ENABLED       "natural-scroll"
+
+static void set_tap_to_click        (GdkDevice *device, gboolean state, gboolean left_handed);
+static void set_edge_scroll         (GdkDevice *device, GsdTouchpadScrollMethod method);
+static void set_horiz_scroll        (GdkDevice *device, gboolean state);
+static void set_touchpad_disabled   (GdkDevice *device);
+static void set_natural_scroll      (GsdMouseManager *manager, GdkDevice *device, gboolean natural_scroll);
 
 void
 touchpad_init_settings (GsdMouseManager *manager)
@@ -210,10 +205,8 @@ set_disable_w_typing (GsdMouseManager *manager, gboolean state)
     return 0;
 }
 
-void
-set_tap_to_click (GdkDevice *device,
-                  gboolean   state,
-                  gboolean   left_handed)
+static void
+set_tap_to_click (GdkDevice *device, gboolean state, gboolean left_handed)
 {
     int format, rc;
     unsigned long nitems, bytes_after;
@@ -261,7 +254,7 @@ set_tap_to_click (GdkDevice *device,
     XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
-void
+static void
 set_horiz_scroll (GdkDevice *device, gboolean state)
 {
     int rc;
@@ -326,7 +319,7 @@ set_horiz_scroll (GdkDevice *device, gboolean state)
     XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
-void
+static void
 set_edge_scroll (GdkDevice *device, GsdTouchpadScrollMethod method)
 {
     int rc;
@@ -391,7 +384,7 @@ set_edge_scroll (GdkDevice *device, GsdTouchpadScrollMethod method)
     XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
 }
 
-void
+static void
 set_touchpad_disabled (GdkDevice *device)
 {
     int id;
@@ -463,7 +456,7 @@ get_touchpad_handedness (GsdMouseManager *manager)
     }
 }
 
-void
+static void
 set_natural_scroll (GsdMouseManager *manager, GdkDevice *device, gboolean natural_scroll)
 {
         XDevice *xdevice;
