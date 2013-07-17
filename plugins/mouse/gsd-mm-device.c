@@ -413,17 +413,78 @@ bail:
 
     return FALSE;
 }
+/*
+ * FIXME: we should XI2 here, but most of gnome-settings-daemon code
+ * still use the deprecated XI API, we'll stick to it until we can
+ * afford the time to overhaul it.
+ * MOST of the device types can be determined by this function, but
+ * for devices like TRACKPOINT we use a hacky way.
+ */
+static Atom
+xdevice_get_type (XDevice* xdevice)
+{
+    Atom device_type = None;
 
-//TODO:
+    XDeviceInfo *device_infos = NULL;
+    int n_devices = 0;
+    device_infos = XListInputDevices (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), &n_devices);
+    int i = 0;
+    for(i = 0; i < n_devices; i++)
+    {
+        if (device_infos[i].id == xdevice->device_id)
+        {
+            device_type = device_infos[i].type;
+            break;
+        }
+    }
+    XFreeDeviceList (device_infos);
+    return device_type;
+}
+
 static gboolean
 device_is_mouse (XDevice* xdevice)
 {
-    return FALSE;
+    Atom mouse_type, device_type;
+
+    mouse_type = XInternAtom (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), XI_MOUSE, False);
+    device_type = xdevice_get_type (xdevice);
+
+    return (mouse_type == device_type);
 }
-//check device property TPPS/2 IBM TrackPoint
+
+#if 0
+//device_is_touchpad is defined in gsd-input-helper.c
+static gboolean
+device_is_touchpad (XDevice* xdevice)
+{
+}
+#endif
+
 static gboolean
 device_is_trackpoint (XDevice* xdevice)
 {
+    /*
+     * there's no XI_TRACKPOINT(the only nearest device is XI_TRACKBALL), so
+     * we use a rather hacky way here
+     */
+    Atom prop = XInternAtom (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), "TPPS/2 IBM TrackPoint", False);
+    if (!prop)
+        return FALSE;
+
+    gdk_error_trap_push ();
+    Atom realtype;
+    int realformat;
+    unsigned long nitems, bytes_after;
+    unsigned char *data;
+    if ((XGetDeviceProperty (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice, prop, 0, 1, False,
+                            XA_INTEGER, &realtype, &realformat, &nitems,
+                            &bytes_after, &data) == Success) && (realtype != None)) {
+        gdk_error_trap_pop_ignored ();
+        XFree (data);
+        return TRUE;
+    }
+    gdk_error_trap_pop_ignored ();
+
     return FALSE;
 }
 
@@ -438,7 +499,7 @@ device_get_type (GdkDevice* device)
         device_type = GSD_MM_DEVICE_TYPE_MOUSE;
         goto out;
     }
-    if (device_is_touchpad (xdevice))//device_is_touchpad is in gsd-input-helper.c
+    if (device_is_touchpad (xdevice))
     {
         device_type = GSD_MM_DEVICE_TYPE_TOUCHPAD;
         goto out;
