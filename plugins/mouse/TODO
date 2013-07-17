@@ -7,3 +7,7 @@ support Thinkpad trackpoint device
 
 see http://www.thinkwiki.org/wiki/How_to_configure_the_TrackPoint
     man evdev
+
+
+mouse and keyboard plugins share a lot of common code, we should
+merge mouse and keyboard plugins.
