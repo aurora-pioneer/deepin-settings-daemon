@@ -70,6 +70,7 @@
 #define UPOWER_DBUS_INTERFACE_KBDBACKLIGHT      "org.freedesktop.UPower.KbdBacklight"
 
 #define GSD_POWER_SETTINGS_SCHEMA               "org.gnome.settings-daemon.plugins.power"
+#define GSD_POWER_SCREENSAVER_SCHEMA            "org.gnome.desktop.screensaver"
 
 #define GSD_DBUS_SERVICE                        "org.gnome.SettingsDaemon"
 #define GSD_DBUS_PATH                           "/org/gnome/SettingsDaemon"
@@ -3646,7 +3647,8 @@ upower_notify_sleep_cb (UpClient *client,
                         UpSleepKind sleep_kind,
                         GsdPowerManager *manager)
 {
-        system(LOCK_CMD);
+        /*Why always lock screen???*/
+        //system(LOCK_CMD);
 
         if (strcmp(g_settings_get_string(manager->priv->settings, "lid-close-ac-action"), "suspend") == 0 || 
             strcmp(g_settings_get_string(manager->priv->settings, "lid-close-battery-action"), "suspend")) {
@@ -3681,6 +3683,20 @@ upower_notify_resume_cb (UpClient *client,
 {
         gboolean ret;
         GError *error = NULL;
+
+        GSettings *lock_settings = g_settings_new (GSD_POWER_SCREENSAVER_SCHEMA);
+        if (lock_settings != NULL) {
+
+            if (g_settings_get_boolean (lock_settings, "lock-enabled")) {
+                g_spawn_command_line_async (LOCK_CMD, &error);
+                if (error != NULL) {
+                    g_warning ("upower notify resume:run lock failed %s\n", error->message);
+                    g_error_free (error);
+                }
+                error = NULL;
+            }
+            g_object_unref (lock_settings);
+        }
 
         /* this displays the unlock dialogue so the user doesn't have
          * to move the mouse or press any key before the window comes up */
