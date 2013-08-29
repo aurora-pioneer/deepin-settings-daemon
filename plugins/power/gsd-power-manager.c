@@ -3267,7 +3267,7 @@ idle_sleep_cb (GsdPowerManager *manager)
 
         /* send to sleep, and cancel timeout */
         g_debug ("sending to SLEEP");
-        //idle_set_mode (manager, GSD_POWER_IDLE_MODE_SLEEP);
+        idle_set_mode (manager, GSD_POWER_IDLE_MODE_SLEEP);
         return FALSE;
 }
 

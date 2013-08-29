@@ -20,6 +20,16 @@ check_is_default (gchar* gsettings_key)
 KeysAndCmd* 
 gsd_kb_util_parse_gsettings_value (char* gsettings_key, char* string)
 {
+    if (gsettings_key == NULL) {
+        g_warning ("gsd kb util parse gsettings value:gsettings_key is NULL\n");
+        return NULL;
+    }
+
+    if (string == NULL) {
+        g_warning ("gsd kb util parse gsettings value:string is NULL\n");
+        return NULL;
+    }
+
 	char* _keystring = NULL;
 	char* _cmdstring = NULL;
 	if (check_is_default(gsettings_key))
