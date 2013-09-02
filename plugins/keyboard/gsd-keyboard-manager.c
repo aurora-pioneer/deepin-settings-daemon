@@ -611,9 +611,9 @@ numlock_set_xkb_state (GsdNumLockState new_state)
         Display *dpy = GDK_DISPLAY_XDISPLAY (gdk_display_get_default ());
         if (new_state != GSD_NUM_LOCK_STATE_ON && new_state != GSD_NUM_LOCK_STATE_OFF)
                 return;
-        //num_mask = numlock_NumLock_modifier_mask ();
-        num_mask = xkb_numlock_mask ();
-        XkbLockModifiers (dpy, XkbUseCoreKbd, num_mask, new_state == GSD_NUM_LOCK_STATE_ON ? 0 : num_mask);
+        num_mask = numlock_NumLock_modifier_mask ();
+        //num_mask = xkb_numlock_mask ();
+        //XkbLockModifiers (dpy, XkbUseCoreKbd, num_mask, new_state == GSD_NUM_LOCK_STATE_ON ? 0 : num_mask);
         XkbLockModifiers (dpy, XkbUseCoreKbd, num_mask, new_state == GSD_NUM_LOCK_STATE_ON ? num_mask : 0);
 }
 
