@@ -197,8 +197,10 @@ void deepin_power_using_current_plan(GSettings *settings)
 
     //fixed, free xml doc and node
     cur = xmlDocGetRootElement(doc);                                            
-    xmlFreeNode (cur);
-    xmlFreeDoc (doc);
+    if (cur != NULL) 
+        xmlFreeNode (cur);
+    //if (doc != NULL)
+     //   xmlFreeDoc (doc);
 }
 
 void deepin_power_cleanup() 
