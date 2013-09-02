@@ -570,6 +570,40 @@ numlock_NumLock_modifier_mask (void)
         return XkbKeysymToModifiers (dpy, XK_Num_Lock);
 }
 
+static unsigned int 
+xkb_mask_modifier (XkbDescPtr xkb, const char *name)
+{
+    int i;
+    if (!xkb || !xkb->names)
+	    return 0;
+
+    for (i = 0; i < XkbNumVirtualMods; i++) {
+	    char* modStr = XGetAtomName (xkb->dpy, xkb->names->vmods[i]);
+	    if (modStr != NULL && strcmp (name, modStr) == 0) {
+	        unsigned int mask;
+	        XkbVirtualModsToReal (xkb, 1 << i, &mask);
+	        return mask;
+	    }
+	}
+
+    return 0;
+}
+
+static unsigned int 
+xkb_numlock_mask (void)
+{
+    unsigned int mask = 0;
+    XkbDescPtr xkb;
+    Display *dpy = GDK_DISPLAY_XDISPLAY (gdk_display_get_default ());
+
+    if ((xkb = XkbGetKeyboard (dpy, XkbAllComponentsMask, XkbUseCoreKbd)) != NULL) {
+        mask = xkb_mask_modifier (xkb, "NumLock");
+        XkbFreeKeyboard (xkb, 0, True);
+    }
+
+    return mask;
+}
+
 static void
 numlock_set_xkb_state (GsdNumLockState new_state)
 {
@@ -577,7 +611,9 @@ numlock_set_xkb_state (GsdNumLockState new_state)
         Display *dpy = GDK_DISPLAY_XDISPLAY (gdk_display_get_default ());
         if (new_state != GSD_NUM_LOCK_STATE_ON && new_state != GSD_NUM_LOCK_STATE_OFF)
                 return;
-        num_mask = numlock_NumLock_modifier_mask ();
+        //num_mask = numlock_NumLock_modifier_mask ();
+        num_mask = xkb_numlock_mask ();
+        XkbLockModifiers (dpy, XkbUseCoreKbd, num_mask, new_state == GSD_NUM_LOCK_STATE_ON ? 0 : num_mask);
         XkbLockModifiers (dpy, XkbUseCoreKbd, num_mask, new_state == GSD_NUM_LOCK_STATE_ON ? num_mask : 0);
 }
 

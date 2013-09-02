@@ -2401,7 +2401,7 @@ do_lid_closed_action (GsdPowerManager *manager)
                 } else {
                         /* maybe lock the screen if the lid is closed */
                         g_warning("cancel lock screensaver");
-                        /* lock_screensaver (manager);*/
+                        lock_screensaver (manager);
                 }
         }
 
@@ -3616,7 +3616,7 @@ out:
 static void
 lock_screensaver (GsdPowerManager *manager)
 {
-    system(LOCK_CMD);
+    //system(LOCK_CMD);
 
     if (manager->priv->screensaver_proxy != NULL) {
         g_debug("doing gnome-screensaver lock");
@@ -3649,6 +3649,21 @@ upower_notify_sleep_cb (UpClient *client,
 {
         /*Why always lock screen???*/
         //system(LOCK_CMD);
+        GError *error = NULL;
+
+        GSettings *lock_settings = g_settings_new (GSD_POWER_SCREENSAVER_SCHEMA);
+        if (lock_settings != NULL) {
+
+            if (g_settings_get_boolean (lock_settings, "lock-enabled")) {
+                g_spawn_command_line_async (LOCK_CMD, &error);
+                if (error != NULL) {
+                    g_warning ("upower notify sleep:run lock failed %s\n", error->message);
+                    g_error_free (error);
+                }
+                error = NULL;
+            }
+            //g_object_unref (lock_settings);
+        }
 
         if (strcmp(g_settings_get_string(manager->priv->settings, "lid-close-ac-action"), "suspend") == 0 || 
             strcmp(g_settings_get_string(manager->priv->settings, "lid-close-battery-action"), "suspend")) {
@@ -3683,20 +3698,6 @@ upower_notify_resume_cb (UpClient *client,
 {
         gboolean ret;
         GError *error = NULL;
-
-        GSettings *lock_settings = g_settings_new (GSD_POWER_SCREENSAVER_SCHEMA);
-        if (lock_settings != NULL) {
-
-            if (g_settings_get_boolean (lock_settings, "lock-enabled")) {
-                g_spawn_command_line_async (LOCK_CMD, &error);
-                if (error != NULL) {
-                    g_warning ("upower notify resume:run lock failed %s\n", error->message);
-                    g_error_free (error);
-                }
-                error = NULL;
-            }
-            g_object_unref (lock_settings);
-        }
 
         /* this displays the unlock dialogue so the user doesn't have
          * to move the mouse or press any key before the window comes up */
