@@ -583,7 +583,7 @@ set_disable_w_typing (GsdMouseManager *manager, gboolean state)
 
                 g_ptr_array_add (args, "syndaemon");
                 g_ptr_array_add (args, "-i");
-                g_ptr_array_add (args, "1.0");
+                g_ptr_array_add (args, "0.4");
                 //g_ptr_array_add (args, "-t");
                 g_ptr_array_add (args, "-K");
                 g_ptr_array_add (args, "-R");
