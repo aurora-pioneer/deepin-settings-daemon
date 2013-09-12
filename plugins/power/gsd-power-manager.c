@@ -70,6 +70,7 @@
 #define UPOWER_DBUS_INTERFACE_KBDBACKLIGHT      "org.freedesktop.UPower.KbdBacklight"
 
 #define GSD_POWER_SETTINGS_SCHEMA               "org.gnome.settings-daemon.plugins.power"
+#define GSD_POWER_SCREENSAVER_SCHEMA            "org.gnome.desktop.screensaver"
 
 #define GSD_DBUS_SERVICE                        "org.gnome.SettingsDaemon"
 #define GSD_DBUS_PATH                           "/org/gnome/SettingsDaemon"
@@ -2400,7 +2401,7 @@ do_lid_closed_action (GsdPowerManager *manager)
                 } else {
                         /* maybe lock the screen if the lid is closed */
                         g_warning("cancel lock screensaver");
-                        /* lock_screensaver (manager);*/
+                        lock_screensaver (manager);
                 }
         }
 
@@ -3170,7 +3171,7 @@ idle_blank_cb (GsdPowerManager *manager)
                          idle_mode_to_string (manager->priv->current_idle_mode));
                 return FALSE;
         }
-        //idle_set_mode (manager, GSD_POWER_IDLE_MODE_BLANK);
+        idle_set_mode (manager, GSD_POWER_IDLE_MODE_BLANK);
         return FALSE;
 }
 
@@ -3266,7 +3267,7 @@ idle_sleep_cb (GsdPowerManager *manager)
 
         /* send to sleep, and cancel timeout */
         g_debug ("sending to SLEEP");
-        //idle_set_mode (manager, GSD_POWER_IDLE_MODE_SLEEP);
+        idle_set_mode (manager, GSD_POWER_IDLE_MODE_SLEEP);
         return FALSE;
 }
 
@@ -3615,7 +3616,7 @@ out:
 static void
 lock_screensaver (GsdPowerManager *manager)
 {
-    system(LOCK_CMD);
+    //system(LOCK_CMD);
 
     if (manager->priv->screensaver_proxy != NULL) {
         g_debug("doing gnome-screensaver lock");
@@ -3646,7 +3647,23 @@ upower_notify_sleep_cb (UpClient *client,
                         UpSleepKind sleep_kind,
                         GsdPowerManager *manager)
 {
-        system(LOCK_CMD);
+        /*Why always lock screen???*/
+        //system(LOCK_CMD);
+        GError *error = NULL;
+
+        GSettings *lock_settings = g_settings_new (GSD_POWER_SCREENSAVER_SCHEMA);
+        if (lock_settings != NULL) {
+
+            if (g_settings_get_boolean (lock_settings, "lock-enabled")) {
+                g_spawn_command_line_async (LOCK_CMD, &error);
+                if (error != NULL) {
+                    g_warning ("upower notify sleep:run lock failed %s\n", error->message);
+                    g_error_free (error);
+                }
+                error = NULL;
+            }
+            //g_object_unref (lock_settings);
+        }
 
         if (strcmp(g_settings_get_string(manager->priv->settings, "lid-close-ac-action"), "suspend") == 0 || 
             strcmp(g_settings_get_string(manager->priv->settings, "lid-close-battery-action"), "suspend")) {

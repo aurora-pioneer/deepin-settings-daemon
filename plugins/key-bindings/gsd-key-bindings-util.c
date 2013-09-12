@@ -20,6 +20,16 @@ check_is_default (gchar* gsettings_key)
 KeysAndCmd* 
 gsd_kb_util_parse_gsettings_value (char* gsettings_key, char* string)
 {
+    if (gsettings_key == NULL) {
+        g_warning ("gsd kb util parse gsettings value:gsettings_key is NULL\n");
+        return NULL;
+    }
+
+    if (string == NULL) {
+        g_warning ("gsd kb util parse gsettings value:string is NULL\n");
+        return NULL;
+    }
+
 	char* _keystring = NULL;
 	char* _cmdstring = NULL;
 	if (check_is_default(gsettings_key))
@@ -61,8 +71,9 @@ gsd_kb_util_parse_gsettings_value (char* gsettings_key, char* string)
 void
 gsd_kb_util_read_gsettings (GSettings* settings, GHashTable* gsettings_ht)
 {
-	char* _gsettings_key_str = NULL;
-	char* _gsettings_value_str = NULL;
+    //fixed by Long Wei
+	//char* _gsettings_key_str = NULL;
+	//char* _gsettings_value_str = NULL;
 	KeysAndCmd* _kandc_ptr = NULL;
 	//1. read default key 
 	
@@ -71,11 +82,17 @@ gsd_kb_util_read_gsettings (GSettings* settings, GHashTable* gsettings_ht)
 	for (; i < NUM_OF_KEY_BINDING_SLOTS; i++)
 	{
 	    //use macros defined in gsd-key-bindings-settings.h
+	    gchar* _gsettings_key_str = NULL;
+	    gchar* _gsettings_value_str = NULL;
+
 	    _gsettings_key_str = g_strdup_printf (KEY_BINDING_KEY_PREFIX"%d", i + 1); 
 	    g_debug ("gsettings key : %s", _gsettings_key_str);
 	    _gsettings_value_str = g_settings_get_string (settings, _gsettings_key_str);
 	    _kandc_ptr = gsd_kb_util_parse_gsettings_value (_gsettings_key_str,
 							    _gsettings_value_str);
+
+        g_free (_gsettings_value_str);
+
 	    if (_kandc_ptr == NULL)
 	    {
 		g_debug ("new KeysAndCmd is NULL");
@@ -87,7 +104,9 @@ gsd_kb_util_read_gsettings (GSettings* settings, GHashTable* gsettings_ht)
 	    g_debug ("bind %s -----> %s", _kandc_ptr->keystring, _kandc_ptr->cmdstring);
 	    keybinder_bind (_kandc_ptr->keystring, _handler, _kandc_ptr->cmdstring);
 	    
-	    g_hash_table_insert (gsettings_ht, _gsettings_key_str, _kandc_ptr);
+	    g_hash_table_insert (gsettings_ht, g_strdup (_gsettings_key_str), _kandc_ptr);
+
+        g_free (_gsettings_key_str);
 	}
 }
 

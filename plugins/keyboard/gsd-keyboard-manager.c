@@ -38,9 +38,13 @@
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 
+#include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 #include <X11/keysym.h>
 #include <X11/extensions/XKBrules.h>
+
+#include <libgnomekbd/gkbd-desktop-config.h>
+#include <libgnomekbd/gkbd-keyboard-config.h>
 
 #define GNOME_DESKTOP_USE_UNSTABLE_API
 #include <libgnome-desktop/gnome-languages.h>
@@ -127,9 +131,16 @@ static gboolean apply_input_sources_settings     (GSettings               *setti
 static void     set_gtk_im_module                (GsdKeyboardManager      *manager,
                                                   GVariant                *sources);
 
+//
+static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_config);
+static void apply_xkb_layouts(GkbdKeyboardConfig *kbd_config);
+
 G_DEFINE_TYPE (GsdKeyboardManager, gsd_keyboard_manager, G_TYPE_OBJECT)
 
 static gpointer manager_object = NULL;
+
+static GkbdDesktopConfig current_config;
+static GkbdKeyboardConfig current_kbd_config;
 
 static void
 init_builder_with_sources (GVariantBuilder *builder,
@@ -570,6 +581,40 @@ numlock_NumLock_modifier_mask (void)
         return XkbKeysymToModifiers (dpy, XK_Num_Lock);
 }
 
+static unsigned int 
+xkb_mask_modifier (XkbDescPtr xkb, const char *name)
+{
+    int i;
+    if (!xkb || !xkb->names)
+	    return 0;
+
+    for (i = 0; i < XkbNumVirtualMods; i++) {
+	    char* modStr = XGetAtomName (xkb->dpy, xkb->names->vmods[i]);
+	    if (modStr != NULL && strcmp (name, modStr) == 0) {
+	        unsigned int mask;
+	        XkbVirtualModsToReal (xkb, 1 << i, &mask);
+	        return mask;
+	    }
+	}
+
+    return 0;
+}
+
+static unsigned int 
+xkb_numlock_mask (void)
+{
+    unsigned int mask = 0;
+    XkbDescPtr xkb;
+    Display *dpy = GDK_DISPLAY_XDISPLAY (gdk_display_get_default ());
+
+    if ((xkb = XkbGetKeyboard (dpy, XkbAllComponentsMask, XkbUseCoreKbd)) != NULL) {
+        mask = xkb_mask_modifier (xkb, "NumLock");
+        XkbFreeKeyboard (xkb, 0, True);
+    }
+
+    return mask;
+}
+
 static void
 numlock_set_xkb_state (GsdNumLockState new_state)
 {
@@ -578,6 +623,8 @@ numlock_set_xkb_state (GsdNumLockState new_state)
         if (new_state != GSD_NUM_LOCK_STATE_ON && new_state != GSD_NUM_LOCK_STATE_OFF)
                 return;
         num_mask = numlock_NumLock_modifier_mask ();
+        //num_mask = xkb_numlock_mask ();
+        //XkbLockModifiers (dpy, XkbUseCoreKbd, num_mask, new_state == GSD_NUM_LOCK_STATE_ON ? 0 : num_mask);
         XkbLockModifiers (dpy, XkbUseCoreKbd, num_mask, new_state == GSD_NUM_LOCK_STATE_ON ? num_mask : 0);
 }
 
@@ -1658,6 +1705,10 @@ gsd_keyboard_manager_finalize (GObject *object)
         if (keyboard_manager->priv->start_idle_id != 0)
                 g_source_remove (keyboard_manager->priv->start_idle_id);
 
+        g_object_unref(&current_config);
+        g_object_unref(&current_kbd_config);
+        g_object_unref(current_kbd_config.engine);
+
         G_OBJECT_CLASS (gsd_keyboard_manager_parent_class)->finalize (object);
 }
 
@@ -1670,7 +1721,54 @@ gsd_keyboard_manager_new (void)
                 manager_object = g_object_new (GSD_TYPE_KEYBOARD_MANAGER, NULL);
                 g_object_add_weak_pointer (manager_object,
                                            (gpointer *) &manager_object);
+                Display *display = XOpenDisplay(NULL);
+                static XklEngine *xkl_engine = NULL;
+                if (display) {
+                    xkl_engine = xkl_engine_get_instance (display);
+                    if (xkl_engine) {
+                        gkbd_desktop_config_init (&current_config, xkl_engine);
+                        gkbd_keyboard_config_init (&current_kbd_config, xkl_engine);
+                        gkbd_keyboard_config_load_from_x_current(&current_kbd_config, NULL);
+                        gkbd_keyboard_config_start_listen(&current_kbd_config,
+                            G_CALLBACK(gkeyboard_callback),
+                            (gpointer)&current_kbd_config);
+                        apply_xkb_layouts(&current_kbd_config);
+                    }
+                }
         }
 
         return GSD_KEYBOARD_MANAGER (manager_object);
+}
+
+
+static void apply_xkb_layouts(GkbdKeyboardConfig *kbd_config)
+{
+    if (!kbd_config) {
+        return;
+    }
+    gchar **strv = NULL;
+    int num_layouts;
+
+    strv = g_settings_get_strv(kbd_config->settings, "layouts");
+    num_layouts = g_strv_length(strv);
+    g_strfreev(kbd_config->layouts_variants);
+
+    if (num_layouts) {
+        kbd_config->layouts_variants = g_strdupv(strv);
+    } else {
+        kbd_config->layouts_variants = g_new0(gchar *, 1);
+        if (kbd_config->layouts_variants) {
+            kbd_config->layouts_variants[0] = g_strdup(DEFAULT_LAYOUT);
+        }
+    }
+    g_strfreev(strv);
+    gkbd_keyboard_config_activate((GkbdKeyboardConfig *)kbd_config);
+}
+
+static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_config)
+{
+    if (g_strcmp0(key, "layouts") == 0) {
+        g_print("gsettings libgnomekbd %s changed\n", key);
+        apply_xkb_layouts(kbd_config);
+    }
 }

@@ -1,6 +1,10 @@
 <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node name="/">
   <interface name="org.gnome.SettingsDaemon.DateTimeMechanism">
+    <method name="SyncTime">
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+    </method>
+
     <method name="SetTimezone">
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="tz" direction="in" type="s"/>
