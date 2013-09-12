@@ -1768,6 +1768,7 @@ static void apply_xkb_layouts(GkbdKeyboardConfig *kbd_config)
 static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_config)
 {
     if (g_strcmp0(key, "layouts") == 0) {
+        g_print("gsettings libgnomekbd %s changed\n", key);
         apply_xkb_layouts(kbd_config);
     }
 }
