@@ -170,11 +170,12 @@ void deepin_power_using_saving_plan(GSettings *settings)
 
 void deepin_power_using_current_plan(GSettings *settings) 
 {
-    gchar *current_plan = NULL;                                                 
+    //gchar *current_plan = NULL;                                                 
     xmlDocPtr doc = NULL;                                                       
     xmlNodePtr cur = NULL;                                                      
                                                                                 
-    current_plan = g_settings_get_string(settings, "current-plan");             
+    //fixed by Long Wei 
+    //current_plan = g_settings_get_string(settings, "current-plan");             
                                                                                 
     doc = xmlParseFile(m_backup_filename);                                      
     if (!doc)                                                                   
@@ -187,10 +188,19 @@ void deepin_power_using_current_plan(GSettings *settings)
     cur = cur->xmlChildrenNode;                                                 
     while (cur) {                                                               
         if (!xmlStrcmp(cur->name, (const xmlChar *) "configuration")) {         
+            gchar *current_plan = g_settings_get_string(settings, "current-plan");             
             m_parse_configuration(doc, cur, settings, current_plan);                
+            g_free (current_plan);
         }                                                                       
         cur = cur->next;                                                        
     }
+
+    //fixed, free xml doc and node
+    cur = xmlDocGetRootElement(doc);                                            
+    if (cur != NULL) 
+        xmlFreeNode (cur);
+    //if (doc != NULL)
+     //   xmlFreeDoc (doc);
 }
 
 void deepin_power_cleanup() 

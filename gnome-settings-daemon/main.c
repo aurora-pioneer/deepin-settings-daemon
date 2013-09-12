@@ -63,14 +63,6 @@ timed_exit_cb (void)
         return FALSE;
 }
 
-static gboolean
-refresh_numlock_cb (void)
-{
-    g_spawn_command_line_async ("numlockx toggle", NULL);
-    g_spawn_command_line_async ("numlockx toggle", NULL);
-    return FALSE;
-}
-
 static void
 stop_manager (GnomeSettingsManager *manager)
 {
@@ -512,9 +504,6 @@ main (int argc, char *argv[])
         notify_init ("gnome-settings-daemon");
 
         bus_register ();
-
-        // refresh numlock status when start gnome-settings-daemon
-        g_timeout_add_seconds (15, (GSourceFunc) refresh_numlock_cb, NULL);
 
         if (do_timed_exit) {
                 g_timeout_add_seconds (30, (GSourceFunc) timed_exit_cb, NULL);

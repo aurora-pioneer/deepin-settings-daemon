@@ -65,6 +65,10 @@ GType                      gsd_datetime_mechanism_get_type            (void);
 GsdDatetimeMechanism      *gsd_datetime_mechanism_new                 (void);
 
 /* exported methods */
+/* manaul add sync_time method as daemon's sync is too slow */
+gboolean            gsd_datetime_mechanism_sync_time    (GsdDatetimeMechanism   *mechanism,
+                                                         DBusGMethodInvocation  *context);
+
 gboolean            gsd_datetime_mechanism_get_timezone (GsdDatetimeMechanism   *mechanism,
                                                          DBusGMethodInvocation  *context);
 gboolean            gsd_datetime_mechanism_set_timezone (GsdDatetimeMechanism   *mechanism,

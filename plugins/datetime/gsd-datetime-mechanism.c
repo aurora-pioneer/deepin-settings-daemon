@@ -474,6 +474,24 @@ gsd_datetime_check_tz_name (const char *tz,
         return retval;
 }
 
+gboolean            
+gsd_datetime_mechanism_sync_time    (GsdDatetimeMechanism   *mechanism,
+                                     DBusGMethodInvocation  *context)
+{
+        GError *error = NULL;
+        g_spawn_command_line_async ("ntpdate cn.pool.ntp.org", &error);
+
+        if (error != NULL) {
+                g_warning ("sync time:%s\n", error->message);
+                g_error_free (error);
+        }
+
+        error = NULL;
+        dbus_g_method_return (context);
+    
+        return TRUE;
+}
+
 gboolean
 gsd_datetime_mechanism_set_timezone (GsdDatetimeMechanism  *mechanism,
                                      const char            *tz,
