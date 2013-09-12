@@ -24,6 +24,7 @@
  *	and acts as a bridge between different 
  */
 
+#include "config.h"
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -36,6 +37,9 @@
 #include <cairo-xlib.h>
 #include <gtk/gtk.h>
 #include <gio/gio.h>
+#include <glib.h>
+#include <glib/gi18n-lib.h>
+
 
 #include "background_util.h"
 
@@ -274,16 +278,9 @@ register_account_service_background_path (GsdBackgroundManager* manager, const c
     }
 }
 
-// FIXME: there's is a possible race condition here.
-// is the gsettings change signal user-initiated?
-static gboolean is_gnome_initiated = TRUE;
-
 static void
 bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer user_data)
 {
-    if (g_strcmp0 (key, BG_CURRENT_PICT))
-	return;
-
     GsdBackgroundManager* manager = user_data;
     char* cur_pict_path = g_settings_get_string (settings, BG_CURRENT_PICT);
     if (update_prev_pict_path (cur_pict_path))
@@ -298,8 +295,6 @@ bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer user_dat
 
     if (g_strcmp0 (pict_uri, gnome_pict_uri)) // avoid change signal avalanche.
     {
-g_debug ("********************deepin bg settings changed\n");
-	is_gnome_initiated = FALSE;
 	g_settings_set_string (manager->priv->gnome_settings, GNOME_BG_PICTURE_URI, pict_uri);
     }
 
@@ -308,34 +303,36 @@ g_debug ("********************deepin bg settings changed\n");
 }
 
 static void
-gnome_bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer user_data)
+gnome_bg_settings_cur_pict_changed (GSettings *no_used, gchar *key, gpointer user_data)
 {
-    if (g_strcmp0 (key, GNOME_BG_PICTURE_URI))
-	return;
-
     GsdBackgroundManager* manager = user_data;
 
-    //if 1-
-    if (is_gnome_initiated) // avoid change signal avalanche.
-    {
-g_debug ("********************gnome bg settings changed\n");
-    	char* pict_uri = g_settings_get_string (settings, GNOME_BG_PICTURE_URI);
-    	char* deepin_pict_uris = g_settings_get_string (manager->priv->deepin_settings, BG_PICTURE_URIS);
 
-	g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, pict_uri);
-
-    	g_free (pict_uri);
-    	g_free (deepin_pict_uris);
+    char* pict_uri = g_settings_get_string (manager->priv->gnome_settings, GNOME_BG_PICTURE_URI);
+    char* deepin_pict_uris = g_settings_get_string (manager->priv->deepin_settings, BG_PICTURE_URIS);
+    if (!g_strrstr(deepin_pict_uris, ";")) {
+        g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, pict_uri);
+    } else if (!g_strrstr(deepin_pict_uris, pict_uri)) {
+        //TODO: handle gnome current picture change
+        char* new_picts = g_strconcat(deepin_pict_uris, ";", pict_uri, NULL);
+        g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, new_picts);
+        g_settings_set_string (manager->priv->deepin_settings, BG_CURRENT_PICT, pict_uri);
+        g_free(new_picts);
+        char* name = g_path_get_basename(pict_uri);
+        char* cmd = g_strdup_printf(_("notify-send \"Set wallpapper succefully\" \"%s has aleardly append to the end of random wallpaper list.\"")
+                    , name);
+        g_free(name);
+        g_spawn_command_line_async(cmd, NULL);
+        g_free(cmd);
     }
 
-    is_gnome_initiated = TRUE;
+    g_free (pict_uri);
+    g_free (deepin_pict_uris);
 }
 
 static void
 initial_setup (GsdBackgroundManager* manager)
 {
-    is_gnome_initiated = TRUE;
-
     prev_pict_path = NULL;
 
     char* cur_pict_path = NULL; 
