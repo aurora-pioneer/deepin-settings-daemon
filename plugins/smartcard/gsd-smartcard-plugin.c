@@ -200,6 +200,7 @@ get_configured_remove_action (GsdSmartcardPlugin *plugin)
                 g_warning ("GsdSmartcardPlugin unknown smartcard remove action");
                 remove_action = GSD_SMARTCARD_REMOVE_ACTION_NONE;
         }
+        g_free(remove_action_string);
 
         g_object_unref (settings);
 

@@ -20,9 +20,11 @@
  */
 
 #include <gio/gio.h>
+#include <stdio.h>
 #include <pwd.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
+#include "deepin_power.h"
 
 static const char m_powers_plan_xml[] = 
 "<powers version=\"1\">\n"

@@ -335,8 +335,7 @@ initial_setup (GsdBackgroundManager* manager)
 {
     prev_pict_path = NULL;
 
-    char* cur_pict_path = NULL; 
-    cur_pict_path = g_settings_get_string (manager->priv->deepin_settings, BG_CURRENT_PICT);
+    char* cur_pict_path = g_settings_get_string (manager->priv->deepin_settings, BG_CURRENT_PICT);
 
     register_account_service_background_path (manager, cur_pict_path);
 
