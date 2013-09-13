@@ -3665,11 +3665,15 @@ upower_notify_sleep_cb (UpClient *client,
             //g_object_unref (lock_settings);
         }
 
-        if (strcmp(g_settings_get_string(manager->priv->settings, "lid-close-ac-action"), "suspend") == 0 || 
-            strcmp(g_settings_get_string(manager->priv->settings, "lid-close-battery-action"), "suspend")) {
+        char* tmp1 = g_settings_get_string(manager->priv->settings, "lid-close-ac-action");
+        char* tmp2 = g_settings_get_string(manager->priv->settings, "lid-close-battery-action");
+        if (g_strcmp0(tmp1, "suspend") == 0 || g_strcmp0(tmp2, "suspend")) {
             printf("DEBUG: using saving plan\n");
             deepin_power_using_saving_plan(manager->priv->settings);
         }
+        g_free(tmp1);
+        g_free(tmp2);
+
 
         if (manager->priv->screensaver_proxy != NULL) {
                 g_debug ("doing gnome-screensaver lock");

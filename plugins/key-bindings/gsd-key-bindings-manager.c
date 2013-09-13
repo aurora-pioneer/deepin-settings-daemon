@@ -170,6 +170,7 @@ key_bindings_settings_changed (GSettings *settings, gchar *gsettings_key, gpoint
 	g_debug ("keybindings changed: %s : %s", gsettings_key, _string);
 
 	KeysAndCmd* _kandc_ptr = gsd_kb_util_parse_gsettings_value (gsettings_key, _string);
+        g_free(_string);
 	//1. new value is NULL, unbind previous keybindings
 	if (_kandc_ptr == NULL) //remove a previous key bindings.
 	{
