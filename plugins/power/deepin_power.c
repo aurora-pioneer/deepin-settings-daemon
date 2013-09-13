@@ -219,10 +219,6 @@ void deepin_power_cleanup()
     if (m_backup_filename) {
         xmlDocPtr doc = xmlParseFile(m_backup_filename);                                      
         if (doc != NULL) {
-            xmlNodePtr cur = xmlDocGetRootElement(doc);                                            
-            if (cur != NULL) {
-                xmlFreeNode (cur);
-            }
             xmlFreeDoc (doc);
         }
         free(m_backup_filename);
