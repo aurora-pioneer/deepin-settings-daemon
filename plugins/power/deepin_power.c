@@ -91,6 +91,9 @@ static void m_parse_plan(xmlDocPtr doc, xmlNodePtr cur, GSettings *settings)
     }
     
     g_settings_sync();
+
+    xmlFree (close_monitor);
+    xmlFree (suspend);
 }
 
 static void m_parse_configuration(xmlDocPtr doc,                                
@@ -111,6 +114,8 @@ static void m_parse_configuration(xmlDocPtr doc,
         }
         cur = cur->next;                                                        
     }                                                                           
+
+    xmlFree (plan_name);
 }
 
 static void m_settings_changed(GSettings *settings, 
@@ -212,8 +217,16 @@ void deepin_power_cleanup()
         m_session_settings = NULL;
     }
     if (m_backup_filename) {
+        xmlDocPtr doc = xmlParseFile(m_backup_filename);                                      
+        if (doc != NULL) {
+            xmlNodePtr cur = xmlDocGetRootElement(doc);                                            
+            if (cur != NULL) {
+                xmlFreeNode (cur);
+            }
+            xmlFreeDoc (doc);
+        }
         free(m_backup_filename);
         m_backup_filename = NULL;
-    }
+    }                                                                           
     xmlCleanupParser();
 }
