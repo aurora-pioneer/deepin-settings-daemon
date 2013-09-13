@@ -135,7 +135,7 @@ int deepin_power_init(GSettings *settings)
     if (m_backup_filename == NULL) 
         return -1;
     memset(m_backup_filename, 0, PATH_MAX);
-    sprintf(m_backup_filename, "%s/.config/powers.xml", pw->pw_dir);
+    snprintf(m_backup_filename, PATH_MAX, "%s/.config/powers.xml", pw->pw_dir);
     if (access(m_backup_filename, 0) != 0) {
         fptr = fopen(m_backup_filename, "w+");
         if (fptr == NULL) 
