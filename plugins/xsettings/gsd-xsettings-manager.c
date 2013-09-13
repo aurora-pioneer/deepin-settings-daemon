@@ -375,7 +375,7 @@ notify_idle (gpointer data)
 {
         GnomeXSettingsManager *manager = data;
         gint i;
-        for (i = 0; manager->priv->managers [i]; i++) {
+        for (i = 0; manager->priv->managers && manager->priv->managers [i]; i++) {
                 xsettings_manager_notify (manager->priv->managers[i]);
         }
         manager->priv->notify_idle_id = 0;
