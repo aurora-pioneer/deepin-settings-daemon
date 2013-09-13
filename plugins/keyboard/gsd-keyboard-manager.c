@@ -593,8 +593,10 @@ xkb_mask_modifier (XkbDescPtr xkb, const char *name)
 	    if (modStr != NULL && strcmp (name, modStr) == 0) {
 	        unsigned int mask;
 	        XkbVirtualModsToReal (xkb, 1 << i, &mask);
+                XFree(modStr);
 	        return mask;
 	    }
+            XFree(modStr);
 	}
 
     return 0;
