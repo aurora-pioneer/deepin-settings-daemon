@@ -89,7 +89,9 @@ monitors_create (gpointer data)
         GPtrArray *monitors = g_ptr_array_new ();
 
         monitor_files (monitors, FcConfigGetConfigFiles (NULL), data);
-        monitor_files (monitors, FcConfigGetFontDirs (NULL)   , data);
+
+        //this will cause serious memory leak, temporary disable this
+        /*monitor_files (monitors, FcConfigGetFontDirs (NULL)   , data);*/
 
         return monitors;
 }
