@@ -36,7 +36,7 @@
       <_description>Key5</_description>                                            
     </key> 
     <key name="key6" type="s">                                                  
-      <default>'/usr/bin/deepin-user-manual;F12'</default>                                                     
+      <default>'/usr/bin/deepin-user-manual;'</default>
       <_summary>Key6</_summary>                                                 
       <_description>Key6</_description>                                         
     </key>                                                                      
