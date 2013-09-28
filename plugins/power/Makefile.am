@@ -14,6 +14,8 @@ libpower_la_SOURCES = 					\
 	deepin_power.h					\
 	gsd-power-manager.c				\
 	gsd-power-manager.h				\
+	gsd-reset-power.h				\
+	gsd-reset-power.c				\
 	gsd-power-plugin.c	
 
 libpower_la_CPPFLAGS = \

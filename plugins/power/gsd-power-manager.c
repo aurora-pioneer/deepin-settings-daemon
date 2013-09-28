@@ -46,6 +46,14 @@
 #include "gsd-power-manager.h"
 #include "deepin_power.h"
 
+/* 
+ * reset power plan
+ * by jouyouyun
+ * 2013.9.27 17:40
+ */
+#include "gsd-reset-power.h"
+/* end */
+
 #define LOCK_CMD "dlock"
 #define BUFFER_SIZE 1024
 
@@ -3939,6 +3947,15 @@ gsd_power_manager_start (GsdPowerManager *manager,
         refresh_idle_dim_settings (manager);
 
         gnome_settings_profile_end (NULL);
+
+        /* 
+         * reset power plan when play movie for full screen
+         * by jouyouyun
+         * 2013.9.27 17:40
+         */
+        init_reset_power ();
+        /* end */
+
         return TRUE;
 }
 
@@ -3948,6 +3965,14 @@ gsd_power_manager_stop (GsdPowerManager *manager)
         g_debug ("Stopping power manager");
 
         deepin_power_cleanup();
+
+        /* 
+         * reset power plan when play movie for full screen
+         * by jouyouyun
+         * 2013.9.27 17:40
+         */
+        finalize_reset_power ();
+        /* end */
 
         if (manager->priv->bus_cancellable != NULL) {
                 g_cancellable_cancel (manager->priv->bus_cancellable);
