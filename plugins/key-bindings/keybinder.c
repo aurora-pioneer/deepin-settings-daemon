@@ -258,6 +258,8 @@ modifiers_equal (GdkModifierType mf1, GdkModifierType mf2)
 	return FALSE;
 }
 
+#define Super_L                       0xffeb  /* Left super */
+
 static gboolean
 do_grab_key (struct Binding *binding)
 {
@@ -272,13 +274,13 @@ do_grab_key (struct Binding *binding)
 	if (keymap == NULL || rootwin == NULL)
 		return FALSE;
 
-	gtk_accelerator_parse(binding->keystring, &keysym, &modifiers);
+    gtk_accelerator_parse(binding->keystring, &keysym, &modifiers);
+    if (keysym == 0) {
+            return FALSE;
+    }
 
-	if (keysym == 0)
-		return FALSE;
-
-	binding->keyval = keysym;
-	binding->modifiers = modifiers;
+    binding->keyval = keysym;
+    binding->modifiers = modifiers;
 	g_debug ("Grabbing keyval: %d, vmodifiers: 0x%x, name: %s",
 	         keysym, modifiers, binding->keystring);
 
