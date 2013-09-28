@@ -36,9 +36,10 @@ libpower_la_CFLAGS = \
 	$(GNOME_DESKTOP_CFLAGS)				\
 	$(SETTINGS_PLUGIN_CFLAGS)			\
 	$(LIBXML2_CFLAGS)   				\
+	-I/usr/include/libwnck-3.0   				\
 	$(AM_CFLAGS)
 
-libpower_la_LDFLAGS = 					\
+libpower_la_LDFLAGS = -lwnck-3			\
 	$(GSD_PLUGIN_LDFLAGS)
 
 libpower_la_LIBADD  = 					\
