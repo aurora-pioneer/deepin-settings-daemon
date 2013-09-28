@@ -11,7 +11,7 @@
       <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
     </key>
     <key name="key1" type="s">                                                  
-	<default>"/usr/bin/launcher;Super_L"</default>
+    <default>"/usr/bin/launcher;Super_L"</default>
       <_summary>Key1</_summary>                                                 
       <_description>Key1</_description>                                            
     </key>      
@@ -66,10 +66,10 @@
       <_description>Key11</_description>                                         
     </key>                   
     <key name="key12" type="s">                                                  
-      <default>''</default>                                                     
-      <_summary>Key12</_summary>                                                 
-      <_description>Key12</_description>                                         
-    </key>                    
+        <default>"/usr/bin/launcher;Super_R"</default>
+        <_summary>Key12</_summary>
+        <_description>Key12</_description>
+    </key>      
     <key name="key13" type="s">                                                  
       <default>''</default>                                                     
       <_summary>Key13</_summary>                                                 
