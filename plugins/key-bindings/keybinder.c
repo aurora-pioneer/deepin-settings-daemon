@@ -321,12 +321,6 @@ do_ungrab_key (struct Binding *binding)
 	return TRUE;
 }
 
-#define Super_L                       0xffeb  /* Left super */
-#define Super_R                       0xffec  /* Right super */
-static int i = 0;
-static int super_flag = 0;
-struct Binding *super_binding = NULL;
-
 static GdkFilterReturn
 filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 {
@@ -379,10 +373,6 @@ filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 
 		g_debug ("Translated keyval: %d, vmodifiers: 0x%x, name: %s",
 		          keyval, modifiers, gtk_accelerator_name(keyval, modifiers));
-        if ( keyval == Super_L || keyval == Super_R ) {
-            super_flag = 1;
-        }
-        i++;
 
 		/*
 		 * Set the last event time for use when showing
@@ -396,38 +386,22 @@ filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 			/* NOTE: ``iter`` might be removed from the list
 			 * in the callback.
 			 */
-			super_binding = iter->data;
+			struct Binding *binding = iter->data;
 			iter = iter->next;
 
-			if (keyvalues_equal(super_binding->keyval, keyval) &&
-			    modifiers_equal(super_binding->modifiers, modifiers)) {
+			if (keyvalues_equal(binding->keyval, keyval) &&
+			    modifiers_equal(binding->modifiers, modifiers)) {
 				g_debug ("Calling handler for '%s'...", 
-					 super_binding->keystring);
+					 binding->keystring);
 
-                if ( super_flag ) {
-                    g_debug ("^^^^^ i : %d\n", i);
-                    if ( i > 1) {
-                        (super_binding->handler) (super_binding->keystring, 
-                                super_binding->user_data);
-                    }
-                } else {
-                    (super_binding->handler) (super_binding->keystring, 
-                            super_binding->user_data);
-                }
-            g_debug ("$$$$ Start Ending!****\n");
+                (binding->handler) (binding->keystring, 
+                        binding->user_data);
 			}
 		}
 
 		processing_event = FALSE;
 		break;
 	case KeyRelease:
-        g_debug ("<< super_flag : %d >> << i: %d >>\n", super_flag, i);
-        if ( super_flag && i == 1 ) {
-            (super_binding->handler) (super_binding->keystring, 
-                    super_binding->user_data);
-        }
-        i = 0;
-        super_flag = 0;
 		g_debug ("Got KeyRelease!");
 		break;
 	}
