@@ -81,7 +81,7 @@
   </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.cursor" path="/org/gnome/settings-daemon/plugins/cursor/">
     <key name="active" type="b">
-      <default>true</default>
+      <default>false</default>
       <_summary>Activation of this plugin</_summary>
       <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
     </key>
@@ -93,7 +93,7 @@
   </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.mouse" path="/org/gnome/settings-daemon/plugins/mouse/">
     <key name="active" type="b">
-      <default>true</default>
+      <default>false</default>
       <_summary>Activation of this plugin</_summary>
       <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
     </key>
