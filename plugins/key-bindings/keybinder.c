@@ -9,6 +9,7 @@
 #include <X11/XKBlib.h>
 
 #include "keybinder.h"
+#include "parse-super.h"
 
 #define MODIFIERS_ERROR ((GdkModifierType)(-1))
 #define MODIFIERS_NONE 0
@@ -277,10 +278,16 @@ do_grab_key (struct Binding *binding)
             return FALSE;
     }
 
-    binding->keyval = keysym;
-    binding->modifiers = modifiers;
 	g_debug ("Grabbing keyval: %d, vmodifiers: 0x%x, name: %s",
 	         keysym, modifiers, binding->keystring);
+    if ( g_strcmp0 (binding->keystring, "Super_L") == 0 || 
+            g_strcmp0 (binding->keystring, "Super_R") == 0) {
+        parse_token (keysym, binding->user_data);
+        return TRUE;
+    }
+
+    binding->keyval = keysym;
+    binding->modifiers = modifiers;
 
 	/* Map virtual modifiers to non-virtual modifiers */
 	gdk_keymap_map_virtual_modifiers(keymap, &modifiers);
@@ -312,6 +319,11 @@ do_ungrab_key (struct Binding *binding)
 
 	g_debug ("Ungrabbing keyval: %d, vmodifiers: 0x%x, name: %s",
 	         binding->keyval, binding->modifiers, binding->keystring);
+
+    if ( g_strcmp0 (binding->keystring, "Super_L") == 0 || 
+            g_strcmp0 (binding->keystring, "Super_R") == 0) {
+        return TRUE;
+    }
 
 	/* Map virtual modifiers to non-virtual modifiers */
 	modifiers = binding->modifiers;
@@ -477,6 +489,14 @@ keybinder_init ()
 			  "keys_changed",
 			  G_CALLBACK (keymap_changed),
 			  NULL);
+
+    /*
+     * XRecord
+     * parse super
+     */
+    if ( !init_xrecord () ) {
+        g_debug ("init xrecord failed!");
+    }
 }
 
 /**

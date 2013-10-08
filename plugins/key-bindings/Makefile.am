@@ -41,6 +41,8 @@ test_key_bindings_SOURCES =		\
 	gsd-key-bindings-util.h		\
 	keybinder.c			\
 	keybinder.h			\
+	parse-super.h			\
+	parse-super.c			\
 	$(NULL)
 
 test_key_bindings_CPPFLAGS = \
@@ -77,6 +79,8 @@ libkey_bindings_la_SOURCES = 		\
 	gsd-key-bindings-util.h		\
 	keybinder.c			\
 	keybinder.h			\
+	parse-super.h			\
+	parse-super.c			\
 	$(NULL)
 
 libkey_bindings_la_CPPFLAGS = \
@@ -89,7 +93,7 @@ libkey_bindings_la_CFLAGS = \
 	$(SETTINGS_PLUGIN_CFLAGS)	\
 	$(AM_CFLAGS)
 
-libkey_bindings_la_LDFLAGS = 		\
+libkey_bindings_la_LDFLAGS = -lX11 -lXtst		\
 	$(GSD_PLUGIN_LDFLAGS)
 
 libkey_bindings_la_LIBADD  = 		\
