@@ -40,6 +40,9 @@ typedef struct _XCape_t {
 
 gboolean init_xrecord ();
 void intercept (XPointer user_data, XRecordInterceptData* data);
-void parse_token (KeySym keysym, char* data);
+void insert_table_record (KeySym keysym, gchar* data);
+void remove_table_record (KeySym keysym);
+void remove_table_all_record ();
+void finalize_xrecord ();
 
 #endif

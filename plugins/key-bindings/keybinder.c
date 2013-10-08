@@ -27,6 +27,7 @@
  */
 #define WE_ONLY_USE_ONE_GROUP 0
 
+GHashTable* key_table;
 
 struct Binding {
 	KeybinderHandler      handler;
@@ -273,6 +274,14 @@ do_grab_key (struct Binding *binding)
 	if (keymap == NULL || rootwin == NULL)
 		return FALSE;
 
+    if ( g_strcmp0 (binding->keystring, "Super") == 0 ) {
+        g_print ("bind key Super!\n");
+        insert_table_record (0xffeb, binding->user_data);
+        insert_table_record (0xffec, binding->user_data);
+        return TRUE;
+    }
+
+    g_print ("grab bind keys!\n");
     gtk_accelerator_parse(binding->keystring, &keysym, &modifiers);
     if (keysym == 0) {
             return FALSE;
@@ -280,12 +289,6 @@ do_grab_key (struct Binding *binding)
 
 	g_debug ("Grabbing keyval: %d, vmodifiers: 0x%x, name: %s",
 	         keysym, modifiers, binding->keystring);
-    if ( g_strcmp0 (binding->keystring, "Super_L") == 0 || 
-            g_strcmp0 (binding->keystring, "Super_R") == 0) {
-        parse_token (keysym, binding->user_data);
-        return TRUE;
-    }
-
     binding->keyval = keysym;
     binding->modifiers = modifiers;
 
@@ -317,13 +320,14 @@ do_ungrab_key (struct Binding *binding)
 	if (keymap == NULL || rootwin == NULL)
 		return FALSE;
 
-	g_debug ("Ungrabbing keyval: %d, vmodifiers: 0x%x, name: %s",
-	         binding->keyval, binding->modifiers, binding->keystring);
-
-    if ( g_strcmp0 (binding->keystring, "Super_L") == 0 || 
-            g_strcmp0 (binding->keystring, "Super_R") == 0) {
+    if ( g_strcmp0 (binding->keystring, "Super") == 0 ) {
+        remove_table_record (0xffeb);
+        remove_table_record (0xffec);
         return TRUE;
     }
+
+	g_debug ("Ungrabbing keyval: %d, vmodifiers: 0x%x, name: %s",
+	         binding->keyval, binding->modifiers, binding->keystring);
 
 	/* Map virtual modifiers to non-virtual modifiers */
 	modifiers = binding->modifiers;
@@ -494,6 +498,9 @@ keybinder_init ()
      * XRecord
      * parse super
      */
+    key_table = g_hash_table_new_full (g_str_hash, g_str_equal, 
+            g_free, g_free);
+
     if ( !init_xrecord () ) {
         g_debug ("init xrecord failed!");
     }
@@ -579,6 +586,7 @@ keybinder_bind_full (const char *keystring,
 	binding->notify = notify;
 
 	/* Sets the binding's keycode and modifiers */
+    g_print ("Start bind keys!\n");
 	success = do_grab_key (binding);
 
 	if (success) {

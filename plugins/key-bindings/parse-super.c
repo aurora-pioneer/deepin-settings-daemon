@@ -24,9 +24,10 @@
 void xrecord_thread ();
 void handle_key (XCape_t* self, int key_event);
 
-static GHashTable* key_table;
+extern GHashTable* key_table;
 static gboolean super_press = FALSE;
 static gint key_press_cnt = 0;
+static XCape_t* self_xcape;
 
 gboolean init_xrecord ()
 {
@@ -45,7 +46,6 @@ gboolean init_xrecord ()
 void xrecord_thread ()
 {
     int dummy;
-    XCape_t* self_xcape;
     
     self_xcape = calloc (sizeof (XCape_t), 1);
     if ( !self_xcape ) {
@@ -83,9 +83,6 @@ void xrecord_thread ()
         g_thread_exit (NULL);
     }
 
-    key_table = g_hash_table_new_full (g_str_hash, g_str_equal, 
-            g_free, g_free);
-
     XRecordRange* rec_range = XRecordAllocRange ();
     rec_range->device_events.first = KeyPress;
     rec_range->device_events.last = ButtonRelease;
@@ -99,7 +96,8 @@ void xrecord_thread ()
         g_thread_exit (NULL);
     }
 
-    XSync (self_xcape->ctrl_conn, FALSE);
+    /*XSync (self_xcape->ctrl_conn, FALSE);*/
+    XFlush (self_xcape->ctrl_conn);
 
     if ( !XRecordEnableContext (self_xcape->data_conn, 
                 self_xcape->record_ctx, intercept, (XPointer)self_xcape) ) {
@@ -108,6 +106,11 @@ void xrecord_thread ()
         g_thread_exit (NULL);
     }
 
+    g_thread_exit (NULL);
+}
+
+void finalize_xrecord ()
+{
     if ( !XRecordFreeContext (self_xcape->ctrl_conn, 
                 self_xcape->record_ctx) ) {
         g_debug ("Failed to free xrecord connect!\n");
@@ -118,8 +121,7 @@ void xrecord_thread ()
     g_hash_table_destroy (key_table);
     g_debug ("init xcape exiting!\n");
 
-    /*return TRUE;*/
-    g_thread_exit (NULL);
+    return ;
 }
 
 void
@@ -179,9 +181,21 @@ intercept (XPointer user_data, XRecordInterceptData* data)
     }
 }
 
-void parse_token (KeySym keysym, gchar* data)
+void insert_table_record (KeySym keysym, gchar* data)
 {
     gchar* keysym_str = g_strdup_printf ("%lu", (gulong)keysym);
 
     g_hash_table_insert (key_table, keysym_str, g_strdup (data));
+}
+
+void remove_table_all_record ()
+{
+    g_hash_table_remove_all (key_table);
+}
+
+void remove_table_record (KeySym keysym)
+{
+    gchar* keysym_str = g_strdup_printf ("%lu", (gulong)keysym);
+
+    g_hash_table_remove (key_table, keysym_str);
 }
