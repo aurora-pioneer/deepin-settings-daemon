@@ -21,10 +21,11 @@
 
 #include "parse-super.h"
 
-void xrecord_thread ();
+void xrecord_thread (gpointer data);
 void handle_key (XCape_t* self, int key_event);
 
 extern GHashTable* key_table;
+static gboolean super_press = False;
 static gint key_press_cnt = 0;
 static XCape_t* self_xcape;
 
@@ -42,7 +43,7 @@ gboolean init_xrecord ()
     return TRUE;
 }
 
-void xrecord_thread ()
+void xrecord_thread (gpointer data)
 {
     int dummy;
     
@@ -131,10 +132,11 @@ handle_key (XCape_t* self, int key_event)
         key_press_cnt++;
     } else {
         g_debug ("Key Released!\n");
-        if ( key_press_cnt == 1 ) {
-            /*if ( is_grabbed () ) {
-               return ; 
-            }*/
+        if ( (key_press_cnt == 1) && (super_press) ) {
+        /*if ( (key_press_cnt == 1) ) {*/
+            if ( is_grabbed () ) {
+               return ;
+            }
             KeySym key_sym;
 
             key_sym = XkbKeycodeToKeysym (self->ctrl_conn, self->key, 0, 0);
@@ -148,6 +150,7 @@ handle_key (XCape_t* self, int key_event)
             g_free ( key_str);
         }
         key_press_cnt = 0;
+        super_press = False;
     }
 }
 
@@ -163,6 +166,7 @@ intercept (XPointer user_data, XRecordInterceptData* data)
         g_debug ("Intercepted key event %d, key code %d\n",
                 key_event, key_code);
         if ( key_code == 133 ) {
+            super_press = True;
         }
         self->key = key_code;
 
@@ -209,10 +213,12 @@ gboolean is_grabbed ()
             GrabModeSync, GrabModeSync, CurrentTime);
     if ( ret == AlreadyGrabbed ) {
         g_print ("AlreadyGrabbed!\n");
+        XUngrabKeyboard (dpy, CurrentTime);
         XCloseDisplay(dpy);
         return True;
     }
 
+    XUngrabKeyboard (dpy, CurrentTime);
     XCloseDisplay(dpy);
     return False;
 }
