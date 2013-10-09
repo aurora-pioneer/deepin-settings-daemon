@@ -25,7 +25,6 @@ void xrecord_thread ();
 void handle_key (XCape_t* self, int key_event);
 
 extern GHashTable* key_table;
-static gboolean super_press = FALSE;
 static gint key_press_cnt = 0;
 static XCape_t* self_xcape;
 
@@ -130,13 +129,12 @@ handle_key (XCape_t* self, int key_event)
     if ( key_event == KeyPress ) {
         g_debug ("Key Pressed!\n");
         key_press_cnt++;
-        g_debug ("Key Pressed: %d, %d\n", super_press, 
-                key_press_cnt);
     } else {
         g_debug ("Key Released!\n");
-        g_debug ("Key Released: %d, %d\n", super_press, 
-                key_press_cnt);
         if ( key_press_cnt == 1 ) {
+            if ( is_grabbed () ) {
+               return ; 
+            }
             KeySym key_sym;
 
             key_sym = XkbKeycodeToKeysym (self->ctrl_conn, self->key, 0, 0);
@@ -149,7 +147,6 @@ handle_key (XCape_t* self, int key_event)
             }
             g_free ( key_str);
         }
-        super_press = FALSE;
         key_press_cnt = 0;
     }
 }
@@ -166,7 +163,6 @@ intercept (XPointer user_data, XRecordInterceptData* data)
         g_debug ("Intercepted key event %d, key code %d\n",
                 key_event, key_code);
         if ( key_code == 133 ) {
-            super_press = TRUE;
         }
         self->key = key_code;
 
@@ -198,4 +194,25 @@ void remove_table_record (KeySym keysym)
     gchar* keysym_str = g_strdup_printf ("%lu", (gulong)keysym);
 
     g_hash_table_remove (key_table, keysym_str);
+}
+
+gboolean is_grabbed ()
+{
+    Display* dpy;
+    Window root;
+    int ret;
+
+    dpy = XOpenDisplay (0);
+    root = DefaultRootWindow (dpy);
+
+    ret = XGrabKeyboard (dpy, root, False, 
+            GrabModeSync, GrabModeSync, CurrentTime);
+    if ( ret == AlreadyGrabbed ) {
+        g_print ("AlreadyGrabbed!\n");
+        XCloseDisplay(dpy);
+        return True;
+    }
+
+    XCloseDisplay(dpy);
+    return False;
 }

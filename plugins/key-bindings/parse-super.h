@@ -44,5 +44,6 @@ void insert_table_record (KeySym keysym, gchar* data);
 void remove_table_record (KeySym keysym);
 void remove_table_all_record ();
 void finalize_xrecord ();
+gboolean is_grabbed ();
 
 #endif
