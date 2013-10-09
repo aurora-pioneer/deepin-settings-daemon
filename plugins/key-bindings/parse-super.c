@@ -132,9 +132,9 @@ handle_key (XCape_t* self, int key_event)
     } else {
         g_debug ("Key Released!\n");
         if ( key_press_cnt == 1 ) {
-            if ( is_grabbed () ) {
+            /*if ( is_grabbed () ) {
                return ; 
-            }
+            }*/
             KeySym key_sym;
 
             key_sym = XkbKeycodeToKeysym (self->ctrl_conn, self->key, 0, 0);
