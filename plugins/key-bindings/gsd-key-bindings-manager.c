@@ -40,6 +40,7 @@
 #include "gsd-key-bindings-manager.h"
 
 #include "keybinder.h"
+#include "parse-super.h"
 #include "gsd-key-bindings-handler.h"
 #include "gsd-key-bindings-settings.h"
 #include "gsd-key-bindings-util.h"
@@ -99,6 +100,12 @@ gsd_key_bindings_manager_stop (GsdKeyBindingsManager *manager)
 	//1. clear key bindings.
 	g_hash_table_remove_all (_priv->gsettings_ht);
 	g_hash_table_remove_all (_priv->keyandcmd_ht);
+
+    /*
+     * stop XRecord
+     */
+    g_debug ("remove all record in stop!\n");
+    remove_table_all_record ();
 }
 
 static void
@@ -235,6 +242,12 @@ gsd_key_bindings_manager_finalize (GObject *object)
         g_return_if_fail (key_bindings_manager->priv != NULL);
 
         G_OBJECT_CLASS (gsd_key_bindings_manager_parent_class)->finalize (object);
+
+    /*
+     * stop XRecord
+     */
+    g_debug ("finalize XRecord in finalize!\n");
+    finalize_xrecord ();
 }
 
 GsdKeyBindingsManager *
