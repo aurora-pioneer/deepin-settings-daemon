@@ -40,6 +40,7 @@
 #include <gtk/gtk.h>
 #include <gio/gdesktopappinfo.h>
 #include <gconf/gconf-client.h>
+#include <X11/XKBlib.h>
 
 #ifdef HAVE_GUDEV
 #include <gudev/gudev.h>
@@ -171,6 +172,7 @@ struct GsdMediaKeysManagerPrivate
         NotifyNotification *volume_notification;
         NotifyNotification *brightness_notification;
         NotifyNotification *kb_backlight_notification;
+        NotifyNotification *capslock_notification;
 };
 
 static void     gsd_media_keys_manager_class_init  (GsdMediaKeysManagerClass *klass);
@@ -215,6 +217,12 @@ static const char *kb_backlight_icons[] = {
         "notification-keyboard-brightness-medium",
         "notification-keyboard-brightness-high",
         "notification-keyboard-brightness-full",
+        NULL
+};
+
+static const char *capslock_icons[] = {
+        "notification-audio-volume-muted",
+        "notification-audio-volume-high",
         NULL
 };
 
@@ -306,6 +314,14 @@ ubuntu_osd_notification_show_kb_backlight (GsdMediaKeysManager *manager,
 {
         return ubuntu_osd_do_notification (&manager->priv->kb_backlight_notification,
                                            "keyboard", value, value <= 0, kb_backlight_icons);
+}
+
+static gboolean
+ubuntu_osd_notification_show_capslock (GsdMediaKeysManager *manager,
+                                       gint value)
+{
+        return ubuntu_osd_do_notification (&manager->priv->capslock_notification,
+                                           "capslock", value, value <=0, capslock_icons);
 }
 
 static void
@@ -1047,6 +1063,36 @@ do_touchpad_action (GsdMediaKeysManager *manager)
 
         g_settings_set_boolean (settings, TOUCHPAD_ENABLED_KEY, !state);
         g_object_unref (settings);
+}
+
+static void
+do_capslock_osd_action (GsdMediaKeysManager *manager, gboolean state)
+{
+        dialog_init (manager);
+        gsd_media_keys_window_set_action_custom (GSD_MEDIA_KEYS_WINDOW (manager->priv->dialog),
+                                                state ? "capslock-enabled-symbolic" : "capslock-disabled-symbolic",
+                                                FALSE);
+        dialog_show (manager);
+}
+
+static void
+do_capslock_action (GsdMediaKeysManager *manager)
+{
+    gboolean capslock_flag = FALSE;
+
+    Display *d = XOpenDisplay ((gchar*)0);
+    guint n;
+
+    if (d) {
+        XkbGetIndicatorState (d, XkbUseCoreKbd, &n);
+
+        if ((n & 1)) {
+            capslock_flag = TRUE;
+        }
+    }
+    XCloseDisplay (d);
+
+    do_capslock_osd_action (manager, capslock_flag);
 }
 
 static void
@@ -2142,6 +2188,9 @@ do_action (GsdMediaKeysManager *manager,
         case BATTERY_KEY:
                 do_execute_desktop (manager, "gnome-power-statistics.desktop", timestamp);
                 break;
+        case CAPSLOCK_KEY:
+                do_capslock_action (manager);
+                break;
         /* Note, no default so compiler catches missing keys */
         case CUSTOM_KEY:
                 g_assert_not_reached ();
@@ -2490,6 +2539,12 @@ gsd_media_keys_manager_stop (GsdMediaKeysManager *manager)
                 notify_notification_close (priv->kb_backlight_notification, NULL);
                 g_object_unref (priv->kb_backlight_notification);
                 priv->kb_backlight_notification = NULL;
+        }
+
+        if (priv->capslock_notification != NULL) {
+                notify_notification_close (priv->capslock_notification, NULL);
+                g_object_unref (priv->capslock_notification);
+                priv->capslock_notification = NULL;
         }
 
         if (priv->keys != NULL) {
