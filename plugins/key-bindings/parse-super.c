@@ -171,8 +171,10 @@ intercept (XPointer user_data, XRecordInterceptData* data)
         self->key = key_code;
 
         if (key_event == ButtonPress) {
+            key_press_cnt++;
             g_debug ("***Button Pressed!\n");
         } else if (key_event == ButtonRelease) {
+            key_press_cnt++;
             g_debug ("***Mouse Pressed!\n");
         } else {
             g_debug ("***Other Pressed!\n");
