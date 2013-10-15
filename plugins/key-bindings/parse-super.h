@@ -38,12 +38,12 @@ typedef struct _XCape_t {
     KeyCode key;
 } XCape_t;
 
-gboolean init_xrecord ();
+gboolean init_xrecord (void);
 void intercept (XPointer user_data, XRecordInterceptData* data);
 void insert_table_record (KeySym keysym, gchar* data);
 void remove_table_record (KeySym keysym);
-void remove_table_all_record ();
-void finalize_xrecord ();
-gboolean is_grabbed ();
+void remove_table_all_record (void);
+void finalize_xrecord (void);
+gboolean is_grabbed (void);
 
 #endif
