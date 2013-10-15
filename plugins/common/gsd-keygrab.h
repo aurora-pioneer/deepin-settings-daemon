@@ -39,7 +39,8 @@ typedef enum {
 } GsdKeygrabFlags;
 
 void	        grab_key_unsafe	(Key     *key,
-				 GsdKeygrabFlags flags,
+				 gboolean is_grab,
+                 GsdKeygrabFlags flags, 
 			         GSList  *screens);
 
 gboolean        match_xi2_key   (Key           *key,

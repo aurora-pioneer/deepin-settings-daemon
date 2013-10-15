@@ -241,10 +241,11 @@ grab_key_internal (Key             *key,
 
 void
 grab_key_unsafe (Key             *key,
-                 GsdKeygrabFlags  flags,
+                 gboolean  is_grab,
+                 GsdKeygrabFlags flags, 
                  GSList          *screens)
 {
-        grab_key_internal (key, TRUE, flags, screens);
+        grab_key_internal (key, is_grab, flags, screens);
 }
 
 static gboolean

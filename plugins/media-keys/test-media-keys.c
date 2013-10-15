@@ -51,6 +51,7 @@ main (int    argc,
         manager = gsd_media_keys_manager_new ();
 
         error = NULL;
+        g_print ("Test!!!\n");
         gsd_media_keys_manager_start (manager, &error);
 
         gtk_main ();

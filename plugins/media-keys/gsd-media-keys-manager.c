@@ -537,7 +537,8 @@ grab_media_key (MediaKey            *key,
 
 	if (key->key != NULL) {
 		need_flush = TRUE;
-		grab_key_unsafe (key->key, FALSE, manager->priv->screens);
+		grab_key_unsafe (key->key, FALSE, 
+                GSD_KEYGRAB_NORMAL,  manager->priv->screens);
 	}
 
 	free_key (key->key);
@@ -552,7 +553,8 @@ grab_media_key (MediaKey            *key,
 		return need_flush;
 	}
 
-	grab_key_unsafe (key->key, TRUE, manager->priv->screens);
+	grab_key_unsafe (key->key, TRUE, 
+            GSD_KEYGRAB_NORMAL, manager->priv->screens);
 
 	g_free (tmp);
 
@@ -700,7 +702,8 @@ gconf_changed_cb (GConfClient         *client,
 			if (key->key) {
 				gdk_error_trap_push ();
 
-				grab_key_unsafe (key->key, FALSE, manager->priv->screens);
+				grab_key_unsafe (key->key, FALSE, 
+                        GSD_KEYGRAB_NORMAL, manager->priv->screens);
 
 				gdk_flush ();
 				if (gdk_error_trap_pop ())
@@ -2551,7 +2554,8 @@ gsd_media_keys_manager_stop (GsdMediaKeysManager *manager)
                         key = g_ptr_array_index (manager->priv->keys, i);
 
                         if (key->key)
-                                grab_key_unsafe (key->key, FALSE, priv->screens);
+                                grab_key_unsafe (key->key, FALSE, 
+                                        GSD_KEYGRAB_NORMAL, priv->screens);
                 }
                 g_ptr_array_free (priv->keys, TRUE);
                 priv->keys = NULL;

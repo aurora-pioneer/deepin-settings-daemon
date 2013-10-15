@@ -24,6 +24,7 @@ mkinstalldirs
 *.la
 *.gmo
 *~
+*.swp
 man/gnome-settings-daemon.1
 po/POTFILES
 po/stamp-it
