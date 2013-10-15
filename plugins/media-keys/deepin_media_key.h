@@ -22,8 +22,8 @@
 #ifndef DEEPIN_MEDIA_KEY_H
 #define DEEPIN_MEDIA_KEY_H
 
-int deepin_media_key_init();
-void deepin_media_key_cleanup();
-int deepin_media_key_set_brightness(double brightness);
+int deepin_media_key_init(void);
+void deepin_media_key_cleanup(void);
+void deepin_media_key_set_brightness(double brightness);
 
 #endif /* DEEPIN_MEDIA_KEY_H */

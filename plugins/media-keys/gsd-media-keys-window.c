@@ -191,7 +191,8 @@ load_pixbuf (GsdMediaKeysWindow *window,
                                               NULL,
                                               NULL,
                                               NULL);
-        gtk_icon_info_free (info);
+        /*gtk_icon_info_free (info);*/
+        g_object_unref (info);
 
         return pixbuf;
 }

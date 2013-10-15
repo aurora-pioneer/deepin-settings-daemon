@@ -19,19 +19,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
 #include <gio/gio.h>
+#include "deepin_media_key.h"
 
 typedef struct {
     double brightness;
 } deepin_brightness_t;
 
 static GSettings *m_xrandr_settings = NULL;
-static pthread_t m_thread = NULL;
+static pthread_t m_thread;
 static pthread_mutex_t m_mutex;
 
 static void *m_set_brightness(void *argv);
 
-int deepin_media_key_init() 
+int deepin_media_key_init(void) 
 {
     m_xrandr_settings = g_settings_new("org.gnome.settings-daemon.plugins.xrandr");
 
@@ -40,7 +42,7 @@ int deepin_media_key_init()
     return 0;
 }
 
-void deepin_media_key_cleanup() 
+void deepin_media_key_cleanup(void) 
 {
     if (m_xrandr_settings) {
         g_object_unref(m_xrandr_settings);
@@ -60,9 +62,10 @@ static void *m_set_brightness(void *argv)
     free(deepin_brightness_obj);
     deepin_brightness_obj = NULL;
     pthread_mutex_unlock(&m_mutex);
+    /*return NULL;*/
 }
 
-int deepin_media_key_set_brightness(double brightness) 
+void deepin_media_key_set_brightness(double brightness) 
 {
     deepin_brightness_t *deepin_brightness_obj = NULL;
     deepin_brightness_obj = malloc(sizeof(deepin_brightness_t));
