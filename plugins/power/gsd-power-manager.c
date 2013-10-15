@@ -45,6 +45,7 @@
 #include "gsd-enums.h"
 #include "gsd-power-manager.h"
 #include "deepin_power.h"
+#include "deepin-xrandr-helper.h"
 
 /* 
  * reset power plan
@@ -2231,6 +2232,7 @@ do_power_action_type (GsdPowerManager *manager,
                         g_error_free (error);
                 }
                 break;
+        case GSD_POWER_ACTION_LOGOUT:
         case GSD_POWER_ACTION_NOTHING:
                 break;
         }
@@ -3703,6 +3705,10 @@ upower_notify_sleep_cb (UpClient *client,
         }
 }
 
+
+
+
+
 static void
 upower_notify_resume_cb (UpClient *client,
                          UpSleepKind sleep_kind,
@@ -3725,6 +3731,10 @@ upower_notify_resume_cb (UpClient *client,
          * state is probably different now */
         notify_close_if_showing (manager->priv->notification_low);
         notify_close_if_showing (manager->priv->notification_discharging);
+
+        deepin_xrandr_set_brightness(deepin_xrandr_get_brightness());
+        printf("huhuhuhuhu\n");
+        //TODO: fetch brightness and set
 
         /* ensure we turn the panel back on after resume */
         ret = gnome_rr_screen_set_dpms_mode (manager->priv->x11_screen,

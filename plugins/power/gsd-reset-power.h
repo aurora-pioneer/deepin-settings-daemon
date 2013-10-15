@@ -28,9 +28,9 @@
 #define SAVING              "saving"
 #define HIGH_PERFORMANCER   "high-performance"
 
-void init_reset_power ();
-void finalize_reset_power ();
-gchar* get_user_power_plan ();
+void init_reset_power (void);
+void finalize_reset_power (void);
+gchar* get_user_power_plan (void);
 int set_power_plan (const gchar* plan);
 gboolean power_setting_is_change (gulong pid);
 

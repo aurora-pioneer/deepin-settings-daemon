@@ -102,6 +102,9 @@ static const gchar introspection_xml[] =
 "       <!-- Timestamp for the RANDR call itself -->"
 "       <arg name='timestamp' type='x' direction='in'/>"
 "    </method>"
+"    <method name='SetBrightness'>"
+"       <arg name='brithness' type='d' direction='in' />"
+"    </method>"
 "  </interface>"
 "</node>";
 
@@ -155,6 +158,23 @@ static void handle_rotate_windows (GsdXrandrManager *mgr, GnomeRRRotation rotati
 G_DEFINE_TYPE (GsdXrandrManager, gsd_xrandr_manager, G_TYPE_OBJECT)
 
 static gpointer manager_object = NULL;
+GnomeRRScreen* try_get_the_screen()
+{
+    if (manager_object != NULL) {
+        return GSD_XRANDR_MANAGER (manager_object)->priv->rw_screen;
+    } else {
+        return NULL;
+    }
+}
+GSettings* try_get_the_gsettings()
+{
+    if (manager_object != NULL) {
+        return GSD_XRANDR_MANAGER (manager_object)->priv->settings;
+    } else {
+        return NULL;
+    }
+}
+
 
 static FILE *log_file;
 
@@ -1305,6 +1325,7 @@ sanitize (GsdXrandrManager *manager, GPtrArray *array)
         return new;
 }
 
+
 static void
 generate_fn_f7_configs (GsdXrandrManager *mgr)
 {
@@ -2223,6 +2244,11 @@ handle_method_call_xrandr_2 (GsdXrandrManager *manager,
                 g_variant_get (parameters, "(ix)", &rotation, &timestamp);
                 gsd_xrandr_manager_2_rotate_to (manager, rotation, timestamp, NULL);
                 g_dbus_method_invocation_return_value (invocation, NULL);
+        } else if (g_strcmp0(method_name, "SetBrightness") == 0) {
+            double value = 1;
+            g_variant_get(parameters, "(d)", &value);
+            deepin_xrandr_set_brightness_without_gsetting(value);
+            g_dbus_method_invocation_return_value (invocation, NULL);
         }
 }
 

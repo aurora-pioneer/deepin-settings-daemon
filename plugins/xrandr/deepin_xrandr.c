@@ -25,11 +25,22 @@
 #include <unistd.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
-#include <gtk/gtk.h>  //gtk is initialized in gnome-settings-daemon/main.c
+#include <stdlib.h>
+#include <string.h>
 
 #include "deepin_xrandr.h"
+#include "gsd-xrandr-manager.h"
 
 #define BUF_SIZE 1024
+void run_command(const char* cmd);
+
+void run_command(const char* cmd)
+{
+    g_spawn_command_line_async(cmd, NULL);
+}
+
+extern GSettings* try_get_the_gsettings();
+extern GnomeRRScreen* try_get_the_screen();
 
 static GFile *m_config_file = NULL;
 static GFileMonitor *m_config_file_monitor = NULL;
@@ -61,15 +72,16 @@ static void m_only_one_shown(char *primary_output_name,
 static void m_settings_changed(GSettings *settings, 
                                gchar *key, 
                                gpointer user_data);
-static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings);
+void deepin_xrandr_set_brightness_without_gsetting(double value); //doesn't change gsetting's value
+static double m_get_brightness(GSettings *settings) { return g_settings_get_double(settings, "brightness");}
 static void m_set_rotation(char *rotation);
-static void m_parse_configuration(xmlDocPtr doc, 
-                                  xmlNodePtr cur, 
+static void m_parse_configuration(xmlDocPtr doc,
+                                  xmlNodePtr cur,
                                   GnomeRRScreen *screen);
 static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur, gboolean is_clone);
 
-static void m_parse_configuration(xmlDocPtr doc, 
-                                  xmlNodePtr cur, 
+static void m_parse_configuration(xmlDocPtr doc,
+                                  xmlNodePtr cur,
                                   GnomeRRScreen *screen) 
 {
     char *output_name = NULL;                       
@@ -80,14 +92,14 @@ static void m_parse_configuration(xmlDocPtr doc,
     cur = cur->xmlChildrenNode;                                                 
     while (cur) {                                                               
         if (!xmlStrcmp(cur->name, (const xmlChar *) "clone")) {                 
-            clone = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-            if (strcmp(clone, "yes") == 0) 
+            clone = (char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+            if (g_strcmp0(clone, "yes") == 0) 
                 is_clone = TRUE;
             else 
                 is_clone = FALSE;
         }                                                                       
         if (!xmlStrcmp(cur->name, (const xmlChar *) "output")) {                
-            output_name = xmlGetProp(cur, (const xmlChar *) "name");            
+            output_name = (char*)xmlGetProp(cur, (const xmlChar *) "name");            
             if (output_name) {                                                  
                 output = gnome_rr_screen_get_output_by_name(screen,             
                                                             output_name);          
@@ -101,8 +113,8 @@ static void m_parse_configuration(xmlDocPtr doc,
 
 static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur, gboolean is_clone) 
 {
-    char *width = NULL;
-    char *height = NULL;
+    unsigned char *width = NULL;
+    unsigned char *height = NULL;
     char buffer[BUF_SIZE] = {'\0'};
 
     cur = cur->xmlChildrenNode;
@@ -114,7 +126,7 @@ static void m_parse_output(xmlDocPtr doc, xmlNodePtr cur, gboolean is_clone)
             height = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1); 
         }  
         if (!xmlStrcmp(cur->name, (const xmlChar *) "rotation")) {
-            m_set_rotation(xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+            m_set_rotation((char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
         }
         cur = cur->next;
     }
@@ -138,8 +150,6 @@ static void m_config_file_changed(GFileMonitor *monitor,
     char *filename = NULL;
     xmlDocPtr doc = NULL;
     xmlNodePtr cur = NULL;
-    char *output_name = NULL;
-    GnomeRROutput *output = NULL;
 
     if (G_FILE_MONITOR_EVENT_CHANGED != event_type) 
         return;
@@ -188,43 +198,43 @@ static void m_settings_changed(GSettings *settings,
 {
     GnomeRRScreen *screen = (GnomeRRScreen *) user_data;
     
-    if (strcmp(key, "brightness") == 0) {
-        m_set_brightness(screen, settings);
+    if (g_strcmp0(key, "brightness") == 0) {
+        deepin_xrandr_set_brightness_without_gsetting(m_get_brightness(settings));
         return;
     }
 
-    if (strcmp(key, "copy-multi-monitors") == 0 || 
-        strcmp(key, "extend-multi-monitors") == 0 || 
-        strcmp(key, "only-monitor-shown") == 0) {
+    if (g_strcmp0(key, "copy-multi-monitors") == 0 || 
+        g_strcmp0(key, "extend-multi-monitors") == 0 || 
+        g_strcmp0(key, "only-monitor-shown") == 0) {
         m_set_multi_monitors(screen, settings);
         return;
     }
 }
 
-static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings) 
+void deepin_xrandr_set_brightness_without_gsetting(double value)
 {
+    //runtime value will be sured by gsetting's value range
+    g_assert(value >= 0.1 && value <= 1.0);
+    GnomeRRScreen* screen = try_get_the_screen();
+    if (screen == NULL)
+        return;
+
     GnomeRRConfig *config = NULL;
     GnomeRROutputInfo **output_infos = NULL;
     GnomeRROutput *output = NULL;
     GError *error = NULL;
     char *output_name = NULL;
-    double value = 0.0;
     char buffer[BUF_SIZE];
     int i = 0;
     int backlight_min = 0;
     int backlight_max = 0;
-    int backlight = 0;
-    
+
     config = gnome_rr_config_new_current(screen, NULL);
     if (!config) 
         return;
 
     output_infos = gnome_rr_config_get_outputs(config);
     if (!output_infos) 
-        return;
-
-    value = g_settings_get_double(settings, "brightness");
-    if (value < 0.1 || value > 1.0) 
         return;
 
     while (output_infos[i]) {
@@ -253,7 +263,7 @@ static void m_set_brightness(GnomeRRScreen *screen, GSettings *settings)
 
         memset(buffer, 0, BUF_SIZE);
         sprintf(buffer, "xrandr --output %s --brightness %f", output_name, value);
-        system(buffer);
+        run_command(buffer);
 
         backlight_min = gnome_rr_output_get_backlight_min(output);
         backlight_max = gnome_rr_output_get_backlight_max(output);
@@ -393,7 +403,7 @@ static void m_use_mirror(char *primary_output_name,
             other_output_name, 
             same, 
             primary_output_name);
-    system(buffer);
+    run_command(buffer);
 }
 
 static void m_use_extend(GnomeRRScreen* screen, char *primary_output_name, char *other_output_name) 
@@ -403,7 +413,6 @@ static void m_use_extend(GnomeRRScreen* screen, char *primary_output_name, char 
 
     //FIXME: temporary hack to align two outputs
     GdkScreen* gdk_screen = gdk_screen_get_default ();
-    gint screen_width = gdk_screen_get_width (gdk_screen);
     gint screen_height = gdk_screen_get_height (gdk_screen);
     GnomeRROutput* primary_output = gnome_rr_screen_get_output_by_name (screen, primary_output_name);
     GnomeRROutput* other_output = gnome_rr_screen_get_output_by_name (screen, other_output_name);
@@ -411,7 +420,6 @@ static void m_use_extend(GnomeRRScreen* screen, char *primary_output_name, char 
     GnomeRRMode* other_mode = gnome_rr_output_get_current_mode (other_output);
     gint primary_width = gnome_rr_mode_get_width (primary_mode);
     gint primary_height = gnome_rr_mode_get_height (primary_mode);
-    gint other_width = gnome_rr_mode_get_width (other_mode);
     gint other_height = gnome_rr_mode_get_height (other_mode);
     
     gint primary_x = 0;
@@ -423,7 +431,7 @@ static void m_use_extend(GnomeRRScreen* screen, char *primary_output_name, char 
             "xrandr --output %s --auto --pos %dx%d --output %s --auto --pos %dx%d", 
             primary_output_name,  primary_x, primary_y,
             other_output_name, other_x, other_y); 
-    system(buffer);
+    run_command(buffer);
 }
 
 static void m_only_one_shown(char *primary_output_name, 
@@ -435,14 +443,14 @@ static void m_only_one_shown(char *primary_output_name,
         char buffer[BUF_SIZE] = {'\0'};
         sprintf(buffer, "xrandr --output %s --primary", primary_output_name);
         printf("DEBUG %s\n", buffer);
-        system(buffer);
+        run_command(buffer);
         memset(buffer, 0, BUF_SIZE);
         sprintf(buffer, 
                 "xrandr --output %s --auto --output %s --off", 
                 primary_output_name, 
                 other_output_name);
         printf("DEBUG %s\n", buffer);
-        system(buffer);
+        run_command(buffer);
         m_only1_shown = TRUE;
         m_only2_shown = FALSE;
         return;
@@ -453,14 +461,14 @@ static void m_only_one_shown(char *primary_output_name,
 
         sprintf(buffer, "xrandr --output %s --primary", primary_output_name);
         printf("DEBUG %s\n", buffer);
-        system(buffer);
+        run_command(buffer);
         memset(buffer, 0, BUF_SIZE);
         sprintf(buffer, 
                 "xrandr --output %s --auto --output %s --off", 
                 other_output_name, 
                 primary_output_name);
         printf("DEBUG %s\n", buffer);
-        system(buffer);
+        run_command(buffer);
         m_only1_shown = FALSE;
         m_only2_shown = TRUE;
         return;
@@ -473,7 +481,7 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
     GnomeRROutputInfo **output_infos = NULL;
     GnomeRROutput **outputs = NULL;
     char output_name[BUF_SIZE];
-    char *rr_output_name = NULL;
+    const char *rr_output_name = NULL;
     gchar **strv = NULL;
     int count = 0;
     int i = 0;
@@ -510,7 +518,7 @@ static void m_set_output_names(GnomeRRScreen *screen, GSettings *settings)
             rr_output_name = gnome_rr_output_get_name(outputs[i]);
             if (strstr(rr_output_name, "LVDS"))
                 is_laptop = TRUE;
-            if (strcmp(rr_output_name, "default") == 0) {
+            if (g_strcmp0(rr_output_name, "default") == 0) {
                 sprintf(output_name, "%s (%s)", "PC", rr_output_name);
             } else {
                 sprintf(output_name, 
@@ -566,7 +574,7 @@ static void m_set_rotation(char *rotation)
     char buffer[BUF_SIZE] = {'\0'};
     
     sprintf(buffer, "xrandr -o %s", rotation);
-    system(buffer);
+    run_command(buffer);
 }
 
 int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings) 
@@ -582,12 +590,12 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     m_is_copy_monitor = g_settings_get_boolean(settings, "copy-multi-monitors");
 
     /* TODO: GnomeRRScreen changed event */
-    g_signal_connect(screen, "changed", m_screen_changed, settings);
+    g_signal_connect(screen, "changed", G_CALLBACK(m_screen_changed), settings);
     
     /* TODO: GSettings changed event */
     g_signal_connect(settings, 
                      "changed", 
-                     m_settings_changed, 
+                     G_CALLBACK(m_settings_changed), 
                      screen);
 
     m_set_output_names(screen, settings);
@@ -603,7 +611,7 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
 
     gnome_rr_config_save(config, NULL);
 
-    m_set_brightness(screen, settings);
+    deepin_xrandr_set_brightness_without_gsetting(m_get_brightness(settings));
 
     m_config_file = g_file_new_for_path(backup_filename);
     if (!m_config_file) 
@@ -620,7 +628,7 @@ int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings)
     /* TODO: GFile changed event */
     g_signal_connect(m_config_file_monitor, 
                      "changed", 
-                     m_config_file_changed, 
+                     G_CALLBACK(m_config_file_changed),
                      screen);
 
     if (config) {

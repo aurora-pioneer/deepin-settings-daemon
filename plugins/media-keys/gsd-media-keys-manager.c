@@ -49,7 +49,6 @@
 #include "gnome-settings-profile.h"
 #include "gsd-marshal.h"
 #include "gsd-media-keys-manager.h"
-#include "deepin_media_key.h"
 
 #include "shortcuts-list.h"
 #include "gsd-media-keys-window.h"
@@ -59,6 +58,7 @@
 #include <canberra.h>
 #include <pulse/pulseaudio.h>
 #include "gvc-mixer-control.h"
+#include "deepin-xrandr-helper.h"
 
 #include <libnotify/notify.h>
 
@@ -1880,7 +1880,7 @@ update_screen_cb (GObject             *source_object,
         /* update the dialog with the new value */
         g_variant_get (new_percentage, "(u)", &percentage);
         //printf("DEBUG: media-key set brightness %d from %d\n", percentage, data->old_percentage);
-        deepin_media_key_set_brightness(percentage / 100.0);
+        deepin_xrandr_set_brightness(percentage / 100.0);
 
         guint osd_percentage;
         if (data->old_percentage == 100 && data->type == SCREEN_BRIGHTNESS_UP_KEY)
@@ -2391,8 +2391,6 @@ gsd_media_keys_manager_start (GsdMediaKeysManager *manager,
 
         gnome_settings_profile_start (NULL);
 
-        deepin_media_key_init();
-
         if (supports_xinput2_devices (&manager->priv->opcode) == FALSE) {
                 g_debug ("No Xinput2 support, disabling plugin");
                 return TRUE;
@@ -2446,8 +2444,6 @@ gsd_media_keys_manager_stop (GsdMediaKeysManager *manager)
         int i;
 
         g_debug ("Stopping media_keys manager");
-
-        deepin_media_key_cleanup();
 
         if (priv->bus_cancellable != NULL) {
                 g_cancellable_cancel (priv->bus_cancellable);

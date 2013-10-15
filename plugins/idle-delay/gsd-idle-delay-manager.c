@@ -44,6 +44,7 @@
 #include "gsd-idle-delay-manager.h"
 #include "gsd-idle-delay-watcher.h"
 #include "gsd-idle-delay-misc.h"
+#include "deepin-xrandr-helper.h"
 
 #define GSD_IDLE_DELAY_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GSD_TYPE_IDLE_DELAY_MANAGER, GsdIdleDelayManagerPrivate))
 
@@ -55,7 +56,6 @@ struct GsdIdleDelayManagerPrivate
 	guint			settings_timeout;
 	guint			timeout_id;
 	GSettings		*xrandr_settings;//xrandr gsettings.
-        double          	backup_brightness; /* backup the preview xrandr brightness */
 	//X stuff for DPMS
 	Display*		x11_display;
 	gboolean		dpms_supported;
@@ -159,27 +159,6 @@ watcher_idle_cb (GsdIdleDelayWatcher *watcher, gboolean is_idle,
 }
 
 static gboolean
-on_timeout_cb (gpointer user_data)
-{
-	g_debug ("on_timeout_cb called");
-	GsdIdleDelayManager* manager = GSD_IDLE_DELAY_MANAGER(user_data);
-	//turn off the screen
-	if (manager->priv->dpms_supported)
-	{
-		DPMSForceLevel (manager->priv->x11_display, DPMSModeOff);
-	}
-	else
-	{
-		g_settings_set_double (manager->priv->xrandr_settings,
-			               XRANDR_KEY_BRIGHTNESS, 0.1);
-	}
-	//never call it again.
-	g_source_remove (manager->priv->timeout_id);
-	manager->priv->timeout_id = 0;
-	return FALSE;
-}
-
-static gboolean
 watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
                         GsdIdleDelayManager *manager)
 {
@@ -191,24 +170,13 @@ watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
 		manager->priv->timeout_id = 0;
 	}
 
-	if (in_effect) 
+	if (in_effect)
 	{
-	    manager->priv->backup_brightness = g_settings_get_double (manager->priv->xrandr_settings, 
-                                                                      XRANDR_KEY_BRIGHTNESS);	
-            //set dim brightness, not confused with xrandr brightness
-            g_settings_set_double (manager->priv->xrandr_settings, XRANDR_KEY_BRIGHTNESS, 
-                                   manager->priv->settings_brightness);
-
-	    manager->priv->timeout_id = g_timeout_add (manager->priv->settings_timeout * MSEC_PER_SEC,
-						       on_timeout_cb, manager);
+            deepin_xrandr_set_brightness(0.5);
 	} 
 	else 
 	{
-		if (manager->priv->dpms_supported)
-			DPMSForceLevel (manager->priv->x11_display, DPMSModeOn);
-        	//restore xrandr brightness before previous idle-delay.
-        	g_settings_set_double (manager->priv->xrandr_settings, XRANDR_KEY_BRIGHTNESS, 
-				       manager->priv->backup_brightness);
+            deepin_xrandr_set_brightness(deepin_xrandr_get_brightness());
 	}
 	return TRUE;
 }
