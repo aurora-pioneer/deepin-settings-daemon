@@ -352,7 +352,6 @@ filter_func (GdkXEvent *gdk_xevent, GdkEvent *event, gpointer data)
 
 	switch (xevent->type) {
 	case KeyPress:
-        g_debug ("#$&&$$ Enter pressed \n\n");
 		modifiers = xevent->xkey.state;
 
 		g_debug ("Got KeyPress keycode: %d, modifiers: 0x%x", 

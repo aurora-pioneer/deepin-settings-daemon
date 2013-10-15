@@ -631,7 +631,7 @@ xkb_events_filter (GdkXEvent *xev_,
         XEvent *xev = (XEvent *) xev_;
 	XkbEvent *xkbev = (XkbEvent *) xev;
         GsdKeyboardManager *manager = (GsdKeyboardManager *) user_data;
-        g_warning ("xkb events filter\n");
+        /*g_warning ("xkb events filter\n");*/
 
         if (xev->type != manager->priv->xkb_event_base ||
             xkbev->any.xkb_type != XkbStateNotify)
@@ -1431,6 +1431,7 @@ convert_libgnomekbd_layouts (GSettings *settings)
                 gchar **strv;
 
                 strv = g_strsplit (*l, "\t", 2);
+                g_debug ("strv 0: %s\n", strv[0]);
                 if (strv[0] && !strv[1])
                         id = g_strdup (strv[0]);
                 else if (strv[0] && strv[1])
@@ -1438,6 +1439,7 @@ convert_libgnomekbd_layouts (GSettings *settings)
                 else
                         id = NULL;
 
+                g_debug ("id: %s\n", id ? id : "NULL");
                 if (id)
                         g_variant_builder_add (&builder, "(ss)", INPUT_SOURCE_TYPE_XKB, id);
 
@@ -1471,8 +1473,10 @@ maybe_convert_old_settings (GSettings *settings)
                 goto out;
 
         sources = g_settings_get_value (settings, KEY_INPUT_SOURCES);
+        g_debug ("convert_libgnomekbd_layouts ....");
         if (g_variant_n_children (sources) < 1) {
                 convert_libgnomekbd_layouts (settings);
+                g_debug ("convert_libgnomekbd_layouts end....");
 #ifdef HAVE_IBUS
                 convert_ibus (settings);
 #endif
@@ -1480,8 +1484,11 @@ maybe_convert_old_settings (GSettings *settings)
         g_variant_unref (sources);
 
         options = g_settings_get_strv (settings, KEY_KEYBOARD_OPTIONS);
-        if (g_strv_length (options) < 1)
+        g_debug ("convert_libgnomekbd_options ....");
+        if (g_strv_length (options) < 1) {
                 convert_libgnomekbd_options (settings);
+                g_debug ("convert_libgnomekbd_options end....");
+        }
         g_strfreev (options);
 
         if (!g_file_set_contents (stamp_file_path, "", 0, &error)) {
