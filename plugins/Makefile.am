@@ -27,12 +27,6 @@ disabled_plugins = \
 	color	\
 	$(NULL)
 
-if HAVE_PACKAGEKIT
-enabled_plugins += updates
-else
-disabled_plugins += updates
-endif
-
 if SMARTCARD_SUPPORT
 enabled_plugins += smartcard
 else
