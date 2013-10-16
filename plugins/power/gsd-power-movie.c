@@ -88,7 +88,7 @@ static void on_active_window_changed (WnckScreen* screen,
 
     if ( wnck_window_is_fullscreen (active_window) ) {
         pid = wnck_window_get_pid (active_window);
-        g_print ("current pid: %lu\n", pid);
+        g_debug ("current pid: %lu\n", pid);
 
         is_change = power_setting_is_change (pid);
         if ( is_change ) {
@@ -99,13 +99,13 @@ static void on_active_window_changed (WnckScreen* screen,
             }
             user_plan = get_user_power_plan ();
 
-            g_print ("Set power plan for high performance!\n\n");
+            g_debug ("Set power plan for high performance!\n\n");
             set_power_plan (HIGH_PERFORMANCER);
         }
     } else {
         if ( active_set_power ) {
             active_set_power = 0;
-            g_print ("**pre state is full screen###!\n");
+            g_debug ("**pre state is full screen###!\n");
             set_power_plan (user_plan);
         }
     }
@@ -120,7 +120,7 @@ static void on_state_changed (WnckWindow* window,
 
     if ( changed_mask == WNCK_WINDOW_STATE_FULLSCREEN ) {
         pid = wnck_window_get_pid (window);
-        g_print ("current pid: %lu\n", pid);
+        g_debug ("current pid: %lu\n", pid);
 
         is_change = power_setting_is_change (pid);
         if ( is_change ) {
@@ -132,11 +132,11 @@ static void on_state_changed (WnckWindow* window,
                 }
                 user_plan = get_user_power_plan ();
 
-                g_print ("Set power plan for high performance!\n");
+                g_debug ("Set power plan for high performance!\n");
                 set_power_plan (HIGH_PERFORMANCER);
             } else {
                 has_set_flag = 0;
-                g_print ("**pre state is full screen###!\n");
+                g_debug ("**pre state is full screen###!\n");
                 set_power_plan (user_plan);
             }
         }
@@ -152,7 +152,7 @@ gchar* get_user_power_plan ()
 
     power_settings = g_settings_new ("org.gnome.settings-daemon.plugins.power");
     cur_plan = g_settings_get_string (power_settings, "current-plan");
-    g_print ("current plan: %s\n", cur_plan);
+    g_debug ("current plan: %s\n", cur_plan);
 
     g_object_unref (power_settings);
 
@@ -200,22 +200,22 @@ gboolean power_setting_is_change (gulong pid)
         return FALSE;
     }
     
-    g_print ("size: %d\n", length);
+    g_debug ("size: %d\n", length);
     for (; i < length; i++ ) {
         if ( memcmp("libflash", (content + i), 8) == 0 ) {
-            g_print ("flash exist!\n");
+            g_debug ("flash exist!\n");
             exist_flag = 1;
             break;
         } else if ( memcmp("chrome", (content + i), 6) == 0 ) {
-            g_print ("chrome exist!\n");
+            g_debug ("chrome exist!\n");
             exist_flag = 1;
             break;
         } else if ( memcmp("operaplugin", (content + i), 11) == 0 ) {
-            g_print ("opera plugin exist!\n");
+            g_debug ("opera plugin exist!\n");
             exist_flag = 1;
             break;
-        } else if ( memcmp("mplayer", (content + i), 11) == 0 ) {
-            g_print ("mplayer exist!\n");
+        } else if ( memcmp("mplayer", (content + i), 7) == 0 ) {
+            g_debug ("mplayer exist!\n");
             exist_flag = 1;
             break;
         }
