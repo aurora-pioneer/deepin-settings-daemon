@@ -52,7 +52,7 @@
  * by jouyouyun
  * 2013.9.27 17:40
  */
-#include "gsd-reset-power.h"
+#include "gsd-power-movie.h"
 /* end */
 
 #define LOCK_CMD "dlock"
@@ -3951,7 +3951,7 @@ gsd_power_manager_start (GsdPowerManager *manager,
          * by jouyouyun
          * 2013.9.27 17:40
          */
-        init_reset_power ();
+        init_power_movie ();
         /* end */
 
         return TRUE;

@@ -19,8 +19,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef __GSD_RESET_POWER_H__
-#define __GSD_RESET_POWER_H__
+#ifndef __GSD_POWER_MOVIE_H__
+#define __GSD_POWER_MOVIE_H__
 
 #include <gio/gio.h>
 
@@ -28,7 +28,7 @@
 #define SAVING              "saving"
 #define HIGH_PERFORMANCER   "high-performance"
 
-void init_reset_power (void);
+void init_power_movie (void);
 void finalize_reset_power (void);
 gchar* get_user_power_plan (void);
 int set_power_plan (const gchar* plan);

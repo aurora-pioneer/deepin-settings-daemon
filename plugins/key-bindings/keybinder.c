@@ -275,13 +275,12 @@ do_grab_key (struct Binding *binding)
 		return FALSE;
 
     if ( g_strcmp0 (binding->keystring, "Super") == 0 ) {
-        g_print ("bind key Super!\n");
+        g_debug ("bind key Super!\n");
         insert_table_record (0xffeb, binding->user_data);
         insert_table_record (0xffec, binding->user_data);
         return TRUE;
     }
 
-    g_print ("grab bind keys!\n");
     gtk_accelerator_parse(binding->keystring, &keysym, &modifiers);
     if (keysym == 0) {
             return FALSE;
@@ -585,7 +584,6 @@ keybinder_bind_full (const char *keystring,
 	binding->notify = notify;
 
 	/* Sets the binding's keycode and modifiers */
-    g_print ("Start bind keys!\n");
 	success = do_grab_key (binding);
 
 	if (success) {

@@ -23,7 +23,7 @@
 #include <libwnck/libwnck.h>
 #include <string.h>
 
-#include "gsd-reset-power.h"
+#include "gsd-power-movie.h"
 
 static void on_active_window_changed (WnckScreen* screen, 
         WnckWindow* pre_active_window, gpointer data);
@@ -38,7 +38,7 @@ static gchar* user_plan = NULL;
 static gulong active_sig_id = 0;
 static gulong state_sig_id = 0;
 
-void init_reset_power ()
+void init_power_movie (void)
 {
     gdk_init (NULL, NULL);
     WnckScreen* screen = wnck_screen_get_default ();
@@ -71,7 +71,6 @@ static void on_active_window_changed (WnckScreen* screen,
 {
     gulong pid = 0;
     gboolean is_change = FALSE;
-    gchar* cur_plan = NULL;
 
     wnck_screen_force_update (screen);
     WnckWindow* active_window = wnck_screen_get_active_window (screen);
@@ -118,7 +117,6 @@ static void on_state_changed (WnckWindow* window,
 {
     gulong pid = 0;
     gboolean is_change = FALSE;
-    gchar* cur_plan = NULL;
 
     if ( changed_mask == WNCK_WINDOW_STATE_FULLSCREEN ) {
         pid = wnck_window_get_pid (window);
@@ -214,6 +212,10 @@ gboolean power_setting_is_change (gulong pid)
             break;
         } else if ( memcmp("operaplugin", (content + i), 11) == 0 ) {
             g_print ("opera plugin exist!\n");
+            exist_flag = 1;
+            break;
+        } else if ( memcmp("mplayer", (content + i), 11) == 0 ) {
+            g_print ("mplayer exist!\n");
             exist_flag = 1;
             break;
         }
