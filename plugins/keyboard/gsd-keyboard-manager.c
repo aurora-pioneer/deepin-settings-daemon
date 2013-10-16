@@ -134,6 +134,7 @@ static void     set_gtk_im_module                (GsdKeyboardManager      *manag
 //
 static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_config);
 static void apply_xkb_layouts(GkbdKeyboardConfig *kbd_config);
+static gboolean kbd_timeout_func (gpointer data);
 
 G_DEFINE_TYPE (GsdKeyboardManager, gsd_keyboard_manager, G_TYPE_OBJECT)
 
@@ -1462,7 +1463,7 @@ maybe_convert_old_settings (GSettings *settings)
         gchar *stamp_file_path = NULL;
         GError *error = NULL;
 
-        stamp_dir_path = g_build_filename (g_get_user_data_dir (), PACKAGE_NAME, NULL);
+        stamp_dir_path = g_build_path (g_get_user_data_dir (), PACKAGE_NAME, NULL);
         if (g_mkdir_with_parents (stamp_dir_path, 0755)) {
                 g_warning ("Failed to create directory %s: %s", stamp_dir_path, g_strerror (errno));
                 goto out;
@@ -1471,12 +1472,9 @@ maybe_convert_old_settings (GSettings *settings)
         stamp_file_path = g_build_filename (stamp_dir_path, "input-sources-converted", NULL);
         if (g_file_test (stamp_file_path, G_FILE_TEST_EXISTS))
                 goto out;
-
         sources = g_settings_get_value (settings, KEY_INPUT_SOURCES);
-        g_debug ("convert_libgnomekbd_layouts ....");
         if (g_variant_n_children (sources) < 1) {
                 convert_libgnomekbd_layouts (settings);
-                g_debug ("convert_libgnomekbd_layouts end....");
 #ifdef HAVE_IBUS
                 convert_ibus (settings);
 #endif
@@ -1484,10 +1482,8 @@ maybe_convert_old_settings (GSettings *settings)
         g_variant_unref (sources);
 
         options = g_settings_get_strv (settings, KEY_KEYBOARD_OPTIONS);
-        g_debug ("convert_libgnomekbd_options ....");
         if (g_strv_length (options) < 1) {
                 convert_libgnomekbd_options (settings);
-                g_debug ("convert_libgnomekbd_options end....");
         }
         g_strfreev (options);
 
@@ -1627,6 +1623,7 @@ gsd_keyboard_manager_start (GsdKeyboardManager *manager,
         manager->priv->start_idle_id = g_idle_add ((GSourceFunc) start_keyboard_idle_cb, manager);
 
         gnome_settings_profile_end (NULL);
+        g_timeout_add_seconds (60, kbd_timeout_func, &current_kbd_config);
 
         return TRUE;
 }
@@ -1759,4 +1756,13 @@ static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_con
         g_print("gsettings libgnomekbd %s changed\n", key);
         apply_xkb_layouts(kbd_config);
     }
+}
+
+gboolean kbd_timeout_func (gpointer data)
+{
+    GkbdKeyboardConfig *config = (GkbdKeyboardConfig*)data;
+
+    apply_xkb_layouts (config);
+
+    return FALSE;
 }
