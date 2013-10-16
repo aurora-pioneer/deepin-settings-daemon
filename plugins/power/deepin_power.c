@@ -80,10 +80,6 @@ static void m_parse_plan(xmlDocPtr doc, xmlNodePtr cur, GSettings *settings)
     }
     close_monitor_value = atoi(close_monitor);
     suspend_value = atoi(suspend);
-    printf("m_parse_plan: %d, %d, %d\n", 
-            close_monitor_value,
-            suspend_value,
-            close_monitor_value);
     g_settings_set_int(settings, "sleep-display-ac", close_monitor_value);
     g_settings_set_int(settings, "sleep-display-battery", close_monitor_value);
     g_settings_set_int(settings, "sleep-inactive-ac-timeout", suspend_value);
@@ -127,7 +123,6 @@ static void m_settings_current_plan_changed(GSettings *settings,
                                gchar *key, 
                                gpointer user_data) 
 {
-    printf("plan changed\n");
     deepin_power_using_current_plan(settings);
 }
 
@@ -139,7 +134,7 @@ int deepin_power_init(GSettings *settings)
     m_session_settings = g_settings_new("org.gnome.desktop.session");
 
     pw = getpwuid(getuid());
-    if (!pw) 
+    if (!pw)
         return -1;
     m_backup_filename = malloc(PATH_MAX * sizeof(char));
     if (m_backup_filename == NULL) 
@@ -162,21 +157,6 @@ int deepin_power_init(GSettings *settings)
                      NULL);
 
     return 0;
-}
-
-void deepin_power_using_saving_plan(GSettings *settings) 
-{
-    printf("save plan\n");
-    int close_monitor_value = 300;
-    int suspend_value = 900;
-
-    g_settings_set_int(settings, "sleep-display-ac", close_monitor_value);         
-    g_settings_set_int(settings, "sleep-display-battery", close_monitor_value); 
-    g_settings_set_int(settings, "sleep-inactive-ac-timeout", suspend_value);   
-    g_settings_set_int(settings, "sleep-inactive-battery-timeout", suspend_value);
-    g_settings_set_uint(m_session_settings, "idle-delay", close_monitor_value);
-    g_settings_set_boolean(settings, "idle-dim-battery", TRUE);
-    g_settings_sync();
 }
 
 void deepin_power_using_current_plan(GSettings *settings) 

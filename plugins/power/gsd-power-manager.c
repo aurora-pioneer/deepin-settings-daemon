@@ -2299,8 +2299,6 @@ do_lid_open_action (GsdPowerManager *manager)
         gboolean ret;
         GError *error = NULL;
 
-        printf("DEBUG: do_lid_open_action using current power plan\n");
-        deepin_power_using_current_plan(manager->priv->settings);
         /* play a sound, using sounds from the naming spec */
         ca_context_play (manager->priv->canberra_context, 0,
                          CA_PROP_EVENT_ID, "lid-open",
@@ -3672,18 +3670,8 @@ upower_notify_sleep_cb (UpClient *client,
                 }
                 error = NULL;
             }
-            //g_object_unref (lock_settings);
+            g_object_unref (lock_settings);
         }
-
-        char* tmp1 = g_settings_get_string(manager->priv->settings, "lid-close-ac-action");
-        char* tmp2 = g_settings_get_string(manager->priv->settings, "lid-close-battery-action");
-        if (g_strcmp0(tmp1, "suspend") == 0 || g_strcmp0(tmp2, "suspend")) {
-            printf("DEBUG: using saving plan\n");
-            deepin_power_using_saving_plan(manager->priv->settings);
-        }
-        g_free(tmp1);
-        g_free(tmp2);
-
 
         if (manager->priv->screensaver_proxy != NULL) {
                 g_debug ("doing gnome-screensaver lock");
@@ -3732,9 +3720,8 @@ upower_notify_resume_cb (UpClient *client,
         notify_close_if_showing (manager->priv->notification_low);
         notify_close_if_showing (manager->priv->notification_discharging);
 
+        //when resume reset the brightness
         deepin_xrandr_set_brightness(deepin_xrandr_get_brightness());
-        printf("huhuhuhuhu\n");
-        //TODO: fetch brightness and set
 
         /* ensure we turn the panel back on after resume */
         ret = gnome_rr_screen_set_dpms_mode (manager->priv->x11_screen,
@@ -3823,6 +3810,7 @@ gsd_power_manager_start (GsdPowerManager *manager,
         manager->priv->settings = g_settings_new (GSD_POWER_SETTINGS_SCHEMA);
         g_signal_connect (manager->priv->settings, "changed",
                           G_CALLBACK (engine_settings_key_changed_cb), manager);
+        printf("managetr_start\n");
         deepin_power_init(manager->priv->settings);
         manager->priv->settings_screensaver = g_settings_new ("org.gnome.desktop.screensaver");
         manager->priv->up_client = up_client_new ();
