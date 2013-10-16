@@ -28,6 +28,7 @@
 #include <libgnome-desktop/gnome-rr.h>
 
 int deepin_xrandr_init(GnomeRRScreen *screen, GSettings *settings);
-void deepin_xrandr_cleanup();
+void deepin_xrandr_cleanup(void);
+
 
 #endif /* DEEPIN_XRANDR_H */

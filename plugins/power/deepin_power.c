@@ -25,6 +25,7 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 #include "deepin_power.h"
+#include <string.h>
 
 static const char m_powers_plan_xml[] = 
 "<powers version=\"1\">\n"
@@ -56,7 +57,7 @@ static void m_parse_configuration(xmlDocPtr doc,
                                   xmlNodePtr cur, 
                                   GSettings *settings, 
                                   char *current_plan);
-static void m_settings_changed(GSettings *settings, 
+static void m_settings_current_plan_changed(GSettings *settings, 
                                gchar *key, 
                                gpointer user_data);
 
@@ -70,10 +71,10 @@ static void m_parse_plan(xmlDocPtr doc, xmlNodePtr cur, GSettings *settings)
     cur = cur->xmlChildrenNode;                                                 
     while (cur) {                                                               
         if (!xmlStrcmp(cur->name, (const xmlChar *) "close-monitor")) {                 
-            close_monitor = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);         
+            close_monitor = (char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);         
         }                                                                       
         if (!xmlStrcmp(cur->name, (const xmlChar *) "suspend")) {                
-            suspend = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);        
+            suspend = (char*)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);        
         }                                                                       
         cur = cur->next;                                                        
     }
@@ -106,7 +107,7 @@ static void m_parse_configuration(xmlDocPtr doc,
     cur = cur->xmlChildrenNode;                                                  
     while (cur) {                                                                
         if (!xmlStrcmp(cur->name, (const xmlChar *) "plan")) {                
-            plan_name = xmlGetProp(cur, (const xmlChar *) "name");            
+            plan_name = (char*)xmlGetProp(cur, (const xmlChar *) "name");            
             if (strcmp(plan_name, current_plan) == 0) {
                 m_parse_plan(doc, cur, settings);
                 break;
@@ -118,13 +119,10 @@ static void m_parse_configuration(xmlDocPtr doc,
     xmlFree (plan_name);
 }
 
-static void m_settings_changed(GSettings *settings, 
+static void m_settings_current_plan_changed(GSettings *settings, 
                                gchar *key, 
                                gpointer user_data) 
 {
-    if (strcmp(key, "current-plan") != 0) 
-        return;
-
     deepin_power_using_current_plan(settings);
 }
 
@@ -136,7 +134,7 @@ int deepin_power_init(GSettings *settings)
     m_session_settings = g_settings_new("org.gnome.desktop.session");
 
     pw = getpwuid(getuid());
-    if (!pw) 
+    if (!pw)
         return -1;
     m_backup_filename = malloc(PATH_MAX * sizeof(char));
     if (m_backup_filename == NULL) 
@@ -152,27 +150,13 @@ int deepin_power_init(GSettings *settings)
         fclose(fptr);
         fptr = NULL;
     }
-
+    
     g_signal_connect(settings,                                                  
-                     "changed",                                                 
-                     m_settings_changed,                                        
+                     "changed::current-plan",                                                 
+                     G_CALLBACK(m_settings_current_plan_changed),                                        
                      NULL);
 
     return 0;
-}
-
-void deepin_power_using_saving_plan(GSettings *settings) 
-{
-    int close_monitor_value = 300;
-    int suspend_value = 900;
-
-    g_settings_set_int(settings, "sleep-display-ac", close_monitor_value);         
-    g_settings_set_int(settings, "sleep-display-battery", close_monitor_value); 
-    g_settings_set_int(settings, "sleep-inactive-ac-timeout", suspend_value);   
-    g_settings_set_int(settings, "sleep-inactive-battery-timeout", suspend_value);
-    g_settings_set_uint(m_session_settings, "idle-delay", close_monitor_value);
-    g_settings_set_boolean(settings, "idle-dim-battery", TRUE);
-    g_settings_sync();
 }
 
 void deepin_power_using_current_plan(GSettings *settings) 

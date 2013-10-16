@@ -54,6 +54,7 @@ libidle_delay_la_SOURCES = \
 	$(NULL)
 
 libidle_delay_la_CPPFLAGS = \
+	-I$(top_srcdir)/plugins/common			\
 	-I$(top_srcdir)/gnome-settings-daemon		\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
 	-DLIBEXECDIR=\""$(libexecdir)"\"			\
@@ -68,6 +69,7 @@ libidle_delay_la_LDFLAGS = 		\
 	$(GSD_PLUGIN_LDFLAGS)
 
 libidle_delay_la_LIBADD  = 		\
+	$(top_builddir)/plugins/common/libcommon.la	\
 	$(SETTINGS_PLUGIN_LIBS)
 
 gsd-idle-delay-marshal.c: gsd-idle-delay-marshal.list gsd-idle-delay-marshal.h
