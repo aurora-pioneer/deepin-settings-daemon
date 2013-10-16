@@ -134,7 +134,7 @@ static void     set_gtk_im_module                (GsdKeyboardManager      *manag
 //
 static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_config);
 static void apply_xkb_layouts(GkbdKeyboardConfig *kbd_config);
-static gboolean kbd_timeout_func (gpointer data);
+static gboolean set_layouts_from_gsettings (void);
 
 G_DEFINE_TYPE (GsdKeyboardManager, gsd_keyboard_manager, G_TYPE_OBJECT)
 
@@ -1623,7 +1623,8 @@ gsd_keyboard_manager_start (GsdKeyboardManager *manager,
         manager->priv->start_idle_id = g_idle_add ((GSourceFunc) start_keyboard_idle_cb, manager);
 
         gnome_settings_profile_end (NULL);
-        g_timeout_add_seconds (60, kbd_timeout_func, &current_kbd_config);
+        g_timeout_add_seconds (2, (GSourceFunc)set_layouts_from_gsettings,
+                NULL);
 
         return TRUE;
 }
@@ -1729,15 +1730,21 @@ gsd_keyboard_manager_new (void)
 static void apply_xkb_layouts(GkbdKeyboardConfig *kbd_config)
 {
     if (!kbd_config) {
+        /*g_print ("layouts kbd_config is null");*/
         return;
     }
+    /*GSettings *kbd_set = NULL;*/
     gchar **strv = NULL;
     int num_layouts;
 
+    /*g_warning ("set layouts");*/
+    /*kbd_set = g_settings_new ("org.gnome.libgnomekbd.keyboard");*/
+    /*kbd_config->settings = kbd_set;*/
     strv = g_settings_get_strv(kbd_config->settings, "layouts");
     num_layouts = g_strv_length(strv);
     g_strfreev(kbd_config->layouts_variants);
 
+    /*g_print ("len: %u\tkey: %s\n", num_layouts, strv[0]);*/
     if (num_layouts) {
         kbd_config->layouts_variants = g_strdupv(strv);
     } else {
@@ -1758,11 +1765,36 @@ static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_con
     }
 }
 
-gboolean kbd_timeout_func (gpointer data)
+static gboolean
+set_layouts_from_gsettings (void)
 {
-    GkbdKeyboardConfig *config = (GkbdKeyboardConfig*)data;
+    gchar **kbd_layout = NULL;
+    GSettings *kbd_set = NULL;
+    guint len = 0;
+    gboolean is_ok;
 
-    apply_xkb_layouts (config);
+    kbd_set = g_settings_new ("org.gnome.libgnomekbd.keyboard");
+    kbd_layout = g_settings_get_strv (kbd_set, "layouts");
+    len = g_strv_length (kbd_layout);
+    /*g_print ("cur kbd layout: %s\tlen: %u\n", kbd_layout[0], len);*/
+
+    if ( len < 1 ) {
+        /*g_print ("default layout: %s\n", DEFAULT_LAYOUT);*/
+        gchar *tmp = g_strdup_printf ("%s;", DEFAULT_LAYOUT);
+        kbd_layout = g_strsplit (tmp, ";", -1);
+        g_free (tmp);
+    }
+
+    is_ok = g_settings_set_strv (kbd_set, "layouts", 
+            (const gchar* const*)kbd_layout);
+    if ( !is_ok ) {
+        /*g_print ("set layouts failed: %s", kbd_layout[0]);*/
+        return TRUE;
+    }
+
+    g_strfreev (kbd_layout);
+    g_settings_sync ();
+    g_object_unref (kbd_set);
 
     return FALSE;
 }
