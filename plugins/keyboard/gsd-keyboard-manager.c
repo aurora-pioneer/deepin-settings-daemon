@@ -1623,6 +1623,9 @@ gsd_keyboard_manager_stop (GsdKeyboardManager *manager)
 
         g_debug ("Stopping keyboard manager");
 
+        g_signal_handler_disconnect (layout_settings, kbd_layout_id);
+        g_object_unref (layout_settings);
+
         g_cancellable_cancel (p->cancellable);
         g_clear_object (&p->cancellable);
 
