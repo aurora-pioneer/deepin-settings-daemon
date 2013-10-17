@@ -218,7 +218,7 @@ gboolean is_grabbed ()
     ret = XGrabKeyboard (dpy, root, False, 
             GrabModeSync, GrabModeSync, CurrentTime);
     if ( ret == AlreadyGrabbed ) {
-        g_print ("AlreadyGrabbed!\n");
+        g_debug ("AlreadyGrabbed!\n");
         XUngrabKeyboard (dpy, CurrentTime);
         XCloseDisplay(dpy);
         return True;
