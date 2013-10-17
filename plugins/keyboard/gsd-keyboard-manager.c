@@ -43,9 +43,6 @@
 #include <X11/keysym.h>
 #include <X11/extensions/XKBrules.h>
 
-#include <libgnomekbd/gkbd-desktop-config.h>
-#include <libgnomekbd/gkbd-keyboard-config.h>
-
 #define GNOME_DESKTOP_USE_UNSTABLE_API
 #include <libgnome-desktop/gnome-languages.h>
 #include <libgnome-desktop/gnome-xkb-info.h>
@@ -132,9 +129,8 @@ static void     set_gtk_im_module                (GsdKeyboardManager      *manag
                                                   GVariant                *sources);
 
 //
-static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_config);
-static void apply_xkb_layouts(GkbdKeyboardConfig *kbd_config);
-static gboolean set_layouts_from_gsettings (void);
+static void set_layouts_from_gsettings (void);
+static void set_xkb_layouts (const char *option, const char *layout);
 
 G_DEFINE_TYPE (GsdKeyboardManager, gsd_keyboard_manager, G_TYPE_OBJECT)
 
@@ -1459,7 +1455,7 @@ maybe_convert_old_settings (GSettings *settings)
 {
         GVariant *sources;
         gchar **options;
-        gchar *stamp_dir_path = NULL;
+        /*gchar *stamp_dir_path = NULL;
         gchar *stamp_file_path = NULL;
         GError *error = NULL;
 
@@ -1471,7 +1467,7 @@ maybe_convert_old_settings (GSettings *settings)
 
         stamp_file_path = g_build_filename (stamp_dir_path, "input-sources-converted", NULL);
         if (g_file_test (stamp_file_path, G_FILE_TEST_EXISTS))
-                goto out;
+                goto out;*/
         sources = g_settings_get_value (settings, KEY_INPUT_SOURCES);
         if (g_variant_n_children (sources) < 1) {
                 convert_libgnomekbd_layouts (settings);
@@ -1487,13 +1483,14 @@ maybe_convert_old_settings (GSettings *settings)
         }
         g_strfreev (options);
 
+        /*
         if (!g_file_set_contents (stamp_file_path, "", 0, &error)) {
                 g_warning ("%s", error->message);
                 g_error_free (error);
         }
 out:
         g_free (stamp_file_path);
-        g_free (stamp_dir_path);
+        g_free (stamp_dir_path);*/
 }
 
 static void
@@ -1623,8 +1620,6 @@ gsd_keyboard_manager_start (GsdKeyboardManager *manager,
         manager->priv->start_idle_id = g_idle_add ((GSourceFunc) start_keyboard_idle_cb, manager);
 
         gnome_settings_profile_end (NULL);
-        g_timeout_add_seconds (2, (GSourceFunc)set_layouts_from_gsettings,
-                NULL);
 
         return TRUE;
 }
@@ -1707,71 +1702,17 @@ gsd_keyboard_manager_new (void)
                 manager_object = g_object_new (GSD_TYPE_KEYBOARD_MANAGER, NULL);
                 g_object_add_weak_pointer (manager_object,
                                            (gpointer *) &manager_object);
-                Display *display = XOpenDisplay(NULL);
-                static XklEngine *xkl_engine = NULL;
-                if (display) {
-                    xkl_engine = xkl_engine_get_instance (display);
-                    if (xkl_engine) {
-                        gkbd_desktop_config_init (&current_config, xkl_engine);
-                        gkbd_keyboard_config_init (&current_kbd_config, xkl_engine);
-                        gkbd_keyboard_config_load_from_x_current(&current_kbd_config, NULL);
-                        gkbd_keyboard_config_start_listen(&current_kbd_config,
-                            G_CALLBACK(gkeyboard_callback),
-                            (gpointer)&current_kbd_config);
-                        apply_xkb_layouts(&current_kbd_config);
-                    }
-                }
         }
 
         return GSD_KEYBOARD_MANAGER (manager_object);
 }
 
-
-static void apply_xkb_layouts(GkbdKeyboardConfig *kbd_config)
-{
-    if (!kbd_config) {
-        /*g_print ("layouts kbd_config is null");*/
-        return;
-    }
-    /*GSettings *kbd_set = NULL;*/
-    gchar **strv = NULL;
-    int num_layouts;
-
-    /*g_warning ("set layouts");*/
-    /*kbd_set = g_settings_new ("org.gnome.libgnomekbd.keyboard");*/
-    /*kbd_config->settings = kbd_set;*/
-    strv = g_settings_get_strv(kbd_config->settings, "layouts");
-    num_layouts = g_strv_length(strv);
-    g_strfreev(kbd_config->layouts_variants);
-
-    /*g_print ("len: %u\tkey: %s\n", num_layouts, strv[0]);*/
-    if (num_layouts) {
-        kbd_config->layouts_variants = g_strdupv(strv);
-    } else {
-        kbd_config->layouts_variants = g_new0(gchar *, 1);
-        if (kbd_config->layouts_variants) {
-            kbd_config->layouts_variants[0] = g_strdup(DEFAULT_LAYOUT);
-        }
-    }
-    g_strfreev(strv);
-    gkbd_keyboard_config_activate((GkbdKeyboardConfig *)kbd_config);
-}
-
-static void gkeyboard_callback(GSettings *settings, gchar *key, gpointer kbd_config)
-{
-    if (g_strcmp0(key, "layouts") == 0) {
-        g_print("gsettings libgnomekbd %s changed\n", key);
-        apply_xkb_layouts(kbd_config);
-    }
-}
-
-static gboolean
+static void
 set_layouts_from_gsettings (void)
 {
     gchar **kbd_layout = NULL;
     GSettings *kbd_set = NULL;
     guint len = 0;
-    gboolean is_ok;
 
     kbd_set = g_settings_new ("org.gnome.libgnomekbd.keyboard");
     kbd_layout = g_settings_get_strv (kbd_set, "layouts");
@@ -1785,16 +1726,36 @@ set_layouts_from_gsettings (void)
         g_free (tmp);
     }
 
-    is_ok = g_settings_set_strv (kbd_set, "layouts", 
-            (const gchar* const*)kbd_layout);
-    if ( !is_ok ) {
-        /*g_print ("set layouts failed: %s", kbd_layout[0]);*/
-        return TRUE;
-    }
-
+    set_xkb_layouts ("-layout", kbd_layout[0]);
     g_strfreev (kbd_layout);
     g_settings_sync ();
     g_object_unref (kbd_set);
+}
 
-    return FALSE;
+static void
+set_xkb_layouts (const char *option, const char *layout)
+{
+    gchar *set_layout_cmd = NULL;
+    gchar **split = NULL;
+    int i = 0;
+
+    split = g_strsplit (layout, "\t", -1);
+    for ( ; split[i] != NULL; i++ ) {
+        if ( i == 0 ) {
+            set_layout_cmd = g_strdup_printf ("setxkbmap %s \'%s\'", 
+                    option, split[i]);
+        } else {
+            gchar *tmp_cmd = g_strdup_printf ("%s \'%s\'", 
+                    set_layout_cmd, split[i]);
+            g_free (set_layout_cmd);
+            set_layout_cmd = g_strdup (tmp_cmd);
+            g_free (tmp_cmd);
+        }
+    }
+    g_strfreev (split);
+    g_print ("layout cmd: %s\n", set_layout_cmd);
+    if ( !g_spawn_command_line_sync (set_layout_cmd, NULL, NULL, 
+                NULL, NULL) ) {
+        g_warning ("set xkb layout failed!");
+    }
 }
