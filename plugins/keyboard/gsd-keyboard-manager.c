@@ -1439,6 +1439,7 @@ maybe_convert_old_settings (GSettings *settings)
 {
         GVariant *sources;
         gchar **options;
+        /*
         gchar *stamp_dir_path = NULL;
         gchar *stamp_file_path = NULL;
         GError *error = NULL;
@@ -1452,7 +1453,7 @@ maybe_convert_old_settings (GSettings *settings)
         stamp_file_path = g_build_filename (stamp_dir_path, "input-sources-converted", NULL);
         if (g_file_test (stamp_file_path, G_FILE_TEST_EXISTS))
                 goto out;
-
+        */
         sources = g_settings_get_value (settings, KEY_INPUT_SOURCES);
         if (g_variant_n_children (sources) < 1) {
                 convert_libgnomekbd_layouts (settings);
@@ -1467,13 +1468,14 @@ maybe_convert_old_settings (GSettings *settings)
                 convert_libgnomekbd_options (settings);
         g_strfreev (options);
 
+        /*
         if (!g_file_set_contents (stamp_file_path, "", 0, &error)) {
                 g_warning ("%s", error->message);
                 g_error_free (error);
         }
 out:
         g_free (stamp_file_path);
-        g_free (stamp_dir_path);
+        g_free (stamp_dir_path);*/
 }
 
 static void
@@ -1762,5 +1764,6 @@ set_kbd_layout (const char *option, const char *layout)
     g_free (set_layout_cmd);
     if ( !is_ok ) {
         g_warning ("set xkb layout failed!");
+        return;
     }
 }
