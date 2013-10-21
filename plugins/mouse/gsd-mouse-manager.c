@@ -69,6 +69,7 @@
 #define KEY_TAP_TO_CLICK                 "tap-to-click"
 #define KEY_TOUCHPAD_ENABLED             "touchpad-enabled"
 #define KEY_NATURAL_SCROLL_ENABLED       "natural-scroll"
+#define KEY_TWO_FINGER_SCROLL            "two-finger-scroll"
 
 /* Mouse settings */
 #define KEY_LOCATE_POINTER               "locate-pointer"
@@ -103,6 +104,8 @@ static void     set_tap_to_click              (GdkDevice           *device,
 static void     set_natural_scroll            (GsdMouseManager *manager,
                                                GdkDevice       *device,
                                                gboolean         natural_scroll);
+static void set_two_finger_scroll             (GdkDevice *device, 
+                                               gboolean is_scroll);
 
 G_DEFINE_TYPE (GsdMouseManager, gsd_mouse_manager, G_TYPE_OBJECT)
 
@@ -809,6 +812,51 @@ set_edge_scroll (GdkDevice               *device,
 }
 
 static void
+set_two_finger_scroll (GdkDevice *device, gboolean is_scroll)
+{
+        int rc;
+        XDevice *xdevice;
+        Atom act_type, prop_twofinger;
+        int act_format;
+        unsigned long nitems, bytes_after;
+        unsigned char *data;
+
+        prop_twofinger = XInternAtom (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), "Synaptics Two-Finger Scrolling", False);
+
+        if (!prop_twofinger)
+                return;
+
+        xdevice = open_gdk_device (device);
+        if (xdevice == NULL)
+                return;
+
+        if (!device_is_touchpad (xdevice)) {
+                XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
+                return;
+        }
+
+        gdk_error_trap_push ();
+        rc = XGetDeviceProperty (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), 
+                xdevice, prop_twofinger, 0, 1, False, XA_INTEGER, 
+                &act_type, &act_format, &nitems, &bytes_after, &data);
+        if (rc == Success && act_type == XA_INTEGER &&
+            act_format == 8 && nitems >= 2) {
+                data[0] = (is_scroll) ? 1 : 0;
+                XChangeDeviceProperty (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice,
+                                       prop_twofinger, XA_INTEGER, 8,
+                                       PropModeReplace, data, nitems);
+        }
+
+        if (gdk_error_trap_pop ())
+                g_warning ("Error in setting edge scroll on \"%s\"", gdk_device_get_name (device));
+
+        if (rc == Success)
+                XFree (data);
+
+        XCloseDevice (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice);
+}
+
+static void
 set_touchpad_disabled (GdkDevice *device)
 {
         int id;
@@ -971,6 +1019,7 @@ set_mouse_settings (GsdMouseManager *manager,
         set_tap_to_click (device, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TAP_TO_CLICK), touchpad_left_handed);
         set_edge_scroll (device, g_settings_get_enum (manager->priv->touchpad_settings, KEY_SCROLL_METHOD));
         set_horiz_scroll (device, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_PAD_HORIZ_SCROLL));
+        set_two_finger_scroll (device, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TWO_FINGER_SCROLL));
         set_natural_scroll (manager, device, g_settings_get_boolean (manager->priv->touchpad_settings, KEY_NATURAL_SCROLL_ENABLED));
         if (g_settings_get_boolean (manager->priv->touchpad_settings, KEY_TOUCHPAD_ENABLED) == FALSE)
                 set_touchpad_disabled (device);
@@ -1119,6 +1168,9 @@ touchpad_callback (GSettings       *settings,
                         set_left_handed (manager, device, mouse_left_handed, get_touchpad_handedness (manager, mouse_left_handed));
                 } else if (g_str_equal (key, KEY_NATURAL_SCROLL_ENABLED)) {
                         set_natural_scroll (manager, device, g_settings_get_boolean (settings, key));
+                } else if ( g_str_equal (key, KEY_TWO_FINGER_SCROLL) ) {
+                    set_two_finger_scroll (device, g_settings_get_boolean (
+                                settings, key));
                 }
         }
         g_list_free (devices);
