@@ -841,8 +841,8 @@ set_two_finger_scroll (GdkDevice *device, gboolean is_scroll)
                 &act_type, &act_format, &nitems, &bytes_after, &data);
         if (rc == Success && act_type == XA_INTEGER &&
             act_format == 8 && nitems >= 2) {
-                data[0] = (is_scroll) ? 1 : 0;
-                data[1] = (is_scroll) ? 1 : 0;
+                data[0] = (is_scroll) ? 1 : 0;  //set vert scroll
+                data[1] = (is_scroll) ? 1 : 0;  //set horiz scroll
                 XChangeDeviceProperty (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice,
                                        prop_twofinger, XA_INTEGER, 8,
                                        PropModeReplace, data, nitems);
