@@ -60,6 +60,11 @@
       <summary>Natural scrolling</summary>
       <description>Set this to TRUE to enable natural (reverse) scrolling for touchpads.</description>
     </key>
+    <key name="two-finger-scroll" type="b">
+      <default>true</default>
+      <summary>Two finger scrolling.</summary>
+      <description>Enable(or disable) two finger scrolling.</description>
+    </key>
   </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.peripherals.keyboard" path="/org/gnome/settings-daemon/peripherals/keyboard/">
     <key name="repeat" type="b">
