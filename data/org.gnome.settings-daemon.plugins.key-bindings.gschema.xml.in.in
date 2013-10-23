@@ -16,7 +16,7 @@
       <_description>Key1</_description>
     </key>      
     <key name="key2" type="s">
-      <default>"deepin-terminal;&lt;Control&gt;&lt;Alt&gt;T"</default>
+      <default>"default-terminal;&lt;Control&gt;&lt;Alt&gt;T"</default>
       <_summary>Key2</_summary>
       <_description>Key2</_description>
     </key>      
