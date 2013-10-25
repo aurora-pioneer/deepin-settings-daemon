@@ -118,7 +118,9 @@ void finalize_xrecord ()
 
     XCloseDisplay (self_xcape->ctrl_conn);
     XCloseDisplay (self_xcape->data_conn);
-    g_hash_table_destroy (key_table);
+    if (key_table) {
+        g_hash_table_destroy (key_table);
+    }
     g_debug ("init xcape exiting!\n");
 
     return ;
@@ -141,13 +143,15 @@ handle_key (XCape_t* self, int key_event)
 
             key_sym = XkbKeycodeToKeysym (self->ctrl_conn, self->key, 0, 0);
             gchar* key_str = g_strdup_printf ("%lu", (gulong)key_sym);
-            gchar* cmd = g_hash_table_lookup (key_table, key_str);
-            if ( cmd ) {
-                if ( system (cmd) == -1 ) {
-                    g_debug ("system exec error!");
+            if ( key_str ) {
+                gchar* cmd = g_hash_table_lookup (key_table, key_str);
+                if ( cmd ) {
+                    if ( system (cmd) == -1 ) {
+                        g_debug ("system exec error!");
+                    }
                 }
+                g_free ( key_str);
             }
-            g_free ( key_str);
         }
         key_press_cnt = 0;
         super_press = False;
@@ -190,6 +194,9 @@ intercept (XPointer user_data, XRecordInterceptData* data)
 void insert_table_record (KeySym keysym, gchar* data)
 {
     gchar* keysym_str = g_strdup_printf ("%lu", (gulong)keysym);
+    if ( !keysym_str ) {
+        return ;
+    }
 
     g_hash_table_insert (key_table, keysym_str, g_strdup (data));
 }
@@ -202,6 +209,9 @@ void remove_table_all_record ()
 void remove_table_record (KeySym keysym)
 {
     gchar* keysym_str = g_strdup_printf ("%lu", (gulong)keysym);
+    if ( !keysym_str ) {
+        return ;
+    }
 
     g_hash_table_remove (key_table, keysym_str);
 }

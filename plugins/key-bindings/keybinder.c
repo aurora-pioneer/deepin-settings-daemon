@@ -574,10 +574,13 @@ keybinder_bind_full (const char *keystring,
                      void *user_data,
                      GDestroyNotify notify)
 {
-	struct Binding *binding;
-	gboolean success;
+	struct Binding *binding = NULL;
+	gboolean success = FALSE;
 
 	binding = g_new0 (struct Binding, 1);
+    if ( binding == NULL ) {
+        return success;
+    }
 	binding->keystring = g_strdup (keystring);
 	binding->handler = handler;
 	binding->user_data = user_data;

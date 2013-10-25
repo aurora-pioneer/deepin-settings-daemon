@@ -88,6 +88,9 @@ gsd_kb_util_read_gsettings (GSettings* settings, GHashTable* gsettings_ht)
 	    _gsettings_key_str = g_strdup_printf (KEY_BINDING_KEY_PREFIX"%d", i + 1); 
 	    g_debug ("gsettings key : %s", _gsettings_key_str);
 	    _gsettings_value_str = g_settings_get_string (settings, _gsettings_key_str);
+        if ( _gsettings_value_str == NULL ) {
+            continue;
+        }
 	    _kandc_ptr = gsd_kb_util_parse_gsettings_value (_gsettings_key_str,
 							    _gsettings_value_str);
 

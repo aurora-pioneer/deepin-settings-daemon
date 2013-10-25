@@ -172,6 +172,11 @@ gsd_key_bindings_manager_class_init (GsdKeyBindingsManagerClass *klass)
 static void 
 key_bindings_settings_changed (GSettings *settings, gchar *gsettings_key, gpointer user_data)
 {	
+    if ( settings == NULL || gsettings_key == NULL || 
+            user_data == NULL ) {
+        return ;
+    }
+
 	GsdKeyBindingsManagerPrivate* _priv = (GsdKeyBindingsManagerPrivate*) user_data;
 	char* _string = g_settings_get_string (settings, gsettings_key);
 	g_debug ("keybindings changed: %s : %s", gsettings_key, _string);
