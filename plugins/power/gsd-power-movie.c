@@ -52,11 +52,11 @@ void finalize_reset_power ()
     WnckScreen* screen = wnck_screen_get_default ();
     WnckWindow* active_window = wnck_screen_get_active_window (screen);
 
-    if ( active_sig_id ) {
+    if ( screen && active_sig_id ) {
         g_signal_handler_disconnect (screen, active_sig_id);
     }
 
-    if ( state_sig_id ) {
+    if ( active_window && state_sig_id ) {
         g_signal_handler_disconnect (active_window, state_sig_id);
     }
     
@@ -75,13 +75,13 @@ static void on_active_window_changed (WnckScreen* screen,
     wnck_screen_force_update (screen);
     WnckWindow* active_window = wnck_screen_get_active_window (screen);
 
+    if ( pre_active_window && state_sig_id ) {
+        g_signal_handler_disconnect (pre_active_window, state_sig_id);
+    }
+
     if ( !active_window ) {
         g_warning ("No Active Window!\n");
         return ;
-    }
-
-    if ( state_sig_id ) {
-        g_signal_handler_disconnect (pre_active_window, state_sig_id);
     }
     state_sig_id = g_signal_connect (active_window, "state-changed", 
             G_CALLBACK (on_state_changed), NULL);
