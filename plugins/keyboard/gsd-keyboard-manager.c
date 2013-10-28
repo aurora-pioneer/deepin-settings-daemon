@@ -1464,6 +1464,10 @@ maybe_convert_old_settings (GSettings *settings)
         g_variant_unref (sources);
 
         options = g_settings_get_strv (settings, KEY_KEYBOARD_OPTIONS);
+        if (options == NULL) {
+            return ;
+        }
+
         if (g_strv_length (options) < 1)
                 convert_libgnomekbd_options (settings);
         g_strfreev (options);
@@ -1512,6 +1516,10 @@ maybe_create_initial_settings (GsdKeyboardManager *manager)
         g_variant_unref (sources);
 
         options = g_settings_get_strv (settings, KEY_KEYBOARD_OPTIONS);
+        if (options == NULL) {
+            return ;
+        }
+
         if (g_strv_length (options) < 1)
                 get_options_from_xkb_config (manager);
         g_strfreev (options);
@@ -1705,7 +1713,6 @@ kbd_layout_cb (GSettings *settings, gchar *key, gpointer user_data)
 {
     gchar *layout;
 
-    g_print ("change key: %s\n", key);
     layout = get_kbd_layout (settings, key);
 
     if ( g_strcmp0 (key, "layouts") == 0 ) {
@@ -1724,6 +1731,10 @@ get_kbd_layout (GSettings *settings, const gchar *key)
     guint len = 0;
 
     strv = g_settings_get_strv (settings, key);
+    if (strv == NULL) {
+        return ;
+    }
+
     len = g_strv_length (strv);
 
     if ( len ) {
@@ -1758,7 +1769,6 @@ set_kbd_layout (const char *option, const char *layout)
         }
     }
     g_strfreev (split);
-    g_print ("layout cmd: %s\n", set_layout_cmd);
     is_ok = g_spawn_command_line_sync (set_layout_cmd, NULL, NULL, 
                 NULL, NULL);
     g_free (set_layout_cmd);

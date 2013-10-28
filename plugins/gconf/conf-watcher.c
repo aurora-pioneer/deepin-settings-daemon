@@ -74,6 +74,10 @@ settings_changed_cb (GSettings *settings,
 		GVariant *value;
 
 		value = g_settings_get_value (settings, key);
+        if ( value == NULL ) {
+            return;
+        }
+
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_BOOLEAN)) {
 			gconf_client_set_bool (watcher->conf_client,
 					       gconf_key_name,

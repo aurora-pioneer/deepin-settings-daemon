@@ -292,6 +292,9 @@ setting_store (XSettingsSetting *setting,
   guint16 len16;
 
   value = xsettings_setting_get (setting);
+  if ( value == NULL ) {
+    return ;
+  }
 
   type = xsettings_get_typecode (value);
 

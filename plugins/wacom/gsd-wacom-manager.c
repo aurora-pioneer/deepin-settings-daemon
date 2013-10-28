@@ -710,6 +710,10 @@ set_wacom_settings (GsdWacomManager *manager,
 	GsdWacomDeviceType type;
 	GSettings *settings;
 
+    if ( GSD_IS_WACOM_DEVICE (device) == WACOM_TYPE_INVALID ) {
+        return ;
+    }
+
 	g_debug ("Applying settings for device '%s' (type: %s)",
 		 gsd_wacom_device_get_tool_name (device),
 		 gsd_wacom_device_type_to_string (gsd_wacom_device_get_device_type (device)));
@@ -1392,7 +1396,8 @@ on_screen_changed_cb (GnomeRRScreen *rr_screen,
 		GSettings *settings;
 
 		type = gsd_wacom_device_get_device_type (device);
-		if (type == WACOM_TYPE_CURSOR || type == WACOM_TYPE_PAD)
+		if (type == WACOM_TYPE_CURSOR || type == WACOM_TYPE_PAD 
+                || type == WACOM_TYPE_INVALID)
 			continue;
 
 		settings = gsd_wacom_device_get_settings (device);

@@ -275,6 +275,9 @@ translate_bool_int (GnomeXSettingsManager *manager,
 {
         int i;
 
+        g_return_if_fail (g_variant_is_of_type (value, 
+                    G_VARIANT_TYPE_BOOLEAN));
+
         for (i = 0; manager->priv->managers [i]; i++) {
                 xsettings_manager_set_int (manager->priv->managers [i], trans->xsetting_name,
                                            g_variant_get_boolean (value));
@@ -301,6 +304,10 @@ translate_string_string (GnomeXSettingsManager *manager,
 {
         int i;
 
+        if ( value == NULL ) {
+            return ;
+        }
+
         for (i = 0; manager->priv->managers [i]; i++) {
                 xsettings_manager_set_string (manager->priv->managers [i],
                                               trans->xsetting_name,
@@ -315,6 +322,10 @@ translate_string_string_toolbar (GnomeXSettingsManager *manager,
 {
         int         i;
         const char *tmp;
+
+        if ( value == NULL ) {
+            return ;
+        }
 
         /* This is kind of a workaround since GNOME expects the key value to be
          * "both_horiz" and gtk+ wants the XSetting to be "both-horiz".

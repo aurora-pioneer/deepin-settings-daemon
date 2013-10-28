@@ -61,6 +61,9 @@ static void
 update_settings_from_variant (GsdRemoteDisplayManager *manager,
 			      GVariant                *variant)
 {
+    g_return_if_fail (g_variant_is_of_type (value, 
+                G_VARIANT_TYPE_BOOLEAN));
+
 	manager->priv->vnc_in_use = g_variant_get_boolean (variant);
 
 	g_debug ("%s because of remote display status (vnc: %d)",
