@@ -93,7 +93,7 @@ update_prev_pict_path (const char* cur_pict_path)
 	//no need to generate pictures.
 	if (prev_pict_path!=NULL)
 	{
-	   g_print ("start_gaussian_helper: alread started for this picture: %s\n", prev_pict_path);
+	   g_warning ("start_gaussian_helper: alread started for this picture: %s\n", prev_pict_path);
 	}
 	return FALSE;
     }
@@ -293,10 +293,10 @@ bg_settings_cur_pict_changed (GSettings *settings, gchar *key, gpointer user_dat
     char* pict_uri = g_filename_to_uri (cur_pict_path, NULL, NULL);
     g_free (cur_pict_path);
 
-    if (g_strcmp0 (pict_uri, gnome_pict_uri)) // avoid change signal avalanche.
+    /*if (g_strcmp0 (pict_uri, gnome_pict_uri)) // avoid change signal avalanche.
     {
 	g_settings_set_string (manager->priv->gnome_settings, GNOME_BG_PICTURE_URI, pict_uri);
-    }
+    }*/
 
     g_free (gnome_pict_uri);
     g_free (pict_uri);
@@ -309,6 +309,16 @@ gnome_bg_settings_cur_pict_changed (GSettings *no_used, gchar *key, gpointer use
 
 
     char* pict_uri = g_settings_get_string (manager->priv->gnome_settings, GNOME_BG_PICTURE_URI);
+    gchar *pict_path = g_filename_from_uri (pict_uri, NULL, NULL);
+
+    g_warning ("pict path: %s", pict_path);
+    g_settings_set_string (manager->priv->deepin_settings, BG_CURRENT_PICT, pict_path);
+    g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, pict_uri);
+
+    g_free (pict_uri);
+    g_free (pict_path);
+    return ;
+
     char* deepin_pict_uris = g_settings_get_string (manager->priv->deepin_settings, BG_PICTURE_URIS);
     if (!g_strrstr(deepin_pict_uris, ";")) {
         g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, pict_uri);
@@ -316,7 +326,10 @@ gnome_bg_settings_cur_pict_changed (GSettings *no_used, gchar *key, gpointer use
         //TODO: handle gnome current picture change
         char* new_picts = g_strconcat(deepin_pict_uris, ";", pict_uri, NULL);
         g_settings_set_string (manager->priv->deepin_settings, BG_PICTURE_URIS, new_picts);
-        g_settings_set_string (manager->priv->deepin_settings, BG_CURRENT_PICT, pict_uri);
+        gchar *pict_path = g_filename_from_uri (pict_uri, NULL, NULL);
+        g_warning ("pict path: %s", pict_path);
+        g_settings_set_string (manager->priv->deepin_settings, BG_CURRENT_PICT, pict_path);
+        g_free (pict_path);
         g_free(new_picts);
         char* name = g_path_get_basename(pict_uri);
         char* cmd = g_strdup_printf(_("notify-send \"Set wallpapper succefully\" \"%s has aleardly append to the end of random wallpaper list.\"")
