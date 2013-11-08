@@ -1887,7 +1887,7 @@ update_screen_cb (GObject             *source_object,
         /* update the dialog with the new value */
         g_variant_get (new_percentage, "(u)", &percentage);
         //printf("DEBUG: media-key set brightness %d from %d\n", percentage, data->old_percentage);
-        deepin_xrandr_set_brightness(percentage / 100.0);
+	deepin_xrandr_set_brightness(percentage / 100.0, TRUE);
 
         guint osd_percentage;
         if (data->old_percentage == 100 && data->type == SCREEN_BRIGHTNESS_UP_KEY)

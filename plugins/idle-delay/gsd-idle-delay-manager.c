@@ -172,11 +172,11 @@ watcher_idle_notice_cb (GsdIdleDelayWatcher *watcher, gboolean in_effect,
 
 	if (in_effect)
 	{
-            deepin_xrandr_set_brightness(0.5);
+            deepin_xrandr_set_brightness(manager->priv->settings_brightness, FALSE);
 	} 
 	else 
 	{
-            deepin_xrandr_set_brightness(deepin_xrandr_get_brightness());
+            deepin_xrandr_set_brightness(deepin_xrandr_get_brightness(), FALSE);
 	}
 	return TRUE;
 }
