@@ -186,5 +186,10 @@
       <_summary>Caps Lock</_summary>
       <_description>Binding for capslock</_description>
     </key>
+    <key name="numlock" type="s">
+      <default>'Num_Lock'</default>
+      <_summary>Num Lock</_summary>
+      <_description>Binding for numlock</_description>
+    </key>
   </schema>
 </schemalist>
