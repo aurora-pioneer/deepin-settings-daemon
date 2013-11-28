@@ -81,6 +81,7 @@ typedef enum {
         KEYBOARD_BRIGHTNESS_TOGGLE_KEY,
         BATTERY_KEY,
         CAPSLOCK_KEY,
+        NUMLOCK_KEY,
         CUSTOM_KEY
 } MediaKeyType;
 
@@ -150,6 +151,7 @@ static struct {
         { KEYBOARD_BRIGHTNESS_TOGGLE_KEY, NULL, "XF86KbdLightOnOff" },
         { BATTERY_KEY, NULL, "XF86Battery" },
         { CAPSLOCK_KEY, "capslock",  "Caps_Lock" },
+        { NUMLOCK_KEY, "numlock", "Num_Lock" },
 };
 
 #endif /* __ACME_H__ */

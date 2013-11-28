@@ -168,6 +168,7 @@ grab_key_internal (Key             *key,
             !IN_RANGE(key->keysym, XF86KEYS_RANGE_MIN, XF86KEYS_RANGE_MAX) &&
             !IN_RANGE(key->keysym, FKEYS_RANGE_MIN, FKEYS_RANGE_MAX) &&
              key->keysym != GDK_KEY_Caps_Lock &&
+             key->keysym != GDK_KEY_Num_Lock &&
              key->keysym != GDK_KEY_Pause &&
              key->keysym != GDK_KEY_Print &&
              key->keysym != GDK_KEY_Scroll_Lock &&

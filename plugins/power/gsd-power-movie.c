@@ -52,11 +52,11 @@ void finalize_reset_power ()
     WnckScreen* screen = wnck_screen_get_default ();
     WnckWindow* active_window = wnck_screen_get_active_window (screen);
 
-    if ( screen && active_sig_id ) {
+    if ( G_TYPE_CHECK_INSTANCE (screen) && active_sig_id ) {
         g_signal_handler_disconnect (screen, active_sig_id);
     }
 
-    if ( active_window && state_sig_id ) {
+    if ( G_TYPE_CHECK_INSTANCE (active_window) && state_sig_id ) {
         g_signal_handler_disconnect (active_window, state_sig_id);
     }
     

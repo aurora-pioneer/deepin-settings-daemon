@@ -3721,7 +3721,7 @@ upower_notify_resume_cb (UpClient *client,
         notify_close_if_showing (manager->priv->notification_discharging);
 
         //when resume reset the brightness
-        deepin_xrandr_set_brightness(deepin_xrandr_get_brightness());
+        deepin_xrandr_set_brightness(deepin_xrandr_get_brightness(), FALSE);
 
         /* ensure we turn the panel back on after resume */
         ret = gnome_rr_screen_set_dpms_mode (manager->priv->x11_screen,

@@ -1732,7 +1732,7 @@ get_kbd_layout (GSettings *settings, const gchar *key)
 
     strv = g_settings_get_strv (settings, key);
     if (strv == NULL) {
-        return ;
+        return NULL;
     }
 
     len = g_strv_length (strv);

@@ -172,7 +172,6 @@ struct GsdMediaKeysManagerPrivate
         NotifyNotification *volume_notification;
         NotifyNotification *brightness_notification;
         NotifyNotification *kb_backlight_notification;
-        NotifyNotification *capslock_notification;
 };
 
 static void     gsd_media_keys_manager_class_init  (GsdMediaKeysManagerClass *klass);
@@ -217,12 +216,6 @@ static const char *kb_backlight_icons[] = {
         "notification-keyboard-brightness-medium",
         "notification-keyboard-brightness-high",
         "notification-keyboard-brightness-full",
-        NULL
-};
-
-static const char *capslock_icons[] = {
-        "notification-audio-volume-muted",
-        "notification-audio-volume-high",
         NULL
 };
 
@@ -318,14 +311,6 @@ ubuntu_osd_notification_show_kb_backlight (GsdMediaKeysManager *manager,
 {
         return ubuntu_osd_do_notification (&manager->priv->kb_backlight_notification,
                                            "keyboard", value, value <= 0, kb_backlight_icons);
-}
-
-static gboolean
-ubuntu_osd_notification_show_capslock (GsdMediaKeysManager *manager,
-                                       gint value)
-{
-        return ubuntu_osd_do_notification (&manager->priv->capslock_notification,
-                                           "capslock", value, value <=0, capslock_icons);
 }
 
 static void
@@ -1070,6 +1055,31 @@ do_touchpad_action (GsdMediaKeysManager *manager)
 
         g_settings_set_boolean (settings, TOUCHPAD_ENABLED_KEY, !state);
         g_object_unref (settings);
+}
+
+static void
+do_numlock_osd_action (GsdMediaKeysManager *manager, gboolean state)
+{
+        dialog_init (manager);
+        gsd_media_keys_window_set_action_custom (GSD_MEDIA_KEYS_WINDOW (manager->priv->dialog),
+                                                state ? "numlock-enabled-symbolic" : "numlock-disabled-symbolic",
+                                                FALSE);
+        dialog_show (manager);
+}
+
+static void
+do_numlock_action (GsdMediaKeysManager *manager)
+{
+    gboolean numlock_flag = FALSE;
+
+    Display *d = XOpenDisplay ((gchar*)0);
+    XKeyboardState x;
+    XGetKeyboardControl (d, &x);
+    XCloseDisplay (d);
+
+    numlock_flag = x.led_mask & 2 ;
+
+    do_numlock_osd_action (manager, numlock_flag);
 }
 
 static void
@@ -1887,7 +1897,7 @@ update_screen_cb (GObject             *source_object,
         /* update the dialog with the new value */
         g_variant_get (new_percentage, "(u)", &percentage);
         //printf("DEBUG: media-key set brightness %d from %d\n", percentage, data->old_percentage);
-        deepin_xrandr_set_brightness(percentage / 100.0);
+	deepin_xrandr_set_brightness(percentage / 100.0, TRUE);
 
         guint osd_percentage;
         if (data->old_percentage == 100 && data->type == SCREEN_BRIGHTNESS_UP_KEY)
@@ -2194,6 +2204,9 @@ do_action (GsdMediaKeysManager *manager,
                 break;
         case BATTERY_KEY:
                 do_execute_desktop (manager, "gnome-power-statistics.desktop", timestamp);
+                break;
+        case NUMLOCK_KEY:
+                do_numlock_action (manager);
                 break;
         case CAPSLOCK_KEY:
                 do_capslock_action (manager);
@@ -2542,12 +2555,6 @@ gsd_media_keys_manager_stop (GsdMediaKeysManager *manager)
                 notify_notification_close (priv->kb_backlight_notification, NULL);
                 g_object_unref (priv->kb_backlight_notification);
                 priv->kb_backlight_notification = NULL;
-        }
-
-        if (priv->capslock_notification != NULL) {
-                notify_notification_close (priv->capslock_notification, NULL);
-                g_object_unref (priv->capslock_notification);
-                priv->capslock_notification = NULL;
         }
 
         if (priv->keys != NULL) {
