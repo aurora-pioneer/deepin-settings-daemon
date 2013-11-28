@@ -16,7 +16,7 @@
       <_description>Primary or first device percentage</_description>
     </key>
     <key name="current-plan" type="s">
-      <default>'default'</default>
+      <default>'high-performance'</default>
       <_summary>Current Power Plan</_summary>
       <_description>Current Power Plan</_description>
     </key>
