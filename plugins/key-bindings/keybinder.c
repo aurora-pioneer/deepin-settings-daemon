@@ -10,6 +10,7 @@
 
 #include "keybinder.h"
 #include "parse-super.h"
+#include "../common/gsd-keygrab.h"
 
 #define MODIFIERS_ERROR ((GdkModifierType)(-1))
 #define MODIFIERS_NONE 0
@@ -27,7 +28,12 @@
  */
 #define WE_ONLY_USE_ONE_GROUP 0
 
+static void init_screen_list (void);
+static gboolean is_combination_key (const gchar *str);
+static void use_xi_grab (const gchar *keystring, gboolean grab);
+
 GHashTable* key_table;
+GSList *screen_list;
 
 struct Binding {
 	KeybinderHandler      handler;
@@ -281,6 +287,11 @@ do_grab_key (struct Binding *binding)
         return TRUE;
     }
 
+	if ( is_combination_key (binding->keystring) ) {
+		use_xi_grab (binding->keystring, TRUE);
+		return TRUE;
+	}
+
     gtk_accelerator_parse(binding->keystring, &keysym, &modifiers);
     if (keysym == 0) {
             return FALSE;
@@ -324,6 +335,11 @@ do_ungrab_key (struct Binding *binding)
         remove_table_record (0xffec);
         return TRUE;
     }
+
+	if ( is_combination_key (binding->keystring) ) {
+		use_xi_grab (binding->keystring, TRUE);
+		return TRUE;
+	}
 
 	g_debug ("Ungrabbing keyval: %d, vmodifiers: 0x%x, name: %s",
 	         binding->keyval, binding->modifiers, binding->keystring);
@@ -502,6 +518,7 @@ keybinder_init ()
     if ( !init_xrecord () ) {
         g_debug ("init xrecord failed!");
     }
+	init_screen_list ();
 }
 
 /**
@@ -687,4 +704,59 @@ keybinder_get_current_event_time (void)
 		return last_event_time;
 	else
 		return GDK_CURRENT_TIME;
+}
+
+static void
+init_screen_list (void)
+{
+	GdkDisplay *display;
+	int i;
+	gboolean flag = FALSE;
+
+	screen_list = g_slist_alloc();
+	display = gdk_display_get_default ();
+	if ( !GDK_IS_DISPLAY (display) ) {
+		g_print ("no display ...\n");
+		return ;
+	}
+	for (i = 0; i < gdk_display_get_n_screens (display); i++) {
+		GdkScreen *screen;
+
+		screen = gdk_display_get_screen (display, i);
+		if ( (screen == NULL) || !(GDK_IS_SCREEN (screen)) ) {
+			g_print ("screen is null...\n");
+			continue;
+		}
+		g_print ("screen: %p\n", screen);
+		screen_list = g_slist_append (screen_list, g_object_ref(screen));
+		flag = TRUE;
+	}
+	g_print ("for i : %d\n", i);
+	if ( !flag || screen_list == NULL ) {
+		g_print ("No screen...\n");
+	}
+}
+
+static gboolean
+is_combination_key (const gchar *str)
+{
+	if ( g_strrstr (str, "<") && g_strrstr (str, ">") ) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static void
+use_xi_grab (const gchar *keystring, gboolean grab)
+{
+	Key *key;
+
+	key = parse_key (keystring);
+	if (key == NULL) {
+		g_print ("parse key failed: %s\n", keystring);
+		return ;
+	}
+
+	grab_key_unsafe (key, grab, GSD_KEYGRAB_NORMAL, screen_list);
 }

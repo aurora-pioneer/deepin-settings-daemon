@@ -226,7 +226,17 @@ grab_key_internal (Key             *key,
 
 	/* Capture the actual keycodes with the modifier array */
         for (l = screens; l; l = l->next) {
-                GdkScreen *screen = l->data;
+			if ( l == NULL ) {
+				break;
+			}
+                GdkScreen *screen;
+				if ( !GDK_IS_SCREEN (l->data) ) {
+					g_print ("grab key: not screen ...\n");
+					screen = gdk_screen_get_default ();
+				} else {
+					screen = GDK_SCREEN (l->data);
+					/*g_print ("list data: %p\n", l->data);*/
+				}
                 guint *code;
 
                 for (code = key->keycodes; *code; ++code) {
@@ -247,6 +257,7 @@ grab_key_unsafe (Key             *key,
                  GsdKeygrabFlags flags, 
                  GSList          *screens)
 {
+	g_print ("grab unsafe: %d\n", key->keysym);
         grab_key_internal (key, is_grab, flags, screens);
 }
 

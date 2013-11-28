@@ -97,6 +97,7 @@ libkey_bindings_la_LDFLAGS = -lX11 -lXtst		\
 	$(GSD_PLUGIN_LDFLAGS)
 
 libkey_bindings_la_LIBADD  = 		\
+	$(top_builddir)/plugins/common/libcommon.la			\
 	$(SETTINGS_PLUGIN_LIBS)
 
 plugin_in_files = 		\
