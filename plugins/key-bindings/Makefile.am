@@ -85,6 +85,7 @@ libkey_bindings_la_SOURCES = 		\
 
 libkey_bindings_la_CPPFLAGS = \
 	-I$(top_srcdir)/gnome-settings-daemon		\
+	-I$(top_srcdir)/plugins/common				\
 	-DGNOME_SETTINGS_LOCALEDIR=\""$(datadir)/locale"\" \
 	$(AM_CPPFLAGS)
 

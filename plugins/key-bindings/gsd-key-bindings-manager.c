@@ -253,6 +253,7 @@ gsd_key_bindings_manager_finalize (GObject *object)
      */
     g_debug ("finalize XRecord in finalize!\n");
     finalize_xrecord ();
+	destroy_grab_xi2_manager ();
 }
 
 GsdKeyBindingsManager *
