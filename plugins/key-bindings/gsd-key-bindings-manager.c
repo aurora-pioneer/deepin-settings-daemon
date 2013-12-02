@@ -179,6 +179,9 @@ key_bindings_settings_changed (GSettings *settings, gchar *gsettings_key, gpoint
 
 	GsdKeyBindingsManagerPrivate* _priv = (GsdKeyBindingsManagerPrivate*) user_data;
 	char* _string = g_settings_get_string (settings, gsettings_key);
+	if ( _string == NULL ) {
+		return;
+	}
 	g_debug ("keybindings changed: %s : %s", gsettings_key, _string);
 
 	KeysAndCmd* _kandc_ptr = gsd_kb_util_parse_gsettings_value (gsettings_key, _string);
