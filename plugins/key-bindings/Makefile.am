@@ -27,6 +27,7 @@ test_keybinder_CFLAGS = \
 
 test_keybinder_LDADD =		\
 	$(top_builddir)/gnome-settings-daemon/libgsd.la	\
+	$(top_builddir)/plugins/common/libcommon.la			\
 	$(SETTINGS_PLUGIN_LIBS)	\
 	$(NULL)
 
@@ -43,6 +44,8 @@ test_key_bindings_SOURCES =		\
 	keybinder.h			\
 	parse-super.h			\
 	parse-super.c			\
+	gsd-key-bindings-custom.h			\
+	gsd-key-bindings-custom.c			\
 	$(NULL)
 
 test_key_bindings_CPPFLAGS = \
@@ -60,6 +63,7 @@ test_key_bindings_CFLAGS = \
 
 test_key_bindings_LDADD =		\
 	$(top_builddir)/gnome-settings-daemon/libgsd.la	\
+	$(top_builddir)/plugins/common/libcommon.la			\
 	$(SETTINGS_PLUGIN_LIBS)	\
 	$(KEY_BINDINGS_LIBS)	\
 	$(NULL)
@@ -81,6 +85,8 @@ libkey_bindings_la_SOURCES = 		\
 	keybinder.h			\
 	parse-super.h			\
 	parse-super.c			\
+	gsd-key-bindings-custom.h			\
+	gsd-key-bindings-custom.c			\
 	$(NULL)
 
 libkey_bindings_la_CPPFLAGS = \

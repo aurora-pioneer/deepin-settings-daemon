@@ -11,25 +11,27 @@
 #include "keybinder.h"
 #include "parse-super.h"
 #include "gsd-keygrab.h"
+#include "gsd-key-bindings-custom.h"
 
 struct Binding {
-	KeybinderHandler      handler;
-	void                 *user_data;
-	char                 *keystring;
-	GDestroyNotify        notify;
+    KeybinderHandler      handler;
+    void                 *user_data;
+    char                 *keystring;
+    GDestroyNotify        notify;
 };
 
 static void init_grab_key_xi2_manager (void);
 static gboolean init_screen_list (void);
-static GdkFilterReturn filter_key_events (XEvent *xevent, 
-GdkEvent *event, gpointer user_data);
+static GdkFilterReturn filter_key_events (XEvent *xevent,
+        GdkEvent *event, gpointer user_data);
 static void keymap_changed (GdkKeymap *map);
 static gboolean do_grab_key (struct Binding *binding);
 static gboolean do_ungrab_key (struct Binding *binding);
 
-GHashTable* key_table;
-static GSList *screens;
+GHashTable *key_table;
+GSList *screens;
 static GSList *bindings = NULL;
+extern GHashTable *custom_table;
 
 /**
  * keybinder_init:
@@ -42,98 +44,104 @@ static GSList *bindings = NULL;
 void
 keybinder_init ()
 {
-	GdkKeymap *keymap = gdk_keymap_get_default ();
-	Display *disp;
+    GdkKeymap *keymap = gdk_keymap_get_default ();
+    Display *disp;
 
-	if (!(disp = XOpenDisplay(NULL))) {
-		g_warning("keybinder_init: Unable to open display");
-		return;
-	}
+    if (!(disp = XOpenDisplay(NULL))) {
+        g_warning("keybinder_init: Unable to open display");
+        return;
+    }
 
-	/* Workaround: Make sure modmap is up to date
-	 * There is possibly a bug in GTK+ where virtual modifiers are not
-	 * mapped because the modmap is not updated. The following function
-	 * updates it.
-	 */
-	(void) gdk_keymap_have_bidi_layouts(keymap);
+    /* Workaround: Make sure modmap is up to date
+     * There is possibly a bug in GTK+ where virtual modifiers are not
+     * mapped because the modmap is not updated. The following function
+     * updates it.
+     */
+    (void) gdk_keymap_have_bidi_layouts(keymap);
 
 
-	g_signal_connect (keymap, 
-			  "keys_changed",
-			  G_CALLBACK (keymap_changed),
-			  NULL);
+    g_signal_connect (keymap,
+                      "keys_changed",
+                      G_CALLBACK (keymap_changed),
+                      NULL);
 
     /*
      * XRecord
      * parse super
      */
-    key_table = g_hash_table_new_full (g_str_hash, g_str_equal, 
-            g_free, g_free);
+    key_table = g_hash_table_new_full (g_str_hash, g_str_equal,
+                                       g_free, g_free);
 
     if ( !init_xrecord () ) {
         g_debug ("init xrecord failed!");
     }
-	init_grab_key_xi2_manager ();
+
+    init_grab_key_xi2_manager ();
+    init_custom_settings ();
 }
 
 static void
 keymap_changed (GdkKeymap *map)
 {
-	GSList *iter;
+    GSList *iter;
 
-	(void) map;
+    (void) map;
 
-	g_debug ("Keymap changed! Regrabbing keys...");
+    g_debug ("Keymap changed! Regrabbing keys...");
 
-	for (iter = bindings; iter != NULL; iter = iter->next) {
-		struct Binding *binding = iter->data;
-		do_ungrab_key (binding);
-	}
+    for (iter = bindings; iter != NULL; iter = iter->next) {
+        struct Binding *binding = iter->data;
+        do_ungrab_key (binding);
+    }
 
-	for (iter = bindings; iter != NULL; iter = iter->next) {
-		struct Binding *binding = iter->data;
-		do_grab_key (binding);
-	}
+    for (iter = bindings; iter != NULL; iter = iter->next) {
+        struct Binding *binding = iter->data;
+        do_grab_key (binding);
+    }
 }
 
 
 static gboolean
 do_grab_key (struct Binding *binding)
 {
-	if ( g_strcmp0 (binding->keystring, "Super") == 0 ) {
+    if ( g_strcmp0 (binding->keystring, "Super") == 0 ) {
         g_debug ("bind key Super!\n");
         insert_table_record (0xffeb, binding->user_data);
         insert_table_record (0xffec, binding->user_data);
         return TRUE;
     }
 
-		Key *key = parse_key (binding->keystring);
-		if ( key == NULL ) {
-			return FALSE;
-		}
-		grab_key_unsafe (key, TRUE, GSD_KEYGRAB_NORMAL, screens);
-		free_key (key);
+    Key *key = parse_key (binding->keystring);
 
-	return TRUE;
+    if ( key == NULL ) {
+        return FALSE;
+    }
+
+    grab_key_unsafe (key, TRUE, GSD_KEYGRAB_NORMAL, screens);
+    free_key (key);
+
+    return TRUE;
 }
 
 static gboolean
 do_ungrab_key (struct Binding *binding)
 {
-	if ( g_strcmp0 (binding->keystring, "Super") == 0 ) {
+    if ( g_strcmp0 (binding->keystring, "Super") == 0 ) {
         remove_table_record (0xffeb);
         remove_table_record (0xffec);
         return TRUE;
     }
 
-		Key *key = parse_key (binding->keystring);
-		if ( key == NULL ) {
-			return FALSE;
-		}
-		grab_key_unsafe (key, FALSE, GSD_KEYGRAB_NORMAL, screens);
-		free_key (key);
+    Key *key = parse_key (binding->keystring);
 
-	return TRUE;
+    if ( key == NULL ) {
+        return FALSE;
+    }
+
+    grab_key_unsafe (key, FALSE, GSD_KEYGRAB_NORMAL, screens);
+    free_key (key);
+
+    return TRUE;
 }
 
 /**
@@ -155,7 +163,7 @@ keybinder_bind (const char *keystring,
                 KeybinderHandler handler,
                 void *user_data)
 {
-	return keybinder_bind_full(keystring, handler, user_data, NULL);
+    return keybinder_bind_full(keystring, handler, user_data, NULL);
 }
 
 /**
@@ -180,30 +188,33 @@ keybinder_bind_full (const char *keystring,
                      void *user_data,
                      GDestroyNotify notify)
 {
-	struct Binding *binding = NULL;
-	gboolean success = FALSE;
+    struct Binding *binding = NULL;
+    gboolean success = FALSE;
 
-	binding = g_new0 (struct Binding, 1);
+    binding = g_new0 (struct Binding, 1);
+
     if ( binding == NULL ) {
         return success;
     }
-	binding->keystring = g_strdup (keystring);
-	binding->handler = handler;
-	binding->user_data = user_data;
-	binding->notify = notify;
 
-	/* Sets the binding's keycode and modifiers */
-	success = do_grab_key (binding);
+    binding->keystring = g_strdup (keystring);
+    binding->handler = handler;
+    binding->user_data = user_data;
+    binding->notify = notify;
 
-	if (success) {
-		g_debug ("keybinder_bind_full: do_grab_key success");
-		bindings = g_slist_prepend (bindings, binding);
-	} else {
-		g_debug ("keybinder_bind_full: do_grab_key failed");
-		g_free (binding->keystring);
-		g_free (binding);
-	}
-	return success;
+    /* Sets the binding's keycode and modifiers */
+    success = do_grab_key (binding);
+
+    if (success) {
+        g_debug ("keybinder_bind_full: do_grab_key success");
+        bindings = g_slist_prepend (bindings, binding);
+    } else {
+        g_debug ("keybinder_bind_full: do_grab_key failed");
+        g_free (binding->keystring);
+        g_free (binding);
+    }
+
+    return success;
 }
 
 /**
@@ -222,26 +233,29 @@ keybinder_bind_full (const char *keystring,
 void
 keybinder_unbind (const char *keystring, KeybinderHandler handler)
 {
-	GSList *iter;
+    GSList *iter;
 
-	for (iter = bindings; iter != NULL; iter = iter->next) {
-		struct Binding *binding = iter->data;
+    for (iter = bindings; iter != NULL; iter = iter->next) {
+        struct Binding *binding = iter->data;
 
-		if (strcmp (keystring, binding->keystring) != 0 ||
-		    handler != binding->handler) 
-			continue;
+        if (strcmp (keystring, binding->keystring) != 0 ||
+                handler != binding->handler) {
+            continue;
+        }
 
-		do_ungrab_key (binding);
-		bindings = g_slist_remove (bindings, binding);
+        do_ungrab_key (binding);
+        bindings = g_slist_remove (bindings, binding);
 
-		g_debug ("unbind, notify: %p", binding->notify);
-		if (binding->notify) {
-			binding->notify(binding->user_data);
-		}
-		g_free (binding->keystring);
-		g_free (binding);
-		break;
-	}
+        g_debug ("unbind, notify: %p", binding->notify);
+
+        if (binding->notify) {
+            binding->notify(binding->user_data);
+        }
+
+        g_free (binding->keystring);
+        g_free (binding);
+        break;
+    }
 }
 
 /**
@@ -256,29 +270,34 @@ keybinder_unbind (const char *keystring, KeybinderHandler handler)
  */
 void keybinder_unbind_all (const char *keystring)
 {
-	GSList *iter = bindings;
+    GSList *iter = bindings;
 
-	for (iter = bindings; iter != NULL; iter = iter->next) {
-		struct Binding *binding = iter->data;
+    for (iter = bindings; iter != NULL; iter = iter->next) {
+        struct Binding *binding = iter->data;
 
-		if (strcmp (keystring, binding->keystring) != 0)
-			continue;
+        if (strcmp (keystring, binding->keystring) != 0) {
+            continue;
+        }
 
-		do_ungrab_key (binding);
-		bindings = g_slist_remove (bindings, binding);
+        do_ungrab_key (binding);
+        bindings = g_slist_remove (bindings, binding);
 
-		g_debug ("unbind_all, notify: %p", binding->notify);
-		if (binding->notify) {
-			binding->notify(binding->user_data);
-		}
-		g_free (binding->keystring);
-		g_free (binding);
+        g_debug ("unbind_all, notify: %p", binding->notify);
 
-		/* re-start scan from head of new list */
-		iter = bindings;
-		if (!iter)
-			break;
-	}
+        if (binding->notify) {
+            binding->notify(binding->user_data);
+        }
+
+        g_free (binding->keystring);
+        g_free (binding);
+
+        /* re-start scan from head of new list */
+        iter = bindings;
+
+        if (!iter) {
+            break;
+        }
+    }
 }
 
 static void
@@ -289,6 +308,7 @@ init_grab_key_xi2_manager (void)
     }
 
     GSList *l;
+
     for ( l = screens; l != NULL; l = l->next ) {
         gdk_window_add_filter (gdk_screen_get_root_window (l->data),
                                (GdkFilterFunc) filter_key_events, NULL);
@@ -299,6 +319,7 @@ void
 destroy_grab_xi2_manager (void)
 {
     GSList *l;
+
     for ( l = screens; l != NULL; l = l->next ) {
         gdk_window_remove_filter (gdk_screen_get_root_window (l->data),
                                   (GdkFilterFunc) filter_key_events, NULL);
@@ -357,23 +378,43 @@ filter_key_events (XEvent *xevent, GdkEvent *event, gpointer user_data)
     }
 
     xev = (XIDeviceEvent *)xiev;
+
     if ( xiev->evtype == XI_KeyRelease ) {
         GSList *iter = bindings;
+
         while (iter != NULL) {
-			struct Binding *binding = iter->data;
-			iter = iter->next;
-			
-			Key *key = parse_key (binding->keystring);
-            if ( match_xi2_key (key, xev)) {
+            struct Binding *binding = iter->data;
+            iter = iter->next;
+
+            Key *key = parse_key (binding->keystring);
+            gboolean is_equal = match_xi2_key (key, xev);
+            free_key (key);
+
+            if ( is_equal ) {
                 GdkWindow *window = gdk_get_default_root_window ();
 
                 if ( GDK_WINDOW_XID(window) == xev->root) {
-                    (binding->handler) (binding->keystring, 
-                        binding->user_data);
+                    (binding->handler) (binding->keystring,
+                                        binding->user_data);
                     return GDK_FILTER_CONTINUE;
                 }
             }
-			free_key (key);
+        }
+
+        GHashTableIter custom_iter;
+        CustomGrabKey *entry;
+
+        g_hash_table_iter_init (&custom_iter, custom_table);
+
+        while ( g_hash_table_iter_next (&custom_iter, NULL, (void**)&entry) ) {
+            Key *key = parse_key (entry->shortcut);
+            gboolean is_equal = match_xi2_key (key, xev);
+            free_key (key);
+
+            if ( is_equal ) {
+                g_spawn_command_line_sync (entry->action,
+                                           NULL, NULL, NULL, NULL);
+            }
         }
     }
 
