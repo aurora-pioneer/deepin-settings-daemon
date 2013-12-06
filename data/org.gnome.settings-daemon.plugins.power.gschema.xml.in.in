@@ -41,7 +41,7 @@
       <description>If the screen should be dimmed to save power when the computer is idle when on battery power.</description>
     </key>
     <key name="idle-dim-time" type="i">
-      <default>90</default>
+      <default>5</default>
       <summary>The default amount of time to dim the screen after idle</summary>
       <description>The default amount of time to dim the screen after idle.</description>
     </key>
