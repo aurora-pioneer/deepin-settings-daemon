@@ -437,7 +437,7 @@ set_motion (GsdMouseManager *manager,
     int num_feedbacks;
     int numerator, denominator;
     gfloat motion_acceleration;
-    gfloat motion_threshold;
+    int motion_threshold;
     GSettings *settings;
     guint i;
 
@@ -484,7 +484,7 @@ set_motion (GsdMouseManager *manager,
     }
 
     /* And threshold */
-    motion_threshold = g_settings_get_double (settings, KEY_MOTION_THRESHOLD);
+    motion_threshold = (int)g_settings_get_double (settings, KEY_MOTION_THRESHOLD);
 
     /* Get the list of feedbacks for the device */
     states = XGetFeedbackControl (GDK_DISPLAY_XDISPLAY (gdk_display_get_default ()), xdevice, &num_feedbacks);
