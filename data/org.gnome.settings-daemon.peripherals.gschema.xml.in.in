@@ -41,17 +41,17 @@
       <_description>Set this to TRUE to enable all touchpads.</_description>
     </key>
     <key name="left-handed" enum="org.gnome.settings-daemon.GsdTouchpadHandedness">
-      <default>'mouse'</default>
+      <default>'left'</default>
       <summary>Touchpad button orientation</summary>
       <description>Swap left and right mouse buttons for left-handed mice with 'left', 'right' for right-handed, 'mouse' to follow the mouse setting.</description>
     </key>
     <key name="motion-acceleration" type="d">
-      <default>-1</default>
+      <default>1</default>
       <summary>Single Click</summary>
       <description>Acceleration multiplier for mouse motion. A value of -1 is the system default.</description>
     </key>
-    <key name="motion-threshold" type="i">
-      <default>-1</default>
+    <key name="motion-threshold" type="d">
+      <default>1</default>
       <summary>Motion Threshold</summary>
       <description>Distance in pixels the pointer must move before accelerated mouse motion is activated. A value of -1 is the system default.</description>
     </key>
@@ -127,12 +127,12 @@
       <description>Swap left and right mouse buttons for left-handed mice.</description>
     </key>
     <key name="motion-acceleration" type="d">
-      <default>-1</default>
+      <default>1.0</default>
       <summary>Single Click</summary>
       <description>Acceleration multiplier for mouse motion. A value of -1 is the system default.</description>
     </key>
-    <key name="motion-threshold" type="i">
-      <default>-1</default>
+    <key name="motion-threshold" type="d">
+      <default>1</default>
       <summary>Motion Threshold</summary>
       <description>Distance in pixels the pointer must move before accelerated mouse motion is activated. A value of -1 is the system default.</description>
     </key>
