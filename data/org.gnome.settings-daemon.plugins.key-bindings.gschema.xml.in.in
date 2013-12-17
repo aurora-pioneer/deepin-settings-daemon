@@ -21,7 +21,7 @@
       <_description>Key2</_description>
     </key>      
     <key name="key3" type="s">
-      <default>"/usr/bin/dlock;&lt;Super&gt;L"</default>
+		<default>"/usr/bin/dlock;&lt;Super&gt;L"</default>
       <_summary>Key3</_summary>
       <_description>Key3</_description>
     </key>      
@@ -31,7 +31,7 @@
       <_description>Key4</_description>                                            
     </key>      
     <key name="key5" type="s">                                                  
-      <default>'python /usr/share/deepin-system-settings/modules/power/src/tray_shutdown_plugin.py logout;&lt;Primary&gt;&lt;Alt&gt;Delete'</default>
+		<default>'/usr/lib/deepin-daemon/dlogout;&lt;Primary&gt;&lt;Alt&gt;Delete'</default>
       <_summary>Key5</_summary>                                                 
       <_description>Key5</_description>                                            
     </key> 
