@@ -23,16 +23,16 @@
 #include "gsd-keygrab.h"
 #include "gsd-key-bindings-custom.h"
 
-#define KEY_BINDING_ID	"com.deepin.daemon.key-binding"
-#define KEY_BINDING_ADD_ID	"com.deepin.daemon.key-binding.custom"
-#define KEY_BINDING_ADD_PATH	"/com/deepin/daemon/key-binding/profiles/"
+#define KEY_BINDING_ID	"com.deepin.dde.key-binding"
+#define KEY_BINDING_ADD_ID	"com.deepin.dde.key-binding.custom"
+#define KEY_BINDING_ADD_PATH	"/com/deepin/dde/key-binding/profiles/"
 
 #define KEY_COUNT	"count"
 #define KEY_ID	"id"
 #define KEY_NAME	"name"
 #define KEY_SHORTCUT	"shortcut"
 #define KEY_ACTION	"action"
-#define KEY_COUNT_BASE	1000
+#define KEY_COUNT_BASE	10000
 
 static void on_settings_changed_cb (GSettings *settings, gchar *key,
                                     gpointer user_data);
@@ -118,9 +118,11 @@ on_settings_changed_cb (GSettings *settings, gchar *key,
         listen_settings_changed_all (count);
     }
 
+    /*
     if ( g_strcmp0 (key, KEY_NAME) == 0 ) {
         return ;
     }
+    */
 
     if ( g_strcmp0 (key, KEY_SHORTCUT) == 0 ) {
         ungrab_custom_key_full ();
@@ -134,6 +136,7 @@ on_settings_changed_cb (GSettings *settings, gchar *key,
         return ;
     }
 
+    /*
     if ( g_strcmp0 (key, KEY_ACTION) == 0 ) {
         gint key_id = g_settings_get_int (settings, KEY_ID);
         gchar *action = g_settings_get_string (settings, KEY_ACTION);
@@ -143,6 +146,7 @@ on_settings_changed_cb (GSettings *settings, gchar *key,
         entry->action = action;
         return ;
     }
+    */
 }
 
 static gboolean
