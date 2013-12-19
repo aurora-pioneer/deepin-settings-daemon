@@ -160,7 +160,7 @@ grab_custom_key (const char *shortcut)
         return FALSE;
     }
 
-    grab_key_unsafe (key, TRUE, GSD_KEYGRAB_NORMAL, screens);
+    grab_key_unsafe (key, TRUE, GSD_KEYGRAB_SYNCHRONOUS, screens);
     free_key (key);
 
     return TRUE;
@@ -177,7 +177,7 @@ ungrab_custom_key (const char *shortcut)
         return FALSE;
     }
 
-    grab_key_unsafe (key, FALSE, GSD_KEYGRAB_NORMAL, screens);
+    grab_key_unsafe (key, FALSE, GSD_KEYGRAB_SYNCHRONOUS, screens);
     free_key (key);
 
     return TRUE;

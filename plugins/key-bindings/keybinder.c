@@ -117,7 +117,7 @@ do_grab_key (struct Binding *binding)
         return FALSE;
     }
 
-    grab_key_unsafe (key, TRUE, GSD_KEYGRAB_NORMAL, screens);
+    grab_key_unsafe (key, TRUE, GSD_KEYGRAB_SYNCHRONOUS, screens);
     free_key (key);
 
     return TRUE;
@@ -138,7 +138,7 @@ do_ungrab_key (struct Binding *binding)
         return FALSE;
     }
 
-    grab_key_unsafe (key, FALSE, GSD_KEYGRAB_NORMAL, screens);
+    grab_key_unsafe (key, FALSE, GSD_KEYGRAB_SYNCHRONOUS, screens);
     free_key (key);
 
     return TRUE;
@@ -406,7 +406,7 @@ filter_key_events (XEvent *xevent, GdkEvent *event, gpointer user_data)
 
         g_hash_table_iter_init (&custom_iter, custom_table);
 
-        while ( g_hash_table_iter_next (&custom_iter, NULL, (void**)&entry) ) {
+        while ( g_hash_table_iter_next (&custom_iter, NULL, (void **)&entry) ) {
             Key *key = parse_key (entry->shortcut);
             gboolean is_equal = match_xi2_key (key, xev);
             free_key (key);
