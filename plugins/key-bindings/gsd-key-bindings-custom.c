@@ -32,12 +32,12 @@
 #define KEY_NAME	"name"
 #define KEY_SHORTCUT	"shortcut"
 #define KEY_ACTION	"action"
-#define KEY_COUNT_BASE	10000
+#define KEY_LIST "key-list"
 
 static void on_settings_changed_cb (GSettings *settings, gchar *key,
                                     gpointer user_data);
 static void listen_settings_changed (const char *id);
-static void listen_settings_changed_all (const gint count);
+static void listen_settings_changed_all (const gchar **list);
 static gboolean grab_custom_key (const char *shortcut);
 static void grab_custom_key_full (void);
 static gboolean ungrab_custom_key (const char *shortcut);
@@ -55,9 +55,10 @@ init_custom_settings (void)
                                           NULL,
                                           (GDestroyNotify)remove_grab_entry);
     GSettings *gs = g_settings_new (KEY_BINDING_ID);
-    gint count = g_settings_get_int (gs, KEY_COUNT);
+    gchar **str_list = g_settings_get_strv (gs, KEY_LIST);
 
-    listen_settings_changed_all (count);
+    listen_settings_changed_all ((const gchar **)str_list);
+    g_strfreev(str_list);
     g_signal_connect (gs, "changed",
                       G_CALLBACK (on_settings_changed_cb), NULL);
 }
@@ -71,16 +72,14 @@ finalize_custom_settings (void)
 }
 
 static void
-listen_settings_changed_all (const gint count)
+listen_settings_changed_all (const gchar **list)
 {
-    g_return_if_fail (count > 0);
+    g_return_if_fail (list);
 
     gint i = 0;
 
-    for ( ; i < count; i++ ) {
-        gchar *id = g_strdup_printf ("%d", KEY_COUNT_BASE + i);
-        listen_settings_changed (id);
-        g_free (id);
+    for ( ; list[i] != NULL; i++ ) {
+        listen_settings_changed (list[i]);
     }
 }
 
@@ -111,11 +110,12 @@ static void
 on_settings_changed_cb (GSettings *settings, gchar *key,
                         gpointer user_data)
 {
-    if ( g_strcmp0(key, KEY_COUNT) == 0 ) {
+    if ( g_strcmp0(key, KEY_LIST) == 0 ) {
         ungrab_custom_key_full ();
         g_hash_table_remove_all (custom_table);
-        gint count = g_settings_get_int (settings, KEY_COUNT);
-        listen_settings_changed_all (count);
+        gchar **str_list = g_settings_get_strv (settings, KEY_LIST);
+        listen_settings_changed_all ((const gchar**)str_list);
+		g_strfreev(str_list);
     }
 
     /*
