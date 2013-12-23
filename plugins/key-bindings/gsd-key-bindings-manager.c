@@ -41,7 +41,6 @@
 
 #include "keybinder.h"
 #include "parse-super.h"
-#include "gsd-key-bindings-custom.h"
 #include "gsd-key-bindings-handler.h"
 #include "gsd-key-bindings-settings.h"
 #include "gsd-key-bindings-util.h"
@@ -258,7 +257,6 @@ gsd_key_bindings_manager_finalize (GObject *object)
     g_debug ("finalize XRecord in finalize!\n");
     finalize_xrecord ();
 	destroy_grab_xi2_manager ();
-	finalize_custom_settings ();
 }
 
 GsdKeyBindingsManager *

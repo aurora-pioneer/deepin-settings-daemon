@@ -44,8 +44,6 @@ test_key_bindings_SOURCES =		\
 	keybinder.h			\
 	parse-super.h			\
 	parse-super.c			\
-	gsd-key-bindings-custom.h			\
-	gsd-key-bindings-custom.c			\
 	$(NULL)
 
 test_key_bindings_CPPFLAGS = \
@@ -85,8 +83,6 @@ libkey_bindings_la_SOURCES = 		\
 	keybinder.h			\
 	parse-super.h			\
 	parse-super.c			\
-	gsd-key-bindings-custom.h			\
-	gsd-key-bindings-custom.c			\
 	$(NULL)
 
 libkey_bindings_la_CPPFLAGS = \

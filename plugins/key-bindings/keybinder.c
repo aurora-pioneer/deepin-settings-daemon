@@ -11,7 +11,6 @@
 #include "keybinder.h"
 #include "parse-super.h"
 #include "gsd-keygrab.h"
-#include "gsd-key-bindings-custom.h"
 
 struct Binding {
     KeybinderHandler      handler;
@@ -31,7 +30,6 @@ static gboolean do_ungrab_key (struct Binding *binding);
 GHashTable *key_table;
 GSList *screens;
 static GSList *bindings = NULL;
-extern GHashTable *custom_table;
 
 /**
  * keybinder_init:
@@ -77,7 +75,6 @@ keybinder_init ()
     }
 
     init_grab_key_xi2_manager ();
-    init_custom_settings ();
 }
 
 static void
@@ -398,22 +395,6 @@ filter_key_events (XEvent *xevent, GdkEvent *event, gpointer user_data)
                                         binding->user_data);
                     return GDK_FILTER_CONTINUE;
                 }
-            }
-        }
-
-        GHashTableIter custom_iter;
-        CustomGrabKey *entry;
-
-        g_hash_table_iter_init (&custom_iter, custom_table);
-
-        while ( g_hash_table_iter_next (&custom_iter, NULL, (void **)&entry) ) {
-            Key *key = parse_key (entry->shortcut);
-            gboolean is_equal = match_xi2_key (key, xev);
-            free_key (key);
-
-            if ( is_equal ) {
-                g_spawn_command_line_sync (entry->action,
-                                           NULL, NULL, NULL, NULL);
             }
         }
     }
