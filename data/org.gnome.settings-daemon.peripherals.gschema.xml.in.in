@@ -50,7 +50,7 @@
       <summary>Single Click</summary>
       <description>Acceleration multiplier for mouse motion. A value of -1 is the system default.</description>
     </key>
-    <key name="motion-threshold" type="d">
+    <key name="motion-threshold" type="i">
       <default>1</default>
       <summary>Motion Threshold</summary>
       <description>Distance in pixels the pointer must move before accelerated mouse motion is activated. A value of -1 is the system default.</description>
@@ -131,7 +131,7 @@
       <summary>Single Click</summary>
       <description>Acceleration multiplier for mouse motion. A value of -1 is the system default.</description>
     </key>
-    <key name="motion-threshold" type="d">
+    <key name="motion-threshold" type="i">
       <default>1</default>
       <summary>Motion Threshold</summary>
       <description>Distance in pixels the pointer must move before accelerated mouse motion is activated. A value of -1 is the system default.</description>
