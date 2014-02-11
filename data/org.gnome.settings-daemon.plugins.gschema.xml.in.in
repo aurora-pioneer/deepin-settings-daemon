@@ -18,7 +18,6 @@
     <child name="mouse" schema="org.gnome.settings-daemon.plugins.mouse"/>
     <child name="power" schema="org.gnome.settings-daemon.plugins.power"/>
     <child name="print-notifications" schema="org.gnome.settings-daemon.plugins.print-notifications"/>
-    <child name="screensaver-proxy" schema="org.gnome.settings-daemon.plugins.screensaver-proxy"/>
     <child name="sound" schema="org.gnome.settings-daemon.plugins.sound"/>
     <child name="xsettings" schema="org.gnome.settings-daemon.plugins.xsettings"/>
   </schema>
@@ -59,18 +58,6 @@
     </key>
   </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.mouse" path="/org/gnome/settings-daemon/plugins/mouse/">
-    <key name="active" type="b">
-      <default>true</default>
-      <_summary>Activation of this plugin</_summary>
-      <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
-    </key>
-    <key name="priority" type="i">
-      <default>0</default>
-      <_summary>Priority to use for this plugin</_summary>
-      <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
-    </key>
-  </schema>
-  <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.screensaver-proxy" path="/org/gnome/settings-daemon/plugins/screensaver-proxy/">
     <key name="active" type="b">
       <default>true</default>
       <_summary>Activation of this plugin</_summary>
