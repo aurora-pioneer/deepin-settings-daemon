@@ -1,6 +1,3 @@
-[org.gnome.settings-daemon.peripherals.smartcard]
-removal-action = /desktop/gnome/peripherals/smartcard/removal_action
-
 [org.gnome.settings-daemon.peripherals.touchpad]
 disable-while-typing = /desktop/gnome/peripherals/touchpad/disable_while_typing
 horiz-scroll-enabled = /desktop/gnome/peripherals/touchpad/horiz_scroll_enabled
@@ -21,15 +18,6 @@ priority = /apps/gnome_settings_daemon/plugins/clipboard/priority
 [org.gnome.settings-daemon.plugins.font]
 active = /apps/gnome_settings_daemon/plugins/font/active
 priority = /apps/gnome_settings_daemon/plugins/font/priority
-
-[org.gnome.settings-daemon.plugins.housekeeping]
-active = /apps/gnome_settings_daemon/plugins/housekeeping/active
-free-percent-notify = /apps/gnome_settings_daemon/plugins/housekeeping/free_percent_notify
-free-percent-notify-again = /apps/gnome_settings_daemon/plugins/housekeeping/free_percent_notify_again
-free-size-gb-no-notify = /apps/gnome_settings_daemon/plugins/housekeeping/free_size_gb_no_notify
-ignore-paths = /apps/gnome_settings_daemon/plugins/housekeeping/ignore_paths
-min-notify-period = /apps/gnome_settings_daemon/plugins/housekeeping/min_notify_period
-priority = /apps/gnome_settings_daemon/plugins/housekeeping/priority
 
 [org.gnome.settings-daemon.plugins.keyboard]
 active = /apps/gnome_settings_daemon/plugins/keyboard/active
@@ -70,18 +58,9 @@ left-handed = /desktop/gnome/peripherals/mouse/left_handed
 motion-acceleration = /desktop/gnome/peripherals/mouse/motion_acceleration
 motion-threshold = /desktop/gnome/peripherals/mouse/motion_threshold
 
-[org.gnome.settings-daemon.plugins.smartcard]
-active = /apps/gnome_settings_daemon/plugins/smartcard/active
-priority = /apps/gnome_settings_daemon/plugins/smartcard/priority
-
 [org.gnome.settings-daemon.plugins.sound]
 active = /apps/gnome_settings_daemon/plugins/sound/active
 priority = /apps/gnome_settings_daemon/plugins/sound/priority
-
-[org.gnome.settings-daemon.plugins.xrandr]
-active = /apps/gnome_settings_daemon/plugins/xrandr/active
-default-configuration-file = /apps/gnome_settings_daemon/xrandr/default_configuration_file
-priority = /apps/gnome_settings_daemon/plugins/xrandr/priority
 
 [org.gnome.settings-daemon.plugins.xsettings]
 active = /apps/gnome_settings_daemon/plugins/xsettings/active

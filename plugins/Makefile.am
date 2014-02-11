@@ -20,12 +20,6 @@ enabled_plugins =	\
 disabled_plugins = \
 	$(NULL)
 
-if SMARTCARD_SUPPORT
-enabled_plugins += smartcard
-else
-disabled_plugins += smartcard
-endif
-
 if BUILD_PRINT_NOTIFICATIONS
 enabled_plugins += print-notifications
 else
