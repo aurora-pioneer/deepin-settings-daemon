@@ -10,15 +10,11 @@ gsettings_SCHEMAS =							\
 	org.gnome.settings-daemon.peripherals.gschema.xml		\
 	org.gnome.settings-daemon.plugins.gschema.xml			\
 	org.gnome.settings-daemon.plugins.keyboard.gschema.xml		\
-	org.gnome.settings-daemon.plugins.key-bindings.gschema.xml	\
 	org.gnome.settings-daemon.plugins.idle-delay.gschema.xml	\
 	org.gnome.settings-daemon.plugins.power.gschema.xml		\
-	org.gnome.settings-daemon.plugins.color.gschema.xml		\
 	org.gnome.settings-daemon.plugins.media-keys.gschema.xml	\
 	org.gnome.settings-daemon.plugins.xsettings.gschema.xml		\
-	org.gnome.settings-daemon.plugins.housekeeping.gschema.xml	\
 	org.gnome.settings-daemon.plugins.print-notifications.gschema.xml	\
-	org.gnome.settings-daemon.plugins.xrandr.gschema.xml		\
 	org.gnome.settings-daemon.plugins.orientation.gschema.xml	\
 	org.gnome.settings-daemon.peripherals.wacom.gschema.xml
 

@@ -3,12 +3,9 @@ NULL =
 enabled_plugins =	\
 	a11y-keyboard	\
 	a11y-settings	\
-	background	\
 	clipboard	\
-	cursor		\
 	datetime	\
 	dummy		\
-	housekeeping    \
 	idle-delay	\
 	keyboard	\
 	media-keys	\
@@ -18,12 +15,10 @@ enabled_plugins =	\
 	print-notifications\
 	sound		\
 	wacom		\
-	xrandr		\
 	xsettings	\
 	$(NULL)
 
 disabled_plugins = \
-	color	\
 	$(NULL)
 
 if SMARTCARD_SUPPORT

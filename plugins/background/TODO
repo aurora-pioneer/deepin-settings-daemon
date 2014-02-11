@@ -1,3 +1,0 @@
-1. clean up irrelevant code
-2. coding in a uniform way
-3. GObject-ize background to utilize GObject's memory management 

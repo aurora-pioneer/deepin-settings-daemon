@@ -11,12 +11,8 @@
     </key>
     <child name="a11y-keyboard" schema="org.gnome.settings-daemon.plugins.a11y-keyboard"/>
     <child name="a11y-settings" schema="org.gnome.settings-daemon.plugins.a11y-settings"/>
-    <child name="background" schema="org.gnome.settings-daemon.plugins.background"/>
     <child name="clipboard" schema="org.gnome.settings-daemon.plugins.clipboard"/>
-    <child name="color" schema="org.gnome.settings-daemon.plugins.color"/>
-    <child name="cursor" schema="org.gnome.settings-daemon.plugins.cursor"/>
     <child name="gsdwacom" schema="org.gnome.settings-daemon.plugins.gsdwacom"/>
-    <child name="housekeeping" schema="org.gnome.settings-daemon.plugins.housekeeping"/>
     <child name="keyboard" schema="org.gnome.settings-daemon.plugins.keyboard"/>
     <child name="media-keys" schema="org.gnome.settings-daemon.plugins.media-keys"/>
     <child name="mouse" schema="org.gnome.settings-daemon.plugins.mouse"/>
@@ -27,7 +23,6 @@
     <child name="screensaver-proxy" schema="org.gnome.settings-daemon.plugins.screensaver-proxy"/>
     <child name="smartcard" schema="org.gnome.settings-daemon.plugins.smartcard"/>
     <child name="sound" schema="org.gnome.settings-daemon.plugins.sound"/>
-    <child name="xrandr" schema="org.gnome.settings-daemon.plugins.xrandr"/>
     <child name="xsettings" schema="org.gnome.settings-daemon.plugins.xsettings"/>
   </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.a11y-keyboard" path="/org/gnome/settings-daemon/plugins/a11y-keyboard/">
@@ -54,33 +49,9 @@
       <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
     </key>
   </schema>
-  <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.background" path="/org/gnome/settings-daemon/plugins/background/">
-    <key name="active" type="b">
-      <default>true</default>
-      <_summary>Activation of this plugin</_summary>
-      <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
-    </key>
-    <key name="priority" type="i">
-      <default>0</default>
-      <_summary>Priority to use for this plugin</_summary>
-      <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
-    </key>
-  </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.clipboard" path="/org/gnome/settings-daemon/plugins/clipboard/">
     <key name="active" type="b">
       <default>true</default>
-      <_summary>Activation of this plugin</_summary>
-      <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
-    </key>
-    <key name="priority" type="i">
-      <default>0</default>
-      <_summary>Priority to use for this plugin</_summary>
-      <_description>Priority to use for this plugin in gnome-settings-daemon startup queue</_description>
-    </key>
-  </schema>
-  <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.cursor" path="/org/gnome/settings-daemon/plugins/cursor/">
-    <key name="active" type="b">
-      <default>false</default>
       <_summary>Activation of this plugin</_summary>
       <_description>Whether this plugin would be activated by gnome-settings-daemon or not</_description>
     </key>
