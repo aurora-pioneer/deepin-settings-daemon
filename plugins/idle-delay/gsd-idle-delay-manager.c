@@ -55,7 +55,6 @@ struct GsdIdleDelayManagerPrivate
 	double			settings_brightness; //this is the brightness we use when we dim
 	guint			settings_timeout;
 	guint			timeout_id;
-	GSettings		*xrandr_settings;//xrandr gsettings.
 	//X stuff for DPMS
 	Display*		x11_display;
 	gboolean		dpms_supported;
@@ -255,7 +254,6 @@ gsd_idle_delay_manager_init (GsdIdleDelayManager *manager)
 {
         manager->priv = GSD_IDLE_DELAY_MANAGER_GET_PRIVATE (manager);
 	
-	manager->priv->xrandr_settings = g_settings_new (XRANDR_SCHEMA);
 	manager->priv->settings = g_settings_new (IDLE_DELAY_SCHEMA);
 	manager->priv->watcher = gsd_idle_delay_watcher_new ();
 
@@ -303,7 +301,6 @@ gsd_idle_delay_manager_finalize (GObject *object)
 	
 	disconnect_gsettings_signals (idle_delay_manager);
 	g_object_unref (idle_delay_manager->priv->settings);
-	g_object_unref (idle_delay_manager->priv->xrandr_settings);
 
         disconnect_watcher_signals (idle_delay_manager);
         g_object_unref (idle_delay_manager->priv->watcher);
