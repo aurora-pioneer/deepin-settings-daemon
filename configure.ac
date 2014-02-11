@@ -237,14 +237,6 @@ dnl ---------------------------------------------------------------------------
 PKG_CHECK_MODULES(XRANDR, [gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION upower-glib >= $UPOWER_REQUIRED_VERSION])
 
 dnl ---------------------------------------------------------------------------
-dnl - orientation plugin stuff
-dnl ---------------------------------------------------------------------------
-
-if test x$have_gudev != xno; then
-	PKG_CHECK_MODULES(ORIENTATION, [gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION gudev-1.0])
-fi
-
-dnl ---------------------------------------------------------------------------
 dnl - sound plugin stuff
 dnl ---------------------------------------------------------------------------
 
@@ -558,7 +550,6 @@ plugins/keyboard/Makefile
 plugins/media-keys/Makefile
 plugins/media-keys/cut-n-paste/Makefile
 plugins/mouse/Makefile
-plugins/orientation/Makefile
 plugins/print-notifications/Makefile
 plugins/smartcard/Makefile
 plugins/sound/Makefile
@@ -574,7 +565,6 @@ data/org.gnome.settings-daemon.plugins.idle-delay.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.power.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.media-keys.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.gschema.xml.in
-data/org.gnome.settings-daemon.plugins.orientation.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.wacom.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.print-notifications.gschema.xml.in
 po/Makefile.in
