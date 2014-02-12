@@ -457,9 +457,6 @@ AC_OUTPUT([
 Makefile
 gnome-settings-daemon/Makefile
 plugins/Makefile
-plugins/a11y-keyboard/Makefile
-plugins/a11y-settings/Makefile
-plugins/clipboard/Makefile
 plugins/common/Makefile
 plugins/datetime/Makefile
 plugins/dummy/Makefile

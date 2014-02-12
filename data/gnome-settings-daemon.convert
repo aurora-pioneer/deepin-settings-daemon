@@ -7,14 +7,6 @@ touchpad-enabled = /desktop/gnome/peripherals/touchpad/touchpad_enabled
 motion-acceleration = /desktop/gnome/peripherals/mouse/motion_acceleration
 motion-threshold = /desktop/gnome/peripherals/mouse/motion_threshold
 
-[org.gnome.settings-daemon.plugins.a11y-keyboard]
-active = /apps/gnome_settings_daemon/plugins/a11y-keyboard/active
-priority = /apps/gnome_settings_daemon/plugins/a11y-keyboard/priority
-
-[org.gnome.settings-daemon.plugins.clipboard]
-active = /apps/gnome_settings_daemon/plugins/clipboard/active
-priority = /apps/gnome_settings_daemon/plugins/clipboard/priority
-
 [org.gnome.settings-daemon.plugins.font]
 active = /apps/gnome_settings_daemon/plugins/font/active
 priority = /apps/gnome_settings_daemon/plugins/font/priority
