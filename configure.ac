@@ -53,7 +53,6 @@ GNOME_DESKTOP_REQUIRED_VERSION=3.7.90
 LIBNOTIFY_REQUIRED_VERSION=0.7.3
 UPOWER_GLIB_REQUIRED_VERSION=0.9.1
 PA_REQUIRED_VERSION=2.0
-LIBWACOM_REQUIRED_VERSION=0.7
 LIBRSVG_REQUIRED_VERSION=2.36.2
 UPOWER_REQUIRED_VERSION=0.9.11
 APPINDICATOR_REQUIRED_VERSION=0.3.0
@@ -230,18 +229,6 @@ PKG_CHECK_MODULES(MEDIA_KEYS, [gio-unix-2.0 libpulse >= $PA_REQUIRED_VERSION $GU
 PKG_CHECK_MODULES(GVC, [gobject-2.0 libpulse >= $PA_REQUIRED_VERSION libpulse-mainloop-glib >= $PA_REQUIRED_VERSION])
 AM_CONDITIONAL(HAVE_INTROSPECTION, false)
 
-dnl ---------------------------------------------------------------------------
-dnl - xrandr plugin stuff
-dnl ---------------------------------------------------------------------------
-
-PKG_CHECK_MODULES(XRANDR, [gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION upower-glib >= $UPOWER_REQUIRED_VERSION])
-
-dnl ---------------------------------------------------------------------------
-dnl - sound plugin stuff
-dnl ---------------------------------------------------------------------------
-
-PKG_CHECK_MODULES(SOUND, [libpulse >= $PA_REQUIRED_VERSION $GUDEV_PKG libpulse-mainloop-glib >= $PA_REQUIRED_VERSION])
-
 # ---------------------------------------------------------------------------
 # Power
 # ---------------------------------------------------------------------------
@@ -253,35 +240,6 @@ if test x$have_gudev != xno; then
 		gudev-1.0
 	)
 fi
-
-dnl ---------------------------------------------------------------------------
-dnl - color
-dnl ---------------------------------------------------------------------------
-
-PKG_CHECK_MODULES(COLOR, [colord >= 0.1.9 gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION libcanberra-gtk3])
-
-dnl ---------------------------------------------------------------------------
-dnl - wacom (disabled for s390/s390x and non Linux platforms)
-dnl ---------------------------------------------------------------------------
-
-case $host_os in
-  linux*)
-    if test "$host_cpu" = s390 -o "$host_cpu" = s390x; then
-      have_wacom=no
-    else
-      if test x$enable_gudev != xno; then
-        PKG_CHECK_MODULES(WACOM, [libwacom >= $LIBWACOM_REQUIRED_VERSION x11 xi xtst gudev-1.0 gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION xorg-wacom librsvg-2.0 >= $LIBRSVG_REQUIRED_VERSION])
-      else
-        AC_MSG_ERROR([GUdev is necessary to compile Wacom support])
-      fi
-      have_wacom=yes
-    fi
-    ;;
-  *)
-    have_wacom=no
-    ;;
-esac
-AM_CONDITIONAL(HAVE_WACOM, test x$have_wacom = xyes)
 
 dnl ==============================================
 dnl PackageKit section
@@ -512,8 +470,6 @@ plugins/media-keys/Makefile
 plugins/media-keys/cut-n-paste/Makefile
 plugins/mouse/Makefile
 plugins/print-notifications/Makefile
-plugins/sound/Makefile
-plugins/wacom/Makefile
 plugins/xsettings/Makefile
 data/Makefile
 data/gnome-settings-daemon.pc
@@ -525,7 +481,6 @@ data/org.gnome.settings-daemon.plugins.idle-delay.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.power.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.media-keys.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.gschema.xml.in
-data/org.gnome.settings-daemon.peripherals.wacom.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.print-notifications.gschema.xml.in
 po/Makefile.in
 man/Makefile
@@ -560,7 +515,6 @@ echo "
         Libnotify support:        ${have_libnotify}
         PackageKit support:       ${have_packagekit}
         Cups support:             ${enable_cups}
-        Wacom support:            ${have_wacom}
 ${NSS_DATABASE:+\
         System nssdb:             ${NSS_DATABASE}
 }\

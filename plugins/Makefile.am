@@ -12,8 +12,6 @@ enabled_plugins =	\
 	mouse		\
 	power		\
 	print-notifications\
-	sound		\
-	wacom		\
 	xsettings	\
 	$(NULL)
 
