@@ -67,9 +67,9 @@
 #define GSD_MEDIA_KEYS_DBUS_PATH GSD_DBUS_PATH "/MediaKeys"
 #define GSD_MEDIA_KEYS_DBUS_NAME GSD_DBUS_NAME ".MediaKeys"
 
-#define GNOME_SESSION_DBUS_NAME "org.gnome.SessionManager"
-#define GNOME_SESSION_DBUS_PATH "/org/gnome/SessionManager"
-#define GNOME_SESSION_DBUS_INTERFACE "org.gnome.SessionManager"
+#define GNOME_SESSION_DBUS_NAME "com.deepin.SessionManager"
+#define GNOME_SESSION_DBUS_PATH "/com/deepin/SessionManager"
+#define GNOME_SESSION_DBUS_INTERFACE "com.deepin.SessionManager"
 
 #define GNOME_KEYRING_DBUS_NAME "org.gnome.keyring"
 #define GNOME_KEYRING_DBUS_PATH "/org/gnome/keyring/daemon"
@@ -94,7 +94,6 @@ static const gchar introspection_xml[] =
     "</node>";
 
 #define SETTINGS_INTERFACE_DIR "org.gnome.desktop.interface"
-#define SETTINGS_POWER_DIR "org.gnome.settings-daemon.plugins.power"
 #define SETTINGS_XSETTINGS_DIR "org.gnome.settings-daemon.plugins.xsettings"
 #define SETTINGS_TOUCHPAD_DIR "org.gnome.settings-daemon.peripherals.touchpad"
 #define TOUCHPAD_ENABLED_KEY "touchpad-enabled"
@@ -145,7 +144,6 @@ struct GsdMediaKeysManagerPrivate {
     char            *gtk_theme;
 
     /* Power stuff */
-    GSettings       *power_settings;
     GDBusProxy      *upower_proxy;
     GDBusProxy      *power_screen_proxy;
     GDBusProxy      *power_keyboard_proxy;
@@ -1771,8 +1769,7 @@ do_config_power_action (GsdMediaKeysManager *manager,
 {
     GsdPowerActionType action_type;
 
-    action_type = g_settings_get_enum (manager->priv->power_settings,
-                                       config_key);
+    action_type = GSD_POWER_ACTION_SHUTDOWN;
 
     switch (action_type) {
         case GSD_POWER_ACTION_SUSPEND:
@@ -2311,9 +2308,6 @@ start_media_keys_idle_cb (GsdMediaKeysManager *manager)
     g_signal_connect (manager->priv->gtksettings, "notify::gtk-sound-theme-name",
                       G_CALLBACK (sound_theme_changed), manager);
 
-    /* for the power plugin interface code */
-    manager->priv->power_settings = g_settings_new (SETTINGS_POWER_DIR);
-
     /* Logic from http://git.gnome.org/browse/gnome-shell/tree/js/ui/status/accessibility.js#n163 */
     manager->priv->interface_settings = g_settings_new (SETTINGS_INTERFACE_DIR);
     g_signal_connect (G_OBJECT (manager->priv->interface_settings), "changed::gtk-theme",
@@ -2453,11 +2447,6 @@ gsd_media_keys_manager_stop (GsdMediaKeysManager *manager)
     if (priv->settings) {
         g_object_unref (priv->settings);
         priv->settings = NULL;
-    }
-
-    if (priv->power_settings) {
-        g_object_unref (priv->power_settings);
-        priv->power_settings = NULL;
     }
 
     if (priv->power_screen_proxy) {
