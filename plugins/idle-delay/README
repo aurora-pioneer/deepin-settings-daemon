@@ -1,4 +1,0 @@
-this plugin is used to replace gnome screensaver's idle-delay functionality.
-
-we still implements all ScreenSaver dbus method (dummy implementation) 
-so as to not break other apps.
