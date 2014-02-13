@@ -1,7 +1,6 @@
 NULL =
 
 enabled_plugins =	\
-	datetime	\
 	dummy		\
 	idle-delay	\
 	keyboard	\

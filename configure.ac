@@ -458,7 +458,6 @@ Makefile
 gnome-settings-daemon/Makefile
 plugins/Makefile
 plugins/common/Makefile
-plugins/datetime/Makefile
 plugins/dummy/Makefile
 plugins/power/Makefile
 plugins/idle-delay/Makefile
