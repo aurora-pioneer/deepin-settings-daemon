@@ -59,6 +59,11 @@
     </key>
   </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.peripherals.keyboard" path="/org/gnome/settings-daemon/peripherals/keyboard/">
+    <key name="user-layout-list" type="as">
+        <default>[]</default>
+        <summary>User Add Layout List</summary>
+        <description>User Add Layout List</description>
+    </key>
     <key name="repeat" type="b">
       <default>true</default>
     </key>
