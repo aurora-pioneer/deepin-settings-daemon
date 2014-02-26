@@ -12,7 +12,6 @@
     <child name="keyboard" schema="org.gnome.settings-daemon.plugins.keyboard"/>
     <child name="media-keys" schema="org.gnome.settings-daemon.plugins.media-keys"/>
     <child name="mouse" schema="org.gnome.settings-daemon.plugins.mouse"/>
-    <child name="xsettings" schema="org.gnome.settings-daemon.plugins.xsettings"/>
   </schema>
   <schema gettext-domain="@GETTEXT_PACKAGE@" id="org.gnome.settings-daemon.plugins.mouse" path="/org/gnome/settings-daemon/plugins/mouse/">
     <key name="active" type="b">

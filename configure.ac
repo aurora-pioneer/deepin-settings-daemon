@@ -190,12 +190,6 @@ dnl ---------------------------------------------------------------------------
 PKG_CHECK_MODULES(CURSOR, xfixes gnome-desktop-3.0 >= $GNOME_DESKTOP_REQUIRED_VERSION)
 
 dnl ---------------------------------------------------------------------------
-dnl - xsettings
-dnl ---------------------------------------------------------------------------
-
-PKG_CHECK_MODULES(XSETTINGS, fontconfig)
-
-dnl ---------------------------------------------------------------------------
 dnl - Keyboard plugin stuff
 dnl ---------------------------------------------------------------------------
 
@@ -417,12 +411,10 @@ plugins/keyboard/Makefile
 plugins/media-keys/Makefile
 plugins/media-keys/cut-n-paste/Makefile
 plugins/mouse/Makefile
-plugins/xsettings/Makefile
 data/Makefile
 data/gnome-settings-daemon.pc
 data/gnome-settings-daemon-uninstalled.pc
 data/org.gnome.settings-daemon.plugins.gschema.xml.in
-data/org.gnome.settings-daemon.plugins.xsettings.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.keyboard.gschema.xml.in
 data/org.gnome.settings-daemon.plugins.media-keys.gschema.xml.in
 data/org.gnome.settings-daemon.peripherals.gschema.xml.in

@@ -4,7 +4,6 @@ enabled_plugins =	\
 	keyboard	\
 	media-keys	\
 	mouse		\
-	xsettings	\
 	$(NULL)
 
 disabled_plugins = \
